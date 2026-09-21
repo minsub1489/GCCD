@@ -30,3 +30,6 @@ Sessions/
 .env.*
 __pycache__/
 *.pyc
+# Unity performance-test package writes these during player builds.
+**/Assets/Resources/PerformanceTestRunInfo.json*
+**/Assets/Resources/PerformanceTestRunSettings.json*

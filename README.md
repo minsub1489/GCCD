@@ -57,7 +57,7 @@ python3 Tools/analyze_session.py /path/to/gccd_session.csv
 - `GCCD/Run Model Checks`: 시행 균형·시드 재현성·공간 분류·모터 값 범위 확인.
 - `GCCD/Create Research Lab`: 데모 씬을 재생성하는 개발 메뉴. 기존 `ThreatLab.unity`를 덮어쓰므로 수정한 씬이 있다면 먼저 복사하세요.
 - Play Mode에서 `LabVerification.Run()`을 실행하면 144회 정답 응답, 오답, 시간초과, 중단, 재청취와 CSV 내용을 검증합니다. 외부 장치 출력은 끈 상태로 수행합니다.
-- `LabBuilder.BuildMac()` 또는 Build Profiles에서 macOS 빌드가 가능합니다.
+- macOS 빌드 성공(오류 0건) 및 독립 실행 확인. `LabBuilder.BuildMac()` 또는 Build Profiles에서 다시 빌드할 수 있습니다.
 - 검증 결과는 [docs/VALIDATION.md](docs/VALIDATION.md), 상세 실험 사양은 [docs/PROTOCOL.md](docs/PROTOCOL.md)를 참고하세요.
 
 ## 구조

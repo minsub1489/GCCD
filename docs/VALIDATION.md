@@ -19,3 +19,8 @@
 ## 검증하지 않은 범위
 
 실제 헤드폰 청감·HRTF 정확도, 실제 진동 장치, UDP 수신 브리지, 출력 지연, 지각적 강도 등가성, 참가자 불편함, Windows/Linux 실행은 검증하지 않았습니다. 장치 ACK가 없으므로 UDP 전송 성공을 장치 작동으로 취급하지 않습니다.
+
+## macOS 빌드
+
+`LabBuilder.BuildMac()`의 BuildPipeline 결과: **Succeeded, errors=0**.
+독립 실행한 `GCCD Threat Lab.app`에서 메뉴 표시 및 연습 시작 후 첫 시행 진입을 확인했습니다. 빌드는 로컬 `GCCD_Project/Builds/`에 생성됩니다. 실행 파일은 소스 저장소에 포함하지 않습니다.
