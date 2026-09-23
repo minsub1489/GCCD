@@ -1,79 +1,50 @@
-# GCCD · Offscreen Threat Lab
+# GCCD — 최소 방향성 햅틱 프로토타입
 
-Minimal Haptic Cues for Off-Screen Threat Awareness in Games
+경희대학교 게임콘텐츠캡스톤디자인 연구 준비용 Unity 프로젝트입니다. 단일 Threat의 화면 밖 여부와 플레이어 기준 4방향을 계산하여 햅틱 서비스에 전달합니다. 기존 ThreatLab의 자동 실험, 통계 도구, UDP 출력 코드는 제거했습니다. 과거 버전은 Git 이력에 남아 있습니다.
 
-**공간 음향과 4개 진동 파츠를 이용한 위협 위치 탐색 연구용 Unity 모의 게임**입니다. 플레이어는 관측 플랫폼에서 카메라를 돌려 소리를 낸 드론을 선택하고, 거리를 응답합니다.
+## 실행
 
-> 현재는 **프로토타입**입니다. Unity 기본 3D 음향과 모의 차폐를 사용합니다. Steam Audio / HRTF, 실제 하네스 드라이버, 지각 강도·출력 지연 보정은 아직 구현·검증되지 않았습니다. 기본 모드에서는 실제 진동이 발생하지 않습니다. 이 상태의 결과를 촉각 효과 검증 자료로 해석하면 안 됩니다.
+1. Unity Hub에서 `GCCD_Project`를 **6000.3.24f1**로 엽니다.
+2. `Assets/_Project/Scenes/ThreatDirectionTest.unity`를 엽니다.
+3. Play 후 Game 화면을 클릭합니다. WASD 이동, 마우스 시점 변경, Esc 커서 해제입니다.
+4. 숫자 **1=앞, 2=오른쪽, 3=뒤, 4=왼쪽**에 Capsule을 생성합니다. 기존 Threat는 교체됩니다. Backspace/Delete로 제거합니다.
+5. `Window > General > Console`에서 방향·각도·화면 밖 여부·강도를 확인합니다. 기본 출력은 **Debug Only**이며 실제 진동을 발생시키지 않습니다.
 
-![연구 데모](docs/menu.png)
+URP와 Input System을 사용합니다. 무기, AI, 참가자 관리, 자동 trial, CSV, Audio Only/Audio+Haptic 비교 조건은 아직 구현하지 않았습니다.
 
-## 바로 실행
+## Inspector
 
-1. 저장소를 내려받고 **Unity Hub → Add → GCCD_Project** 폴더를 선택합니다.
-2. **Unity 6000.3.10f1 (Unity 6.3 LTS)**으로 엽니다.
-3. `Assets/GCCD/Scenes/ThreatLab.unity`를 열고 ▶ Play를 누릅니다.
-4. `START PRACTICE`로 조작과 신호 매핑을 익힙니다. 게임 화면은 영어, 사용 문서는 한국어입니다.
-
-| 조작 | 동작 |
+| Hierarchy / 컴포넌트 | 설정 |
 |---|---|
-| 마우스 오른쪽 버튼을 누른 채 이동 | 시점 회전 |
-| 방향키 | 시점 회전 대체 조작 |
-| Space / CONFIRM AIM | 조준점과 가장 가까운 드론 선택, 허용 각도 8° |
-| R / REPLAY SIGNAL | 같은 신호 다시 듣기. 횟수 기록 |
-| NEAR / MID / FAR | 거리 응답 |
-| CONTINUE | 다음 시행 |
-| Esc | 탐색 중 세션 종료, 부분 기록 저장 |
-| NEXT SEED | 순서·자극 난수 시드 변경 |
+| Player / First Person Controller | Move Speed, Mouse Sensitivity, Pitch Limit |
+| ThreatSystem / Threat Spawner | Distance, Height Offset, Enable Debug Keys, Test Direction |
+| ThreatSystem / Threat Sensor | Front Half Angle, Back Half Angle, Stable Seconds, Fixed Intensity, Log Debug |
+| Haptics / Haptic Cue Service | Output, Cues Enabled, Minimum Interval |
+| Haptics / Debug Haptic Output | Log Cues |
+| Haptics / Bhaptics Haptic Output | 4개 Event ID, Maximum Intensity, Log Requests |
 
-선택 후에는 거리 버튼을 클릭합니다. 같은 드론을 재선택할 수 없으며 최초 응답이 기록됩니다. 창의 포커스를 잃으면 활성 시행은 `focus_lost`로 저장되고 세션을 종료합니다. 드론은 동일한 외형이며 신호를 내는 동안 정답 표시를 하지 않습니다.
+기본 앞/뒤 영역은 각각 ±45°입니다. 나머지를 좌/우로 분류합니다. 각도는 수평 플레이어 heading 기준이며 카메라 pitch는 방향 분류에 영향을 주지 않습니다. 화면 판정은 **Threat 중심점**의 viewport 좌표와 near/far clip 기준입니다. 가림(occlusion) 또는 전체 Capsule 경계 판정은 하지 않습니다.
 
-## 구현 내용
+화면 밖 진입, Threat 교체 또는 방향 변경 후 0.1초 안정화되면 한 번 요청합니다. 최소 요청 간격은 0.5초입니다. 계속 같은 방향에 있다는 이유로 반복 진동하지 않습니다. 화면 안으로 들어오거나 Threat가 제거되면 진행 중 요청을 정지합니다. 기본 강도는 0.5이며 거리에 따른 변화는 없습니다.
 
-- 3개 높이의 탐색 공간과 18개 드론. 관찰자 위치 고정, 시점 회전 자유.
-- 0.65초의 생성 음원, Unity 3D 패닝·거리 감쇠, 모의 차폐 필터.
-- `AudioOnly`, `AlertOnly`, `Direction`, `DirectionAndDistance`의 4개 조건.
-- 앞 위 / 앞 아래 / 뒤 위 / 뒤 아래의 4채널 매핑.
-- 같은 높이는 해당 면의 두 파츠를 동시에 활성화. 높이는 세계 좌표, 전후방은 신호 시작 순간 수평 카메라 방향 기준.
-- 연습 12회: 조건마다 무작위 3회, 진동 시각화·정답 피드백 제공. 균형 실험이 아님.
-- 본 실험 144회: 조건마다 전후 2 × 높이 3 × 거리 3 × 차폐 2 = 36회. 조건 순서는 4그룹 균형 Latin square, 조건 내부 순서는 시드 기반 셔플.
-- 20초 탐색 제한, 최초 선택 시간, 전체 응답 시간, 전후·높이·거리 정오답, 재청취 횟수, 회전량 등을 CSV 저장.
-- 선택적인 로컬 UDP 출력 연결점. 하드웨어 펌웨어는 포함하지 않음.
+## 실제 TactSuit X40 연결
 
-## 결과 위치
+설치된 **bHaptics Haptic Plugin 2.8.1 (SDK2)**의 `BhapticsLibrary` 소스를 확인하여 `PlayParam`, `StopInt`, 연결 확인 API를 사용했습니다. SDK와 계정 설정은 저장소에 포함하지 않습니다. SDK 없이도 기본 Debug 모드로 컴파일됩니다.
 
-`Application.persistentDataPath/Sessions/gccd_<UTC시간>.csv`에 시행마다 즉시 저장됩니다. 완료 화면에서 `OPEN RESULTS FOLDER`로 열 수 있습니다.
+1. `Window > Package Management > Package Manager > My Assets`에서 bHaptics Haptic Plugin을 가져옵니다. 이 개발 환경에는 이미 설치되어 있습니다.
+2. bHaptics Designer의 프로젝트 Haptic App에 짧은 **앞/오른쪽/뒤/왼쪽** 패턴을 각각 연결하고 배포합니다. 실제 X40의 착용자 기준 좌우를 확인합니다. 네 이벤트의 길이와 강도는 같게 하고 위치만 바꿉니다. 이벤트 이름 자체가 방향을 보장하지는 않습니다.
+3. `bHaptics > Developer Window`에서 App ID/API Key를 연결하고 배포된 이벤트를 동기화합니다. 키를 채팅 또는 GitHub에 올리지 않습니다.
+4. SDK에 포함된 `[bhaptics]` prefab을 Hierarchy에 넣습니다. SDK의 초기화는 이 공식 prefab이 담당합니다.
+5. `Edit > Project Settings > Player > Other Settings > Script Compilation > Scripting Define Symbols`의 Standalone 설정에 `GCCD_BHAPTICS_SDK2`를 추가하고 Apply 합니다.
+6. Hierarchy `Haptics`의 `Bhaptics Haptic Output`에 배포된 정확한 4개 Event ID를 입력합니다. `Haptic Cue Service > Output`을 같은 오브젝트의 `Bhaptics Haptic Output`으로 바꿉니다.
+7. bHaptics Player에서 X40 연결을 확인한 뒤 Play합니다. `[bHaptics] ... requested`는 SDK의 요청 접수이며 실제 착용 감각 검증을 대신하지 않습니다.
 
-macOS 기본 경로: `~/Library/Application Support/GCCD/GCCD Threat Lab/Sessions/`
-
-개인정보 입력·서버 전송은 없습니다. CSV와 빌드 결과는 Git에서 제외됩니다. 자동 검증이 생성하는 CSV도 합성 응답이므로 연구 데이터와 분리하세요.
-
-```sh
-python3 Tools/analyze_session.py /path/to/gccd_session.csv
-```
-
-## 개발·검증
-
-- `GCCD/Run Model Checks`: 시행 균형·시드 재현성·공간 분류·모터 값 범위 확인.
-- `GCCD/Create Research Lab`: 데모 씬을 재생성하는 개발 메뉴. 기존 `ThreatLab.unity`를 덮어쓰므로 수정한 씬이 있다면 먼저 복사하세요.
-- Play Mode에서 `LabVerification.Run()`을 실행하면 144회 정답 응답, 오답, 시간초과, 중단, 재청취와 CSV 내용을 검증합니다. 외부 장치 출력은 끈 상태로 수행합니다.
-- macOS 빌드 성공(오류 0건) 및 독립 실행 확인. `LabBuilder.BuildMac()` 또는 Build Profiles에서 다시 빌드할 수 있습니다.
-- 검증 결과는 [docs/VALIDATION.md](docs/VALIDATION.md), 상세 실험 사양은 [docs/PROTOCOL.md](docs/PROTOCOL.md)를 참고하세요.
+현재 확인된 로컬 설정은 App ID/Key 입력, 배포 버전 -1, 이벤트 0개입니다. 따라서 **네 방향 실제 진동 검증은 미완료**입니다. 기본 Scene에는 SDK prefab 참조를 저장하지 않아 SDK를 설치하지 않은 checkout에도 missing script가 생기지 않습니다.
 
 ## 구조
 
-```text
-GCCD_Project/
-  Assets/GCCD/
-    Scenes/ThreatLab.unity
-    Scripts/ResearchModel.cs   # 실험 설계 / 분류 / 모터 매핑
-    Scripts/ThreatLab.cs       # 상태 전이 / 입력 / 음향 / CSV
-    Scripts/HapticOutput.cs    # 시뮬레이션 / 선택적 UDP
-    Scripts/LabUI.cs           # uGUI + TextMeshPro 화면
-    Editor/LabBuilder.cs       # 씬 생성 / 모델 점검 / macOS 빌드
-    Editor/LabVerification.cs  # 플레이 흐름 자동 검증
-  Packages/
-  ProjectSettings/
-```
+`Assets/_Project/Scripts` 아래 Player, Threat, Haptics, Core를 분리했습니다. 게임 로직은 `HapticCueService.PlayThreatCue(direction, intensity)`를 호출하며, SDK 참조는 `BhapticsHapticOutput` 하나에만 있습니다. `HapticOutputBase`를 교체하면 출력 방식을 바꿀 수 있습니다. `Editor/PrototypeSetup.cs`는 최초 Scene 생성 및 계산 검증용이며 기존 Scene을 덮어쓰지 않습니다.
 
-Unity 템플릿의 SampleScene과 기존 패키지 구성은 보존했습니다. 게임의 도형·음원은 코드로 생성하며, UI는 Unity TMP Essentials의 Liberation Sans 리소스를 사용합니다.
+macOS 빌드는 `File > Build Profiles`에서 macOS를 선택하고 Scene List에 `ThreatDirectionTest`만 포함하여 Build합니다. 실제 장비 출력은 macOS 앱에서도 별도 확인해야 합니다.
+
+검증 결과와 남은 제한은 [docs/VALIDATION.md](docs/VALIDATION.md)를 확인하세요.

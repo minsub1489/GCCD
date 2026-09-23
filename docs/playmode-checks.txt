@@ -1,1 +1,0 @@
-PASS: factorial balance and reproducibility for four groups; motor mapping and bounds; 144 correct trial lifecycle + CSV rows; wrong target and distance; timeout; abort; replay count; motor stop; single EventSystem. Automated synthetic responses, not participant data.

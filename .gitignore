@@ -33,3 +33,8 @@ __pycache__/
 # Unity performance-test package writes these during player builds.
 **/Assets/Resources/PerformanceTestRunInfo.json*
 **/Assets/Resources/PerformanceTestRunSettings.json*
+
+# Install licensed SDK locally; never publish SDK credentials.
+**/Assets/Bhaptics/
+**/Assets/Bhaptics.meta
+**/BhapticsSettings.asset*
