@@ -1,0 +1,353 @@
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace FunIsland
+{
+    /// <summary>
+    /// 一键生成"欢乐小岛"低多边形地图场景，并渲染一张预览图。
+    /// 使用：Unity 菜单 Tools > Fun Island > Build Map + Capture Preview，
+    /// 或命令行批处理：Unity.exe -batchmode -quit -projectPath <工程> -executeMethod FunIsland.FunIslandMapBuilder.BuildAll
+    /// </summary>
+    public static class FunIslandMapBuilder
+    {
+        public const string ScenePath   = "Assets/Scenes/FunIsland.unity";
+        public const string PreviewPath = "Assets/Preview_FunIsland.png";
+
+        private static Transform root;
+        private static readonly Dictionary<string, Material> mats = new Dictionary<string, Material>();
+        private static Shader stdShader;
+
+        // ---------- 配色 ----------
+        private static readonly Color C_Ocean    = new Color(0.16f, 0.55f, 0.85f);
+        private static readonly Color C_Sand     = new Color(0.95f, 0.83f, 0.55f);
+        private static readonly Color C_SandDeep = new Color(0.85f, 0.72f, 0.45f);
+        private static readonly Color C_Grass    = new Color(0.36f, 0.72f, 0.32f);
+        private static readonly Color C_GrassLt  = new Color(0.45f, 0.78f, 0.36f);
+        private static readonly Color C_GrassDk  = new Color(0.26f, 0.60f, 0.28f);
+        private static readonly Color C_Trunk    = new Color(0.55f, 0.38f, 0.22f);
+        private static readonly Color C_Leaf     = new Color(0.22f, 0.55f, 0.25f);
+        private static readonly Color C_LeafLt   = new Color(0.35f, 0.65f, 0.30f);
+        private static readonly Color C_Rock     = new Color(0.62f, 0.62f, 0.62f);
+        private static readonly Color C_Water    = new Color(0.20f, 0.45f, 0.80f);
+        private static readonly Color C_Bridge   = new Color(0.50f, 0.34f, 0.18f);
+        private static readonly Color C_Tower    = new Color(0.96f, 0.95f, 0.90f);
+        private static readonly Color C_Dome     = new Color(0.85f, 0.25f, 0.20f);
+        private static readonly Color C_Cloud    = new Color(1f, 1f, 1f);
+        private static readonly Color C_FlowerR  = new Color(0.90f, 0.28f, 0.30f);
+        private static readonly Color C_FlowerY  = new Color(0.98f, 0.80f, 0.25f);
+        private static readonly Color C_FlowerP  = new Color(0.90f, 0.55f, 0.80f);
+        private static readonly Color C_FlowerW  = new Color(0.95f, 0.95f, 0.95f);
+        private static readonly Color C_Lamp     = new Color(1f, 0.85f, 0.30f);
+
+        // 基准高度
+        private const float GrassTop = 1.8f; // 草地顶面
+        private const float SandTop  = 1.0f; // 沙滩顶面
+
+        // ================= 入口 =================
+
+        [MenuItem("Tools/Fun Island/Build Map + Capture Preview")]
+        public static void BuildAll()
+        {
+            Build();
+            CapturePreview();
+            Debug.Log("欢乐小岛地图已生成：" + ScenePath + " ，预览图：" + PreviewPath);
+        }
+
+        public static void Build()
+        {
+            stdShader = Shader.Find("Standard");
+            if (stdShader == null) stdShader = Shader.Find("Universal Render Pipeline/Lit");
+            mats.Clear();
+
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // 阳光
+            var sun = new GameObject("Directional Light");
+            var dl = sun.AddComponent<Light>();
+            dl.type = LightType.Directional;
+            dl.color = new Color(1f, 0.96f, 0.88f);
+            dl.intensity = 1.2f;
+            sun.transform.rotation = Quaternion.Euler(50f, -35f, 0f);
+
+            // 场景根节点
+            root = new GameObject("FunIsland").transform;
+
+            BuildOcean();
+            BuildIsland();
+            BuildRiverAndBridge();
+            BuildTrees();
+            BuildLighthouse();
+            BuildRocksAndFlowers();
+            BuildFloatingIslands();
+            BuildClouds();
+
+            // 第一人称玩家（进入 Play 直接以第一人称游玩）
+            CreatePlayer();
+
+            // 材质落盘（否则场景重新打开时物体会丢失材质）
+            if (!Directory.Exists("Assets/Materials")) Directory.CreateDirectory("Assets/Materials");
+            foreach (var kv in mats)
+            {
+                string path = "Assets/Materials/" + kv.Key + ".mat";
+                if (!File.Exists(path)) AssetDatabase.CreateAsset(kv.Value, path);
+            }
+
+            // 保存场景并加入 Build Settings
+            if (!Directory.Exists("Assets/Scenes")) Directory.CreateDirectory("Assets/Scenes");
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        public static void CapturePreview()
+        {
+            var camGo = new GameObject("Preview Camera");
+            var cam = camGo.AddComponent<Camera>();
+            cam.transform.position = new Vector3(2f, 58f, -68f);
+            cam.transform.rotation = Quaternion.Euler(34f, 0f, 0f);
+            cam.fieldOfView = 50f;
+
+            const int w = 1920, h = 1080;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            cam.targetTexture = rt;
+            cam.Render();
+
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+
+            File.WriteAllBytes(PreviewPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(camGo);
+            AssetDatabase.Refresh();
+            Debug.Log("预览图已生成：" + PreviewPath);
+        }
+
+        // ================= 第一人称玩家 =================
+
+        /// <summary>
+        /// 在“当前打开的场景”中添加第一人称玩家（出生在小桥附近的草地上）。
+        /// 会移除旧的俯视 Main Camera，玩家相机成为唯一主相机。
+        /// </summary>
+        public static void CreatePlayer()
+        {
+            // 移除旧俯视相机（避免双相机同时渲染）
+            var oldCam = GameObject.Find("Main Camera");
+            if (oldCam != null) Object.DestroyImmediate(oldCam);
+
+            var player = new GameObject("Player");
+            player.transform.position = new Vector3(-6f, 2.85f, 8f);
+            player.transform.rotation = Quaternion.Euler(0f, 140f, 0f);
+
+            var cc = player.AddComponent<CharacterController>();
+            cc.height = 2f;
+            cc.radius = 0.4f;
+            cc.center = new Vector3(0f, 1f, 0f);
+            cc.stepOffset = 0.4f;
+
+            var fps = player.AddComponent<FirstPersonController>();
+
+            var camGo = new GameObject("PlayerCamera");
+            camGo.tag = "MainCamera";
+            camGo.transform.SetParent(player.transform, false);
+            camGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = 75f;
+            camGo.AddComponent<AudioListener>();
+            fps.cam = camGo.transform;
+        }
+
+        // ================= 地图内容 =================
+
+        private static void BuildOcean()
+        {
+            // 海洋（顶面 y = -2）
+            Box("Ocean", "Ocean", C_Ocean, new Vector3(0, -3, 0), new Vector3(300, 2, 300));
+        }
+
+        private static void BuildIsland()
+        {
+            // 岛基（沙，沉入海面下）
+            Box("IslandBase", "SandDeep", C_SandDeep, new Vector3(0, -2, 0), new Vector3(46, 3, 46));
+            // 沙滩层（顶 1.0）
+            Box("Beach", "Sand", C_Sand, new Vector3(0, 0.25f, 0), new Vector3(44, 1.5f, 44));
+            // 草地层（顶 1.8）
+            Box("Grass", "Grass", C_Grass, new Vector3(0, 0.9f, 0), new Vector3(38, 1.8f, 38));
+
+            // 丘陵
+            Box("Hill_A", "GrassDk", C_GrassDk, new Vector3(-11, 3.6f, -7),  new Vector3(7, 4, 6));
+            Box("Hill_B", "GrassDk", C_GrassDk, new Vector3(9,  3.1f, 9),   new Vector3(6, 3, 5));
+            Box("Hill_C", "GrassDk", C_GrassDk, new Vector3(13, 2.6f, -12), new Vector3(4, 2, 4));
+            Box("Hill_D", "GrassDk", C_GrassDk, new Vector3(-16, 4.6f, 5),  new Vector3(8, 6, 7));
+            Box("Hill_E", "GrassDk", C_GrassDk, new Vector3(-4, 2.6f, 13),  new Vector3(5, 2, 4));
+            Box("Mound_F", "GrassLt", C_GrassLt, new Vector3(16, 2.4f, 2),  new Vector3(3, 1.5f, 3));
+        }
+
+        private static void BuildRiverAndBridge()
+        {
+            // 穿过小岛中央的河（沿 z 轴，宽约 3.5）
+            float[] rz = { -18, -15.6f, -13.2f, -10.8f, -8.4f, -6f, -3.6f, -1.2f,
+                           1.2f, 3.6f, 6f, 8.4f, 10.8f, 13.2f, 15.6f, 18f };
+            foreach (float z in rz)
+                Box("River", "Water", C_Water, new Vector3(0, 2.0f, z), new Vector3(3.5f, 0.8f, 2.4f));
+
+            // 跨河小桥（z = 1.2 处）
+            for (int i = 0; i < 5; i++)
+            {
+                float x = (i - 2) * 1.25f;
+                Box("BridgePlank", "Bridge", C_Bridge, new Vector3(x, 2.75f, 1.2f), new Vector3(0.75f, 0.35f, 3.6f));
+            }
+        }
+
+        private static void BuildTrees()
+        {
+            // 圆顶树（草地上）
+            Vector3[] grassTrees =
+            {
+                new Vector3(-6, 1.8f, -3), new Vector3(7, 1.8f, -2), new Vector3(12, 1.8f, 5),
+                new Vector3(-8, 1.8f, 9),  new Vector3(-2, 1.8f, -11), new Vector3(10, 1.8f, -7),
+                new Vector3(-3, 1.8f, 5),  new Vector3(15, 1.8f, -3), new Vector3(4, 1.8f, 14)
+            };
+            foreach (var p in grassTrees) RoundTree(p);
+
+            // 山丘上的树
+            RoundTree(new Vector3(-12, 5.6f, -8));
+            RoundTree(new Vector3(-15, 7.6f, 4));
+            RoundTree(new Vector3(9, 4.6f, 10));
+
+            // 椰子树（沙滩 + 草地近海处）
+            Vector3[] palms =
+            {
+                new Vector3(19.5f, 1.0f, 15), new Vector3(20.5f, 1.0f, -8), new Vector3(-20f, 1.0f, -12),
+                new Vector3(-19.5f, 1.0f, 3), new Vector3(20f, 1.0f, 0), new Vector3(17f, 1.8f, 12),
+                new Vector3(-17f, 1.8f, -4)
+            };
+            foreach (var p in palms) Palm(p);
+        }
+
+        private static void BuildLighthouse()
+        {
+            // 灯塔（东南角）
+            Cyl("LighthouseTower", "Tower", C_Tower, new Vector3(17.5f, 4.8f, 13f),  new Vector3(2.4f, 6f, 2.4f));
+            Cyl("LighthouseBand", "Dome", C_Dome,   new Vector3(17.5f, 8.6f, 13f),  new Vector3(2.55f, 1.6f, 2.55f));
+            Sphere("LighthouseDome", "Dome", C_Dome, new Vector3(17.5f, 9.9f, 13f), new Vector3(2.8f, 1.0f, 2.8f));
+            Sphere("LighthouseLamp", "Lamp", C_Lamp, new Vector3(17.5f, 10.15f, 13f), new Vector3(0.55f, 0.55f, 0.55f));
+        }
+
+        private static void BuildRocksAndFlowers()
+        {
+            Sphere("Rock1", "Rock", C_Rock, new Vector3(-12f, 2.6f, -12f), Vector3.one * 1.6f);
+            Box("Rock2", "Rock", C_Rock, new Vector3(14f, 2.7f, -3f), new Vector3(1.8f, 1.8f, 1.8f));
+            Sphere("Rock3", "Rock", C_Rock, new Vector3(-1.5f, 2.4f, -15f), Vector3.one * 1.2f);
+            Box("Rock4", "Rock", C_Rock, new Vector3(5f, 2.7f, 16f), new Vector3(1.5f, 1.8f, 1.4f));
+            Sphere("Rock5", "Rock", C_Rock, new Vector3(-17.5f, 1.5f, 16f), Vector3.one * 0.9f);
+            Sphere("Rock6", "Rock", C_Rock, new Vector3(19.5f, 1.6f, -14f), Vector3.one * 1.2f);
+
+            // 꽃
+            Vector2[] fp =
+            {
+                new Vector2(-2, -1), new Vector2(3, 2), new Vector2(-7, 6), new Vector2(9, 12),
+                new Vector2(-12, 8), new Vector2(14, 9), new Vector2(6, -9), new Vector2(-14, -3),
+                new Vector2(11, -5), new Vector2(-5, -8), new Vector2(2, 12), new Vector2(-16, 11),
+                new Vector2(15, 15), new Vector2(-9, -14), new Vector2(4, -14), new Vector2(12, 14),
+                new Vector2(-3, 8), new Vector2(7, 5)
+            };
+            Color[] fc = { C_FlowerR, C_FlowerY, C_FlowerP, C_FlowerW };
+            for (int i = 0; i < fp.Length; i++)
+            {
+                var c = fc[i % fc.Length];
+                Box("Flower" + i, FlowerMatName(c), c, new Vector3(fp[i].x, 1.94f, fp[i].y), new Vector3(0.28f, 0.28f, 0.28f));
+            }
+        }
+
+        private static void BuildFloatingIslands()
+        {
+            // 浮空岛 1（带小树 + 瀑布）
+            Box("FloatIsland1", "Grass", C_Grass, new Vector3(26, 10, -16), new Vector3(7, 1.6f, 7));
+            RoundTree(new Vector3(26.5f, 10.8f, -15.5f), 1.6f, 0.9f);
+            Box("Waterfall1", "Water", C_Water, new Vector3(26, 3.3f, -16), new Vector3(1.3f, 12f, 1.3f));
+
+            // 浮空岛 2（带椰树 + 瀑布）
+            Box("FloatIsland2", "GrassLt", C_GrassLt, new Vector3(-28, 14, -6), new Vector3(5, 1.4f, 5));
+            Palm(new Vector3(-28.5f, 14.7f, -6.5f));
+            Box("Waterfall2", "Water", C_Water, new Vector3(-28, 6.3f, -6), new Vector3(1.0f, 16.2f, 1.0f));
+        }
+
+        private static void BuildClouds()
+        {
+            Box("Cloud1", "Cloud", C_Cloud, new Vector3(15, 24, -20),  new Vector3(7, 1.2f, 3.6f));
+            Box("Cloud2", "Cloud", C_Cloud, new Vector3(-18, 26, 18),  new Vector3(6, 1.2f, 4f));
+            Box("Cloud3", "Cloud", C_Cloud, new Vector3(0, 23, 24),    new Vector3(8, 1.1f, 3.5f));
+            Box("Cloud4", "Cloud", C_Cloud, new Vector3(22, 25, 10),   new Vector3(5.5f, 1.2f, 3f));
+        }
+
+        // ================= 도구 =================
+
+        private static void RoundTree(Vector3 basePos, float trunkH = 2.4f, float folR = 1.25f)
+        {
+            Cyl("TreeTrunk", "Trunk", C_Trunk, basePos + Vector3.up * (trunkH * 0.5f), new Vector3(0.5f, trunkH, 0.5f));
+            Sphere("TreeFoliage", "Leaf", C_Leaf, basePos + Vector3.up * (trunkH + folR * 0.85f), Vector3.one * (folR * 2f));
+        }
+
+        private static void Palm(Vector3 basePos)
+        {
+            Cyl("PalmTrunk", "Trunk", C_Trunk, basePos + Vector3.up * 1.6f, new Vector3(0.45f, 3.2f, 0.45f));
+            Sphere("PalmLeaf", "LeafLt", C_LeafLt, basePos + Vector3.up * 3.5f, new Vector3(2.9f, 0.75f, 2.9f));
+        }
+
+        private static string FlowerMatName(Color c)
+        {
+            if (c == C_FlowerR) return "FlowerRed";
+            if (c == C_FlowerY) return "FlowerYellow";
+            if (c == C_FlowerP) return "FlowerPink";
+            return "FlowerWhite";
+        }
+
+        private static Material Mat(string name, Color c)
+        {
+            if (mats.TryGetValue(name, out var m)) return m;
+            var mat = new Material(stdShader) { color = c };
+            mats[name] = mat;
+            return mat;
+        }
+
+        private static GameObject Box(string name, string matName, Color c, Vector3 pos, Vector3 scale)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            go.transform.SetParent(root, false);
+            go.transform.position = pos;
+            go.transform.localScale = scale;
+            go.GetComponent<MeshRenderer>().sharedMaterial = Mat(matName, c);
+            return go;
+        }
+
+        private static GameObject Cyl(string name, string matName, Color c, Vector3 pos, Vector3 scale)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.name = name;
+            go.transform.SetParent(root, false);
+            go.transform.position = pos;
+            go.transform.localScale = scale;
+            go.GetComponent<MeshRenderer>().sharedMaterial = Mat(matName, c);
+            return go;
+        }
+
+        private static GameObject Sphere(string name, string matName, Color c, Vector3 pos, Vector3 scale)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = name;
+            go.transform.SetParent(root, false);
+            go.transform.position = pos;
+            go.transform.localScale = scale;
+            go.GetComponent<MeshRenderer>().sharedMaterial = Mat(matName, c);
+            return go;
+        }
+    }
+}
