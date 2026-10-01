@@ -1,0 +1,40 @@
+.unity-ui-document__root { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.root { -unity-font-definition: url("ResearchFont.asset"); flex-grow: 1; color: #edf3fc; font-size: 16px; }
+.setup { position: absolute; left: 28px; top: 26px; width: 540px; height: 70%; padding: 22px; background-color: #121e31; border-width: 1px; border-color: #31415b; border-radius: 12px; }
+.title { font-size: 26px; -unity-font-style: bold; margin-bottom: 6px; }
+.subtitle { color: #a9bdd7; white-space: normal; margin-bottom: 16px; }
+.row { flex-direction: row; flex-wrap: wrap; margin-bottom: 8px; }
+Button { background-color: #293c59; color: #edf3fc; padding: 10px 12px; margin-right: 6px; margin-bottom: 6px; border-width: 1px; border-color: #455c7c; border-radius: 5px; }
+Button:hover { background-color: #3b5579; }
+Button:disabled { color: #76859a; background-color: #1d2a3d; }
+.selected { background-color: #246c88; border-color: #6ce0eb; }
+.primary { background-color: #246c88; }
+.field { margin-bottom: 8px; flex-direction: row; }
+.unity-base-field__label { min-width: 165px; padding-top: 5px; }
+.unity-base-field__input { flex-grow: 1; color: #edf3fc; background-color: #293c59; padding: 6px; border-radius: 4px; }
+.unity-text-field__input { color: #edf3fc; }
+.unity-toggle__input { flex-direction: row; }
+.unity-toggle__checkmark { width: 18px; height: 18px; background-color: #344760; border-width: 1px; border-color: #7284a0; margin-right: 6px; }
+.unity-toggle:checked .unity-toggle__checkmark { background-color: #63d5dd; }
+.note { color: #a9bdd7; white-space: normal; margin-bottom: 8px; font-size: 14px; }
+.status { white-space: normal; margin-top: 10px; color: #9fe3e6; }
+.section { margin-top: 12px; margin-bottom: 6px; -unity-font-style: bold; }
+.crosshair { position: absolute; left: 50%; top: 50%; margin-left: -10px; margin-top: -14px; font-size: 24px; display: none; }
+.instructions { position: absolute; bottom: 24px; align-self: center; color: #c8d7eb; display: none; }
+.running .setup { display: none; }
+.running .crosshair, .running .instructions { display: flex; }
+.hidden { display: none; }
+
+Label, Button, .field, .row { flex-shrink: 0; }
+.unity-scroll-view__content-container { flex-shrink: 0; }
+.unity-scroll-view__content-and-vertical-scroll-container { flex-grow: 1; flex-direction: row; min-height: 0; }
+.unity-scroll-view__content-viewport { flex-grow: 1; overflow: hidden; min-height: 0; flex-basis: 0; }
+.unity-scroll-view__vertical-scroller { width: 14px; }
+.unity-base-field__input { min-height: 30px; }
+.unity-scroller__slider { flex-grow: 1; }
+.unity-base-slider__dragger { background-color: #597497; border-radius: 4px; min-height: 20px; }
+
+.actions, .completion { position: absolute; left: 28px; width: 540px; padding: 18px; background-color: #121e31; border-width: 1px; border-color: #31415b; border-radius: 12px; }
+.actions { bottom: 24px; }
+.completion { top: 26px; }
+.running .actions, .pending .setup, .pending .actions { display: none; }

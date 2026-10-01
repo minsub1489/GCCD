@@ -1,0 +1,64 @@
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace FunIsland
+{
+    /// <summary>
+    /// 在现有场景中原地添加第一人称玩家（不重建地图，保留手动摆放的物体）。
+    /// 使用：菜单 Tools > Fun Island > Add First-Person Player，
+    /// 或命令行：Unity.exe -batchmode -quit -projectPath <工程> -executeMethod FunIsland.FpsSetup.AddPlayerAndCapture
+    /// </summary>
+    public static class FpsSetup
+    {
+        public const string ScenePath  = "Assets/Scenes/FunIsland.unity";
+        public const string FpsPreviewPath = "Assets/Preview_FirstPerson.png";
+
+        [MenuItem("Tools/Fun Island/Add First-Person Player + Capture View")]
+        public static void AddPlayerAndCapture()
+        {
+            AddPlayer();
+            CaptureFpsView();
+            Debug.Log("第一人称玩家已添加并保存到：" + ScenePath);
+        }
+
+        [MenuItem("Tools/Fun Island/Add First-Person Player")]
+        public static void AddPlayer()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath);
+            FunIslandMapBuilder.CreatePlayer();
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("已在场景中添加第一人称玩家：" + ScenePath);
+        }
+
+        /// <summary>从玩家眼睛位置渲染一张第一人称视角预览图（验证用）。</summary>
+        public static void CaptureFpsView()
+        {
+            EditorSceneManager.OpenScene(ScenePath);
+            var cam = GameObject.Find("PlayerCamera")?.GetComponent<Camera>();
+            if (cam == null)
+            {
+                Debug.LogWarning("未找到 PlayerCamera，跳过第一人称预览。");
+                return;
+            }
+
+            const int w = 1920, h = 1080;
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            cam.targetTexture = rt;
+            cam.Render();
+
+            var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+            cam.targetTexture = null;
+
+            File.WriteAllBytes(FpsPreviewPath, tex.EncodeToPNG());
+            AssetDatabase.Refresh();
+            Debug.Log("第一人称预览图已生成：" + FpsPreviewPath);
+        }
+    }
+}
