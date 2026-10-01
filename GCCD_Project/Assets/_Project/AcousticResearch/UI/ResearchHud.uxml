@@ -1,0 +1,59 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="ResearchHud.uss" />
+  <ui:VisualElement name="root" class="root" picking-mode="Ignore">
+    <ui:ScrollView class="setup">
+      <ui:Label text="OFFSCREEN / X40" class="title" />
+      <ui:Label text="Turn, aim and shoot. You stay at the center of an empty 3D space." class="subtitle" />
+      <ui:Label text="1. Choose feedback" class="section" />
+      <ui:VisualElement class="row">
+        <ui:Button name="condition0" text="No Feedback" />
+        <ui:Button name="condition1" text="Audio Only" />
+        <ui:Button name="condition2" text="Haptics Only" />
+        <ui:Button name="condition3" text="Audio + Haptics" />
+      </ui:VisualElement>
+      <ui:TextField name="participant" label="Participant code" value="P001" class="field" />
+      <ui:IntegerField name="seed" label="Trial seed" value="1489" class="field" />
+      <ui:IntegerField name="count" label="Trials per block" value="24" class="field" />
+      <ui:IntegerField name="order" label="Order group (0–3)" value="0" class="field" />
+      <ui:Label name="orderLabel" class="note" />
+      <ui:Label text="2. Choose vibration policy" class="section" />
+      <ui:VisualElement class="row">
+        <ui:Button name="policy0" text="All events" />
+        <ui:Button name="policy1" text="Offscreen threats" />
+        <ui:Button name="policy2" text="Masked / critical threats" />
+      </ui:VisualElement>
+      <ui:Toggle name="hardware" label="Enable connected X40" class="field" />
+      <ui:Toggle name="sto" label="Experimental STO adaptation" class="field" />
+      <ui:Label text="STO requires measured X40 calibration for formal haptic blocks. The main four-condition study defaults to direct 3D mapping." class="note" />
+      <ui:Label name="clips" class="note" />
+      <ui:Label text="Preview sound events" class="section" />
+      <ui:VisualElement class="row">
+        <ui:Button name="preview0" text="Gunshot" /><ui:Button name="preview1" text="Footsteps" />
+        <ui:Button name="preview2" text="Vehicle" /><ui:Button name="preview3" text="Healing" />
+        <ui:Button name="preview4" text="Nature" /><ui:Button name="preview5" text="Door" />
+      </ui:VisualElement>
+      <ui:VisualElement class="row">
+        <ui:Button name="multi" text="Preview overlapping threats" />
+        <ui:Button name="stop" text="Stop all cues" />
+      </ui:VisualElement>
+      <ui:Label name="status" class="status" />
+      <ui:Label name="diagnostics" class="note" />
+      <ui:Label name="result" class="note" />
+    </ui:ScrollView>
+    <ui:VisualElement class="actions">
+      <ui:VisualElement class="row">
+        <ui:Button name="practice" text="Start practice" class="primary" />
+        <ui:Button name="measure" text="Start measurement" />
+      </ui:VisualElement>
+      <ui:Label text="Mouse: look · Left click / Space: shoot · Esc: stop block. First shots, hits, misses and false alarms are recorded." class="note" />
+      <ui:Label name="notice" class="status" />
+    </ui:VisualElement>
+      <ui:VisualElement name="logDecision" class="completion hidden">
+        <ui:Label text="Block Ended" class="title" /><ui:Label name="logResult" class="status" /><ui:Label text="Keep this block's logs?" class="section" />
+        <ui:Label text="Save a valid block, or discard a failed run. Each block has its own condition-labelled CSV." class="note" />
+        <ui:VisualElement class="row"><ui:Button name="saveLogs" text="Save Logs" class="primary" /><ui:Button name="discardLogs" text="Discard Logs" /></ui:VisualElement>
+      </ui:VisualElement>
+    <ui:Label text="+" class="crosshair" picking-mode="Ignore" />
+    <ui:Label text="Turn · Aim · Shoot     |     Esc: stop" class="instructions" picking-mode="Ignore" />
+  </ui:VisualElement>
+</ui:UXML>

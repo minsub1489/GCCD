@@ -1,3 +1,15 @@
+# GCCD — Offscreen Threat Research with TactSuit X40
+
+현재 기본 실험장은 **빈 3D 공간에서 화면 밖 과녁을 찾아 쏘는 반응시간 실험**입니다. 영어 UI의 No Feedback / Audio Only / Haptics Only / Audio + Haptics 네 조건을 제공하며, 블록별 CSV는 종료 후 Save Logs 또는 Discard Logs로 처리합니다.
+
+Unity에서 `GCCD > Acoustic Research > Create or Open Empty 3D Experiment`를 선택하세요. 팀 효과음을 6개 프로필에 연결한 뒤 본 청각 실험을 시작할 수 있습니다. X40는 로컬 bHaptics SDK2 연결 어댑터를 사용합니다. STO는 논문을 참고한 **미보정 X40 실험 구현**이며 기본적으로 꺼져 있습니다.
+
+- [실험장 사용법과 CSV 항목](docs/OFFSCREEN_RESEARCH.md)
+- [STO 반영 수식과 X40에서 달라지는 부분](docs/STO_IMPLEMENTATION.md)
+- [실험장 검증 결과](docs/RESEARCH_VALIDATION.md)
+
+---
+
 # GCCD — FunIsland 연속 3D 햅틱 연구 맵
 
 팀원의 FunIsland 맵에 TactSuit X40용 플레이어 기준 360° 방위각, ±90° 높이, 거리 기반 연속 햅틱 시스템을 통합했습니다. 방향별 Designer 이벤트 없이 40개 모터의 가중치를 계산합니다.

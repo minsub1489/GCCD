@@ -1,0 +1,1 @@
+{"name":"GCCD.AcousticResearch.Tests","references":["GCCD.AcousticResearch","GCCD.ContinuousHaptics"],"includePlatforms":["Editor"],"optionalUnityReferences":["TestAssemblies"]}
