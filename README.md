@@ -1,3 +1,17 @@
+<!-- MINSUB-BRAND:START -->
+<p align="center">
+  <a href="https://minsub-kim-portfolio.vercel.app/projects/gccd/"><img src=".github/assets/banner.svg" width="1200" alt="GCCD · Off-screen threats. Directional cues."></a>
+</p>
+<p align="center">
+  <a href="https://minsub-kim-portfolio.vercel.app/"><img src=".github/assets/portfolio.svg" width="240" alt="Minsub Kim 포트폴리오 보기"></a>
+</p>
+<p align="center">
+  <a href="https://minsub-kim-portfolio.vercel.app/projects/gccd/">프로젝트 스토리</a> · <a href="https://github.com/minsub1489">개발자 프로필</a> · <a href="https://minsub-kim-portfolio.vercel.app/">포트폴리오</a>
+</p>
+<!-- MINSUB-BRAND:END -->
+
+---
+
 # GCCD — 최소 방향성 햅틱 프로토타입
 
 경희대학교 게임콘텐츠캡스톤디자인 연구 준비용 Unity 프로젝트입니다. 단일 Threat의 화면 밖 여부와 플레이어 기준 4방향을 계산하여 햅틱 서비스에 전달합니다. 기존 ThreatLab의 자동 실험, 통계 도구, UDP 출력 코드는 제거했습니다. 과거 버전은 Git 이력에 남아 있습니다.
