@@ -1,0 +1,12 @@
+{
+  "name": "GCCD.ContinuousHaptics.Tests",
+  "references": [
+    "GCCD.ContinuousHaptics"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

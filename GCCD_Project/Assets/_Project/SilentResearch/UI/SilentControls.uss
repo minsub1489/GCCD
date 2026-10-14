@@ -1,0 +1,25 @@
+.researcher-card {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    bottom: 20px;
+    width: 580px;
+    max-width: 95%;
+    padding: 16px;
+    background-color: rgba(17, 22, 29, 0.96);
+    color: rgb(235, 240, 245);
+    border-radius: 8px;
+}
+.researcher-card.running { display: none; }
+.researcher-card Label { margin-bottom: 8px; }
+.researcher-card .title { font-size: 18px; -unity-font-style: bold; }
+.researcher-card .status { color: rgb(137, 225, 187); }
+.researcher-card .wrap { white-space: normal; }
+.researcher-card .unity-base-field { margin-bottom: 9px; }
+.researcher-card .unity-base-field__label { min-width: 240px; }
+.researcher-card Button { min-height: 32px; margin-bottom: 8px; }
+.researcher-card .start { background-color: rgb(41, 102, 91); color: white; }
+
+.pilot-card { display: none; width: 800px; }
+.motor-panel { margin-right: 20px; }
+.motor-panel Button { width: 60px; min-width: 60px; }

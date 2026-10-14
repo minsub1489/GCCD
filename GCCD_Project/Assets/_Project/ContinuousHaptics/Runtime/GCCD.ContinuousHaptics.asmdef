@@ -1,0 +1,7 @@
+{
+  "name": "GCCD.ContinuousHaptics",
+  "rootNamespace": "GCCD.ContinuousHaptics",
+  "references": [
+    "Unity.InputSystem"
+  ]
+}

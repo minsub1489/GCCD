@@ -1,50 +1,31 @@
-# GCCD — 최소 방향성 햅틱 프로토타입
+# GCCD — 무음 게임의 청각 정보 대체 햅틱 연구 플랫폼
 
-경희대학교 게임콘텐츠캡스톤디자인 연구 준비용 Unity 프로젝트입니다. 단일 Threat의 화면 밖 여부와 플레이어 기준 4방향을 계산하여 햅틱 서비스에 전달합니다. 기존 ThreatLab의 자동 실험, 통계 도구, UDP 출력 코드는 제거했습니다. 과거 버전은 Git 이력에 남아 있습니다.
+**Design and Evaluation of Haptic Feedback for Auditory Information Substitution in Silent Games**
 
-## 실행
+소리를 제거한 1인칭 실내 게임에서 사건 발생, 유형, 방향을 햅틱으로 전달했을 때의 수행 성능을 측정합니다. 기존 연속 X40 모터 배치·SDK 어댑터, `ResearchPlayerMotion`, 무료 발소리·문소리, Williams 조건 순서를 재사용했습니다. 프로젝트에는 공포게임 연구 장면 하나만 남겼습니다. 이전 맵·과녁 실험은 저장소 밖의 로컬 보관 폴더로 이동했습니다.
 
-1. Unity Hub에서 `GCCD_Project`를 **6000.3.24f1**로 엽니다.
-2. `Assets/_Project/Scenes/ThreatDirectionTest.unity`를 엽니다.
-3. Play 후 Game 화면을 클릭합니다. WASD 이동, 마우스 시점 변경, Esc 커서 해제입니다.
-4. 숫자 **1=앞, 2=오른쪽, 3=뒤, 4=왼쪽**에 Capsule을 생성합니다. 기존 Threat는 교체됩니다. Backspace/Delete로 제거합니다.
-5. `Window > General > Console`에서 방향·각도·화면 밖 여부·강도를 확인합니다. 기본 출력은 **Debug Only**이며 실제 진동을 발생시키지 않습니다.
+| 조건 | 청각 | 햅틱 정보 |
+|---|---|---|
+| A Audio Only | 공간 음원 | 없음 |
+| B Basic Haptic | 무음 | 동일 패턴으로 사건 발생 |
+| C Type Haptic | 무음 | 유형별 시간 패턴 |
+| D Type + Direction Haptic | 무음 | 유형 + 현재 시점 기준 4방향 위치 |
 
-URP와 Input System을 사용합니다. 무기, AI, 참가자 관리, 자동 trial, CSV, Audio Only/Audio+Haptic 비교 조건은 아직 구현하지 않았습니다.
+Unity **6000.3.24f1**에서 `GCCD_Project`를 열고 **GCCD > Silent Study > Create or Open Research Platform**을 실행한 뒤 Play를 누릅니다. 씬은 `Assets/_Project/Scenes/SilentHapticResearch.unity`입니다. 참가자 익명 ID, 시드, 조건, 시나리오를 설정하고 연습 또는 측정을 시작합니다. 기본은 장비 없는 연습용 시뮬레이션입니다. 이 로컬 프로젝트에는 bHaptics SDK2와 macOS 네이티브 라이브러리를 설치하고 활성화했습니다. SDK와 계정 설정은 Git에서 제외합니다. 다른 PC에서는 공식 Haptic Plugin을 설치하고 **GCCD > Silent Study > Enable Installed SDK2**를 실행합니다. 실제 측정은 X40 연결과 저장된 교정·식별 통과 기록을 요구합니다.
 
-## Inspector
+WASD 이동, 마우스 시점, Ctrl로 탁자 아래 숨기, Space로 시점 방향 회피, F/G 위협/안전 응답, 1/2/3 발소리/문소리/울음 분류, 화살표로 현재 시점 기준 방향 응답입니다. 발소리는 숨기, 울음은 회피, 문소리는 두 행동 중 하나를 사용합니다. Esc는 현재 시행을 중단하고 저장합니다. 사건 응답 창이 닫히기 전에는 괴물이 보이지 않습니다. 이후 순찰·추격을 피하고 EXIT에 도달합니다.
 
-| Hierarchy / 컴포넌트 | 설정 |
-|---|---|
-| Player / First Person Controller | Move Speed, Mouse Sensitivity, Pitch Limit |
-| ThreatSystem / Threat Spawner | Distance, Height Offset, Enable Debug Keys, Test Direction |
-| ThreatSystem / Threat Sensor | Front Half Angle, Back Half Angle, Stable Seconds, Fixed Intensity, Log Debug |
-| Haptics / Haptic Cue Service | Output, Cues Enabled, Minimum Interval |
-| Haptics / Debug Haptic Output | Log Cues |
-| Haptics / Bhaptics Haptic Output | 4개 Event ID, Maximum Intensity, Log Requests |
+결과는 `Application.persistentDataPath/SilentStudy/<SessionID>/`에 **trials.csv, journal.jsonl, configuration.json, summary.json**으로 자동 저장됩니다. 무응답·실패·중단도 기록하며, 불가측정 항목은 빈칸입니다. 연습과 중단 시행은 유효 측정에서 제외합니다. 하드웨어와 실제 참가자 연구 결과는 별도 검증 사항입니다.
 
-기본 앞/뒤 영역은 각각 ±45°입니다. 나머지를 좌/우로 분류합니다. 각도는 수평 플레이어 heading 기준이며 카메라 pitch는 방향 분류에 영향을 주지 않습니다. 화면 판정은 **Threat 중심점**의 viewport 좌표와 near/far clip 기준입니다. 가림(occlusion) 또는 전체 Capsule 경계 판정은 하지 않습니다.
+- [연구 질문·가설·타당성 및 한계](docs/RESEARCH.md)
+- [실험 절차·측정 지표·분석·복구](docs/EXPERIMENT.md)
+- [구조·데이터 흐름·재사용 범위](docs/ARCHITECTURE.md)
+- [프로젝트 정리와 재사용 범위](docs/PROJECT_AUDIT.md)
+- [실제 검증 기록](docs/SILENT_VALIDATION.md)
 
-화면 밖 진입, Threat 교체 또는 방향 변경 후 0.1초 안정화되면 한 번 요청합니다. 최소 요청 간격은 0.5초입니다. 계속 같은 방향에 있다는 이유로 반복 진동하지 않습니다. 화면 안으로 들어오거나 Threat가 제거되면 진행 중 요청을 정지합니다. 기본 강도는 0.5이며 거리에 따른 변화는 없습니다.
 
-## 실제 TactSuit X40 연결
+교정·파일럿은 같은 장면의 연구자 화면에서 실행합니다. **Check SDK / Player / X40 connection → 40-channel calibration → labelled training → blind type / type+direction identification → difficulty pilot** 순서입니다. 유형·방향 시험은 각 48회이며, 각 클래스 80% 이상을 요구합니다. 교정 확인 체크박스는 제거했습니다. 시뮬레이션은 교정 증명으로 인정하지 않습니다.
 
-설치된 **bHaptics Haptic Plugin 2.8.1 (SDK2)**의 `BhapticsLibrary` 소스를 확인하여 `PlayParam`, `StopInt`, 연결 확인 API를 사용했습니다. SDK와 계정 설정은 저장소에 포함하지 않습니다. SDK 없이도 기본 Debug 모드로 컴파일됩니다.
+난이도는 easy/base/hard 시나리오에서 블록 시작 전에 선택합니다. 전체 15회 이상 유효 시행을 마쳐야 판정하며 목표 성공률 ≤20%는 바닥, ≥90%는 천장 가능성으로 표시합니다. 파일럿 결과는 본 실험 분석에서 제외하고, 블록 중 설정 변경은 중단합니다.
 
-1. `Window > Package Management > Package Manager > My Assets`에서 bHaptics Haptic Plugin을 가져옵니다. 이 개발 환경에는 이미 설치되어 있습니다.
-2. bHaptics Designer의 프로젝트 Haptic App에 짧은 **앞/오른쪽/뒤/왼쪽** 패턴을 각각 연결하고 배포합니다. 실제 X40의 착용자 기준 좌우를 확인합니다. 네 이벤트의 길이와 강도는 같게 하고 위치만 바꿉니다. 이벤트 이름 자체가 방향을 보장하지는 않습니다.
-3. `bHaptics > Developer Window`에서 App ID/API Key를 연결하고 배포된 이벤트를 동기화합니다. 키를 채팅 또는 GitHub에 올리지 않습니다.
-4. SDK에 포함된 `[bhaptics]` prefab을 Hierarchy에 넣습니다. SDK의 초기화는 이 공식 prefab이 담당합니다.
-5. `Edit > Project Settings > Player > Other Settings > Script Compilation > Scripting Define Symbols`의 Standalone 설정에 `GCCD_BHAPTICS_SDK2`를 추가하고 Apply 합니다.
-6. Hierarchy `Haptics`의 `Bhaptics Haptic Output`에 배포된 정확한 4개 Event ID를 입력합니다. `Haptic Cue Service > Output`을 같은 오브젝트의 `Bhaptics Haptic Output`으로 바꿉니다.
-7. bHaptics Player에서 X40 연결을 확인한 뒤 Play합니다. `[bHaptics] ... requested`는 SDK의 요청 접수이며 실제 착용 감각 검증을 대신하지 않습니다.
-
-현재 확인된 로컬 설정은 App ID/Key 입력, 배포 버전 -1, 이벤트 0개입니다. 따라서 **네 방향 실제 진동 검증은 미완료**입니다. 기본 Scene에는 SDK prefab 참조를 저장하지 않아 SDK를 설치하지 않은 checkout에도 missing script가 생기지 않습니다.
-
-## 구조
-
-`Assets/_Project/Scripts` 아래 Player, Threat, Haptics, Core를 분리했습니다. 게임 로직은 `HapticCueService.PlayThreatCue(direction, intensity)`를 호출하며, SDK 참조는 `BhapticsHapticOutput` 하나에만 있습니다. `HapticOutputBase`를 교체하면 출력 방식을 바꿀 수 있습니다. `Editor/PrototypeSetup.cs`는 최초 Scene 생성 및 계산 검증용이며 기존 Scene을 덮어쓰지 않습니다.
-
-macOS 빌드는 `File > Build Profiles`에서 macOS를 선택하고 Scene List에 `ThreatDirectionTest`만 포함하여 Build합니다. 실제 장비 출력은 macOS 앱에서도 별도 확인해야 합니다.
-
-검증 결과와 남은 제한은 [docs/VALIDATION.md](docs/VALIDATION.md)를 확인하세요.
+장비를 현재 사용할 수 없어 **실물 출력·체감 교정·실제 참가자 파일럿 결과는 대기 상태**입니다. [실물 검증 및 파일럿 실행 안내](docs/X40_PILOTS.md)를 따르세요.
