@@ -58,3 +58,9 @@ X40 출력 배열은 front 0–19 / back 20–39로 관리한다. 각 면의 row
 - SDK의 에디터 실행 경로는 Universal(TactHub)와 네이티브 Player에 모두 요청할 수 있다. 본 구현은 로컬 Player와 하나의 X40을 기준으로 하며, 별도 TactHub 중복 연결은 검증하지 않았다.
 - SDK singleton 코드의 초기화/종료 구현은 원본 그대로 보존했다.
 - 원격 연결이 끊긴 순간의 물리적 중지를 소프트웨어가 보장할 수는 없다. 출력은 100–220ms 유효기간을 갖고, 정상 연결 시 소유한 요청을 즉시 StopInt한다. 중지 실패 시 이전 펄스 유효기간까지 다음 출력을 대기시킨다.
+
+## 현재 공포게임 설치 상태 (2026-10-14)
+
+같은 사용자 로컬 프로젝트의 SDK2 2.8.1을 이 프로젝트에 설치했습니다. 세 핵심 API 파일은 캐시된 공식 unitypackage 파일과 바이트 단위로 일치합니다. Standalone define를 활성화했고 macOS arm64/x86_64 네이티브 라이브러리가 앱에 포함됩니다. 어댑터 템플릿은 `SilentResearch/Integration/BhapticsX40SdkBackend.cs.txt`이며 Enable Installed SDK2 메뉴가 로컬 SDK에 컴파일 사본을 설치합니다.
+
+기존 설정은 Git 제외된 SDK Resources에서 재사용했습니다. 키를 로그·CSV·문서로 출력하지 않습니다. 네이티브 앱의 Check 버튼은 SDK 초기화 후 `bHaptics Player unavailable`을 반환했습니다. 실물 장비가 없으므로 출력 성공으로 보고하지 않습니다. 40채널/식별 검증은 [X40_PILOTS.md](X40_PILOTS.md)를 따릅니다.

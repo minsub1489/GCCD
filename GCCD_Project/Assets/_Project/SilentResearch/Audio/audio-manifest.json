@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "note": "Digital peak normalization is not headphone SPL or X40 perceptual calibration.",
+  "clips": [
+    {
+      "category": "Footsteps",
+      "file": "GCCD_Project/Assets/_Project/SilentResearch/Audio/Footsteps.wav",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "creator": "rubberduck",
+      "source_url": "https://opengameart.org/content/100-cc0-sfx-2",
+      "download_url": "https://opengameart.org/sites/default/files/sfx_100_v2.zip",
+      "originals": [
+        {
+          "path": "pack2/sfx100v2_footstep_01.ogg",
+          "sha256": "007a96c62d6c335df0d292bdc5cf44fef768b7e2f14378759d03673be6be7ec6",
+          "trimmed_leading_seconds": 0.0
+        },
+        {
+          "path": "pack2/sfx100v2_footstep_02.ogg",
+          "sha256": "8b478a7245bbe358fcddaa5047f8f4e29c8eca52ff79c25d489b5f378747228c",
+          "trimmed_leading_seconds": 0.051156462585034014
+        }
+      ],
+      "processing": "eight alternating steps, 0.45 s cadence, loop; mono, 44100 Hz PCM16, peak normalized to -6 dBFS",
+      "duration_seconds": 3.6,
+      "peak_dbfs": -6.000212666958634,
+      "rms_dbfs": -29.12968384906934,
+      "sha256": "8014dc3874f5ec0e88bbbeed0f891657853f6a281c7ab30fec2813f36108fca0"
+    },
+    {
+      "category": "Door",
+      "file": "GCCD_Project/Assets/_Project/SilentResearch/Audio/Door.wav",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "creator": "rubberduck",
+      "source_url": "https://opengameart.org/content/100-cc0-sfx-2",
+      "download_url": "https://opengameart.org/sites/default/files/sfx_100_v2.zip",
+      "originals": [
+        {
+          "path": "pack2/sfx100v2_door_01.ogg",
+          "sha256": "3fffeef28d3c1662814c33411fe5e76cbb1f74fe58c9ed0cab796c57ca9846b7",
+          "trimmed_leading_seconds": 0.0008843537414965987
+        }
+      ],
+      "processing": "one-shot; mono, 44100 Hz PCM16, peak normalized to -6 dBFS",
+      "duration_seconds": 0.3667573696145125,
+      "peak_dbfs": -6.000212666958634,
+      "rms_dbfs": -28.55419000475354,
+      "sha256": "4209b95b248f15e3d15513804e08c37aa973c68cc1559ed8a623f5b1ae69ff9d"
+    }
+  ]
+}

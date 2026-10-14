@@ -1,0 +1,59 @@
+{
+  "EditMode": {
+    "result": "Passed",
+    "total": "274",
+    "passed": "274",
+    "failed": "0",
+    "skipped": "0"
+  },
+  "PlayMode": {
+    "result": "Passed",
+    "total": "14",
+    "passed": "14",
+    "failed": "0",
+    "skipped": "0"
+  },
+  "Date": "2026-10-14",
+  "Unity": "6000.3.24f1",
+  "Platform": "macOS Apple Silicon",
+  "OnlyScene": "SilentHapticResearch",
+  "SdkVersion": "2.8.1",
+  "SdkLocallyInstalled": true,
+  "SdkOptionalCompilation": "Passed",
+  "NativeSdkCheck": "bHaptics Player unavailable / physical calibration pending",
+  "PhysicalX40": "Pending: user reports equipment unavailable",
+  "HumanPilotResults": null,
+  "PythonPilotExclusionAndRecovery": "Passed",
+  "NativeSimulation": {
+    "CalibrationFinalRows": 3,
+    "IdentificationFinalRows": 4,
+    "AllValid": false,
+    "CertificatesPassed": false
+  },
+  "SourceSHA256": {
+    "GCCD_Project/Assets/_Project/SilentResearch/Integration/BhapticsX40SdkBackend.cs.txt": "9ae3305c02a418ab861f85d07e5745ba9d77dd6f03a013a5d3eccd3ecf8360aa",
+    "GCCD_Project/Assets/_Project/SilentResearch/PlayModeTests/GCCD.SilentResearch.PlayModeTests.asmdef": "50997f542fe2b9d1317e3e91b6d147e1b3ebe22e851ad1ebe99f6e455fd5437b",
+    "GCCD_Project/Assets/_Project/SilentResearch/PlayModeTests/SilentPilotRuntimeTests.cs": "1379eac4b4d9b2c71bd227c06e3357dbe65299cefbb47b63670142d0185062df",
+    "GCCD_Project/Assets/_Project/SilentResearch/PlayModeTests/SilentRuntimeTests.cs": "b7d3a47736d248b9442abaaea72ba6df38fbef0f1edabe03c3642679b4f93ed9",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/GCCD.SilentResearch.asmdef": "6280e9674d62692d9c8dd108494f9902696986180b84d00f644b815827142b0f",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/ResearchPlayerMotion.cs": "52d0211db7c4e499ef9e270d9d98460052ae7c0959bd325a466205a5d5749ba6",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentDataRecorder.cs": "0a2f28db87add45f3e2fe060d909ee0e4e81cd37977d27c8e9d0aa224008129f",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentDifficultyReview.cs": "9b81fb7086cc224a7ea42bdb8c7a6ff71ce5aa1dcd987d2f0ca5a131c9dcd484",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentExperimentSession.cs": "84d0f0863029a300eb766af6727bd59ce303c33538cb4a554dbceb0fec12dee7",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentGameWorld.cs": "f5e32dbb0b7b6ad186da9ec2ac13a703c5a695e6c02bd874ddc93ea71c4d6970",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentHapticPatterns.cs": "7c4e098f6e46123000fae4e06a057c43aa86764c0d8c303ac5e17d39255d8b65",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentParticipantUI.cs": "decd7ab4c842afacc33b05bceaaaca07f29224808353ffd42529cf1cccc7f344",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentPilotController.cs": "59f661e832f1bc35df5632bb5c8a49845b41ba27acd223fee6fc0718be2cae21",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentPilotEvidence.cs": "97ee6f0c675f72551a0564cb898dab3d812f1ea527a019f6dbcbf0e38cf80060",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentResearcherUI.cs": "e325fdacc6974f3578e8e558507c7b60824e631359db47592baf62232336e2fe",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentScenario.cs": "cc78694d87610f2f13ebb8b57c1916effb252050ed634b72e45895bc376fbe61",
+    "GCCD_Project/Assets/_Project/SilentResearch/Runtime/SilentStimulusOutput.cs": "41d893b0b748069c527ec7340509bdfc37067b3d8f3d7b5a683eeef0af6954e7",
+    "GCCD_Project/Assets/_Project/SilentResearch/Tests/GCCD.SilentResearch.Tests.asmdef": "91930c396609e13c42a71fa2205ca0a69669088725072b456ae041715faaa5e5",
+    "GCCD_Project/Assets/_Project/SilentResearch/Tests/SilentPilotTests.cs": "85b9c47f4e5dc251949aaab2bff1662b2a922076d70b6aa46c4bcb5ba82ae5ee",
+    "GCCD_Project/Assets/_Project/SilentResearch/Tests/SilentStudyTests.cs": "a383b303b3eddc2d23beec9ae7fe7e8f2ef15b83820b91bd15898ae4fd390bd4",
+    "GCCD_Project/Assets/_Project/SilentResearch/UI/ResearchHud.uss": "d25901a702d1d715485ceb2a452764b5b746632b679b7a6b10195a8250585f51",
+    "GCCD_Project/Assets/_Project/SilentResearch/UI/SilentControls.uss": "1173ffdf860bc26cdc62e1e7b1d471930c2ccf043b417be7dbf8cd9c5af5ab1a",
+    "GCCD_Project/Assets/_Project/SilentResearch/UI/SilentControls.uxml": "b733b3a67b73f861305373e8c1418216177010fb271a1e018a92b1adc1b37fe2"
+  },
+  "InputSystemMouseToButton": "Passed: virtual mouse state -> UI action -> panel picking -> live hardware-check callback; headless focus policy handled only in test"
+}

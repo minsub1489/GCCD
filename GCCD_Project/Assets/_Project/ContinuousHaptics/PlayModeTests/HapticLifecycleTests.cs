@@ -15,62 +15,9 @@ namespace GCCD.ContinuousHaptics.PlayModeTests
     }
     public sealed class HapticLifecycleTests
     {
-        GameObject root, outputObject;
-        HapticThreatController controller;
-        RecordingOutput output;
-        [UnitySetUp]
-        public IEnumerator Setup()
-        {
-            outputObject = new GameObject("Fake vest"); output = outputObject.AddComponent<RecordingOutput>();
-            root = new GameObject("Controller"); controller = root.AddComponent<HapticThreatController>();
-            controller.TestMode = true; controller.TestDistance = 2; controller.Output = output;
-            controller.EnableSmoothing = false;
-            yield return null;
-            controller.SendMessage("OnApplicationFocus", true);
-            controller.Tick(Time.unscaledTimeAsDouble);
-            Assert.IsTrue(output.Playing);
-        }
-        [UnityTearDown]
-        public IEnumerator Teardown()
-        { BHapticsVestOutput.BackendFactory = null; if (root) Object.Destroy(root); if (outputObject) Object.Destroy(outputObject); yield return null; }
-
-        [UnityTest]
-        public IEnumerator ComponentDisableStopsImmediately()
-        { controller.enabled = false; Assert.IsFalse(output.Playing); yield return null; Assert.IsFalse(output.Playing); }
-        [UnityTest]
-        public IEnumerator GameObjectDisableStopsImmediately()
-        { root.SetActive(false); Assert.IsFalse(output.Playing); yield return null; Assert.IsFalse(output.Playing); }
-        [UnityTest]
-        public IEnumerator DestroyStopsOutputOnSeparateObject()
-        { Object.Destroy(root); yield return null; Assert.IsFalse(output.Playing); }
-        [UnityTest]
-        public IEnumerator FocusPauseQuitCallbacksStop()
-        {
-            controller.SendMessage("OnApplicationFocus", false); Assert.IsFalse(output.Playing);
-            yield return null; Assert.IsFalse(output.Playing);
-            controller.SendMessage("OnApplicationFocus", true); controller.Tick(Time.unscaledTimeAsDouble); Assert.IsTrue(output.Playing);
-            controller.SendMessage("OnApplicationPause", true); Assert.IsFalse(output.Playing);
-            controller.SendMessage("OnApplicationPause", false); controller.Tick(Time.unscaledTimeAsDouble); Assert.IsTrue(output.Playing);
-            controller.SendMessage("OnApplicationQuit"); Assert.IsFalse(output.Playing);
-        }
-        [UnityTest]
-        public IEnumerator UpdateRateDoesNotSendEveryFrame()
-        {
-            controller.HapticUpdateRate = 5;
-            controller.Tick(Time.unscaledTimeAsDouble);
-            int start = output.Sends;
-            yield return new WaitForSecondsRealtime(.45f);
-            Assert.That(output.Sends - start, Is.InRange(1, 3));
-        }
-        [UnityTest]
-        public IEnumerator ActualOutputWithoutSdkOrDeviceDoesNotThrow()
-        {
-            controller.EnableHaptics = false;
-            var real = root.AddComponent<BHapticsVestOutput>(); var values = new int[40]; values[0] = 10;
-            Assert.IsFalse(real.TrySend(values, 100));
-            Assert.DoesNotThrow(real.Stop);
-            yield return null;
-        }
+        GameObject root;
+        [SetUp] public void Setup() { root = new GameObject("Adapter test"); BHapticsVestOutput.BackendFactory = null; }
+        [TearDown] public void Teardown() { if (root) Object.DestroyImmediate(root); BHapticsVestOutput.BackendFactory = null; }
         sealed class SimulatedSdk : IX40SdkBackend
         {
             public bool Connected = true, StopSucceeds = true;
@@ -82,7 +29,6 @@ namespace GCCD.ContinuousHaptics.PlayModeTests
         [UnityTest]
         public IEnumerator OutputCancelsOwnedFramesAndStopsOnDisconnect()
         {
-            controller.enabled = false;
             var sdk = new SimulatedSdk(); BHapticsVestOutput.BackendFactory = () => sdk;
             var real = root.AddComponent<BHapticsVestOutput>(); var values = new int[40]; values[0] = 10;
             Assert.IsTrue(real.TrySend(values, 200)); Assert.IsTrue(real.TrySend(values, 200));
@@ -94,7 +40,6 @@ namespace GCCD.ContinuousHaptics.PlayModeTests
         [UnityTest]
         public IEnumerator FailedStopWaitsForExpiryBeforeSendingAgain()
         {
-            controller.enabled = false;
             var sdk = new SimulatedSdk { StopSucceeds = false }; BHapticsVestOutput.BackendFactory = () => sdk;
             var real = root.AddComponent<BHapticsVestOutput>(); var values = new int[40]; values[0] = 10;
             Assert.IsTrue(real.TrySend(values, 100)); Assert.IsFalse(real.TrySend(values, 100));

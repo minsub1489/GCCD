@@ -1,0 +1,50 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="SilentControls.uss" />
+  <ui:VisualElement name="researcherRoot" class="root researcher-card">
+    <ui:ScrollView>
+      <ui:Label text="GCCD · SILENT GAME / HAPTIC RESEARCH" class="title" />
+      <ui:Label text="Researcher controls — hidden throughout measurement" />
+      <ui:Label name="message" text="Ready" class="status" />
+      <ui:TextField name="participant" label="Anonymous participant ID" max-length="24" />
+      <ui:IntegerField name="participantIndex" label="Participant order index" />
+      <ui:IntegerField name="block" label="Block index" />
+      <ui:IntegerField name="seed" label="Random seed" />
+      <ui:Label name="order" class="wrap" />
+      <ui:DropdownField name="condition" label="Feedback condition A–D" />
+      <ui:DropdownField name="scenario" label="Scenario" />
+      <ui:Label text="Edit scenario timings/speeds and haptic patterns in their Inspector assets before a block." class="wrap" />
+      <ui:Toggle name="hardware" label="Use real bHaptics output" />
+      <ui:Label text="Hardware verification and pilots" class="title" />
+      <ui:Label text="Physical verification remains pending until a connected X40 passes calibration. Simulation never unlocks measurement. Calibration is verified from saved responses, not a checkbox." class="wrap" />
+      <ui:Button name="checkHardware" text="Check SDK / Player / X40 connection" />
+      <ui:Button name="calibrate" text="40-channel position and comfort calibration" />
+      <ui:Label text="Labelled pattern training (excluded from test data)" class="wrap" />
+      <ui:VisualElement name="training" class="row" />
+      <ui:VisualElement name="directionTraining" class="row" />
+      <ui:Button name="typePilot" text="Blind type identification pilot — 48 trials" />
+      <ui:Button name="directionPilot" text="Blind type + direction pilot — 48 trials" />
+      <ui:Label name="pilotMessage" class="wrap status" />
+      <ui:Button name="openPilotResults" text="Open calibration / identification results" />
+      <ui:Toggle name="preview" label="Practice simulator (F1); hidden in measurement" />
+      <ui:Button name="practice" text="Start practice" class="start" />
+      <ui:Button name="difficulty" text="Start difficulty pilot (selected scenario / condition)" class="start" />
+      <ui:Button name="measure" text="Start measurement" class="start" />
+      <ui:Label text="Automatic save after each response/trial. Esc aborts and saves. Practice uses a separate seed." class="wrap" />
+      <ui:Button name="openResults" text="Open result folder" />
+      <ui:Label name="results" class="wrap" />
+    </ui:ScrollView>
+  </ui:VisualElement>
+  <ui:VisualElement name="pilotRoot" class="root researcher-card pilot-card">
+    <ui:ScrollView>
+      <ui:Label name="pilotProgress" class="title" />
+      <ui:Label name="pilotInstructions" text="Select what you felt, then confirm comfortable. First choices lock. Timeout is recorded as NoResponse." class="wrap" />
+      <ui:VisualElement name="motorChoices" class="row" />
+      <ui:VisualElement name="typeChoices" class="row" />
+      <ui:VisualElement name="directionChoices" class="row" />
+      <ui:Label name="selection" class="wrap" />
+      <ui:Button name="pilotSubmit" text="Confirm selected answer / felt and comfortable" />
+      <ui:Button name="pilotDiscomfort" text="Discomfort — stop and save" />
+      <ui:Button name="pilotStop" text="Abort and save (Esc)" />
+    </ui:ScrollView>
+  </ui:VisualElement>
+</ui:UXML>

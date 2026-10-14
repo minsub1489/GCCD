@@ -38,3 +38,6 @@ __pycache__/
 **/Assets/Bhaptics/
 **/Assets/Bhaptics.meta
 **/BhapticsSettings.asset*
+
+# Unity native crash dumps
+mono_crash.*

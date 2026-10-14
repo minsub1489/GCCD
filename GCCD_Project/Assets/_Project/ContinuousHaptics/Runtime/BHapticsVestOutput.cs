@@ -27,6 +27,8 @@ namespace GCCD.ContinuousHaptics
         string lastError;
         public override string Status => status;
         public int LastRequestId => requestId;
+        public string DeviceKey => (backend as IX40DeviceIdentity)?.DeviceKey ?? "";
+        public bool Physical => (backend as IX40DeviceIdentity)?.Physical ?? false;
 
         public bool CheckConnection()
         {

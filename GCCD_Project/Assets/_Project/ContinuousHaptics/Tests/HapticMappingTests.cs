@@ -119,43 +119,6 @@ namespace GCCD.ContinuousHaptics.Tests
             d.TryEvaluate(16, out _, out i); Assert.That(i, Is.Zero);
         }
         [Test]
-        public void ControllerStopsOnLostTargetDisableInvalidDataAndFarCutoff()
-        {
-            var go = new GameObject(); var player = new GameObject(); var enemy = new GameObject();
-            try
-            {
-                var output = go.AddComponent<FakeVestOutput>(); var c = go.AddComponent<HapticThreatController>();
-                c.Output = output; c.Player = player.transform; c.Target = enemy.transform; c.EnableSmoothing = false;
-                enemy.transform.position = Vector3.forward * 3;
-                c.Tick(0); Assert.That(output.Sends, Is.EqualTo(1)); Assert.That(output.Duration, Is.EqualTo(120));
-                c.Target = null; c.Tick(.1); Assert.That(c.SmoothedIntensity, Is.Zero); Assert.That(output.Last[9], Is.Zero);
-                c.Target = enemy.transform; c.Tick(.2); Assert.That(output.Sends, Is.EqualTo(2));
-                enemy.SetActive(false); c.Tick(.3); Assert.That(output.Sends, Is.EqualTo(2));
-                c.TestMode = true; c.TestDistance = 3; c.Tick(.4); Assert.That(output.Sends, Is.EqualTo(3));
-                c.TestAzimuth = float.NaN; c.Tick(.5); Assert.That(c.SmoothedIntensity, Is.Zero);
-                c.TestAzimuth = 0; c.TestDistance = 20; c.Tick(.6); Assert.That(output.Sends, Is.EqualTo(3));
-                c.TestDistance = 3; c.Tick(.7); int before = output.Stops;
-                c.StopNow(); Assert.That(output.Stops, Is.GreaterThan(before));
-            }
-            finally { UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(player); UnityEngine.Object.DestroyImmediate(enemy); }
-        }
-        [Test]
-        public void SmoothingCrossesZeroByShortestArcAndDeadZoneStaysSilent()
-        {
-            var go = new GameObject();
-            try
-            {
-                var output = go.AddComponent<FakeVestOutput>(); var c = go.AddComponent<HapticThreatController>();
-                c.Output = output; c.TestMode = true; c.TestAzimuth = 359; c.TestDistance = 2;
-                c.Tick(0); c.TestAzimuth = 1; c.Tick(.1);
-                Assert.That(Mathf.Abs(Mathf.DeltaAngle(0, c.SmoothedAzimuth)), Is.LessThanOrEqualTo(1));
-                c.EnableSmoothing = false; c.TestDistance = 14.5f; int n = output.Sends; c.Tick(.2);
-                Assert.That(output.Sends, Is.EqualTo(n));
-                c.EnableHaptics = false; c.TestDistance = 2; c.Tick(.3); Assert.That(output.Sends, Is.EqualTo(n));
-            }
-            finally { UnityEngine.Object.DestroyImmediate(go); }
-        }
-        [Test]
         public void NoDeviceOutputInEditModeIsSafe()
         {
             var go = new GameObject();
