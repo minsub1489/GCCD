@@ -1,5 +1,0 @@
-{
-  "name": "GCCD.ContinuousHaptics.PlayModeTests",
-  "references": ["GCCD.ContinuousHaptics"],
-  "optionalUnityReferences": ["TestAssemblies"]
-}

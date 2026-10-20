@@ -1,3 +1,4 @@
+# Unity generated state
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -7,37 +8,25 @@
 [Uu]ser[Ss]ettings/
 [Mm]emoryCaptures/
 [Rr]ecordings/
-.vs/
-.vscode/
-.idea/
-.DS_Store
 *.csproj
 *.sln
-*.slnx
-*.pidb
-*.suo
 *.user
-*.userprefs
-*.apk
-*.aab
 *.unitypackage
-*.log
-Assets/Captures/
-Assets/Captures.meta
-Sessions/
-*.csv
+*.pidb
+*.pdb
+.vs/
+.idea/
+.vscode/
+.DS_Store
+# Logs, participant data and approval snapshots stay local
+*.jsonl
+!analysis/examples/*.jsonl
+research-data/
+participant-data/
+analysis_output/
+analysis/__pycache__/
+**/__pycache__/
+.pytest_cache/
 .env
-.env.*
-__pycache__/
-*.pyc
-# Unity performance-test package writes these during player builds.
-**/Assets/Resources/PerformanceTestRunInfo.json*
-**/Assets/Resources/PerformanceTestRunSettings.json*
-
-# Install licensed SDK locally; never publish SDK credentials.
-**/Assets/Bhaptics/
-**/Assets/Bhaptics.meta
-**/BhapticsSettings.asset*
-
-# Unity native crash dumps
-mono_crash.*
+*.secret
+build-mac.log

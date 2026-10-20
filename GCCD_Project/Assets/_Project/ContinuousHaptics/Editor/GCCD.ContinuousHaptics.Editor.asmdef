@@ -1,5 +1,0 @@
-{
-  "name": "GCCD.ContinuousHaptics.Editor",
-  "references": ["GCCD.ContinuousHaptics"],
-  "includePlatforms": ["Editor"]
-}

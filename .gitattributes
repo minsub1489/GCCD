@@ -1,0 +1,5 @@
+# Unity generates empty YAML scalar values with trailing spaces by design.
+# Keep these engine-managed assets byte-for-byte instead of hand-formatting.
+GCCD_Project/**/*.asset -whitespace
+GCCD_Project/**/*.unity -whitespace
+GCCD_Project/**/*.meta -whitespace
