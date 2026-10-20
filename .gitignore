@@ -29,4 +29,9 @@ analysis/__pycache__/
 .pytest_cache/
 .env
 *.secret
+# Official Unity Asset Store package: imported locally from the user's own
+# licensed cache; do not redistribute vendor SDK/binaries from a public repo.
+GCCD_Project/Assets/Bhaptics/
+GCCD_Project/Assets/Bhaptics.meta
+GCCD_Project/mono_crash.*.json
 build-mac.log

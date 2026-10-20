@@ -15,6 +15,8 @@ namespace GCCD.Editor
         [MenuItem("GCCD / Run Research Core Smoke Tests")]
         public static void Run()
         {
+            string spatialEvidence = SpatialMotorMappingTests.RunAll();
+            Debug.Log("GCCD_360_MOTOR_MAPPING_VALIDATION_SUCCESS " + spatialEvidence);
             // Check the actual session order generator (not a separately reimplemented formula).
             var orderMethod = typeof(ResearchController).GetMethod("BuildOrder", BindingFlags.Static | BindingFlags.NonPublic);
             if (orderMethod == null) throw new Exception("Unable to inspect counterbalanced study order");
@@ -41,15 +43,18 @@ namespace GCCD.Editor
                 throw new Exception("Incomplete Williams 8×8 position/predecessor balance");
 
             var disabled = new ResearchDisabledX40Haptics();
-            if (disabled.IsVerifiedReady || disabled.Request(TorsoZone.FrontLeft, 0.5f, 0.3f, "smoke").accepted)
+            var nonzero = new float[40];
+            nonzero[3] = .5f;
+            if (disabled.IsVerifiedReady || disabled.SubmitFrame(nonzero, .05f, "smoke").accepted)
                 throw new Exception("Unvalidated real X40 adapter unexpectedly allowed output");
             var mock = new ResearchMockHaptics();
-            var result = mock.Request(TorsoZone.FrontLeft, 0.5f, 0.3f, "smoke");
-            if (!result.accepted || result.physicallyDelivered || result.source != "mock")
+            var result = mock.SubmitFrame(nonzero, .05f, "smoke");
+            if (!result.accepted || result.physicallyDelivered || result.source != "mock_40_channel")
                 throw new Exception("Mock output misreported physical delivery");
-            result = mock.Request(TorsoZone.FrontRight, 0f, 0.3f, "baseline");
-            if (result.accepted || result.physicallyDelivered)
-                throw new Exception("Zero-intensity baseline improperly emitted haptics");
+            var zero = new float[40];
+            result = mock.SubmitFrame(zero, .05f, "baseline");
+            if (!result.accepted || result.physicallyDelivered || mock.Latest[3] != 0)
+                throw new Exception("Zero-intensity baseline retained active haptics");
 
             var snapshot = new ResearchSnapshot
             {

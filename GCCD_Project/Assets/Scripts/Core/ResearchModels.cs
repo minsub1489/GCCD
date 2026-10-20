@@ -30,7 +30,7 @@ namespace GCCD.Research
     [Serializable]
     public sealed class ResearchSnapshot
     {
-        public string schema_version = "1.0";
+        public string schema_version = "2.0";
         public string study_title = "동시 위협 수와 진동 강도에 따른 몸통 방향성 햅틱 경고의 효과와 비용";
         public string session_id;
         public string participant_id;
@@ -49,6 +49,7 @@ namespace GCCD.Research
         public float active_duration_seconds;
         public float target_distance;
         public float target_size;
+        public float source_angle_jitter_degrees;
         public float damage_per_failure;
         public float mouse_sensitivity;
         public float camera_sample_hz;
@@ -56,9 +57,20 @@ namespace GCCD.Research
         public float haptic_pulse_seconds;
         public float visual_warning_seconds;
         public float near_miss_inference_angle_degrees;
+        public string haptic_tracking_protocol = "continuous_listener_relative_azimuth_v2";
+        public string direction_protocol_change = "Replaces fixed warning-time 4-zone output with continuous source-world-position and listener-yaw tracking.";
+        public string audio_source_tracking = "A 0.22-second non-looping audible sound is played at each registered source. The logical sound origin is tracked until the threat is neutralized or deadline expires.";
+        public string motor_layout_status = "virtual_unverified_no_physical_output";
+        public float motor_update_hz;
+        public float motor_spread_degrees;
+        public float motor_attack_seconds;
+        public float motor_release_seconds;
+        public float motor_output_ceiling;
+        public int sdk_documented_min_motor_playback_ms = 100;
+        public SpatialMotorProfile motor_profile;
         public ResearchCondition[] assigned_order;
         public ResearchCalibration[] calibration;
-        public string notes = "Mock output is simulation only; no physical stimulation is implied. NASA-TLX ratings are unweighted raw responses.";
+        public string notes = "Protocol changed from 4 fixed warning-time zones to continuous 360-degree listener-relative tracking. Synthetic angles are NOT verified X40 indices. Mock only. NASA-TLX raw unweighted.";
     }
 
     [Serializable]
@@ -96,6 +108,8 @@ namespace GCCD.Research
         public string attribution_method = "";
         public string output_status = "";
         public string output_mode = "";
+        public string motor_profile_id = "";
+        public string motor_levels_csv = "";
         public string survey_json = "";
         public int block_index = -1;
         public int trial_index = -1;
@@ -107,6 +121,8 @@ namespace GCCD.Research
         public int failed_count;
         public int hit_count;
         public int turn_reversals;
+        public int active_sound_sources;
+        public int motor_frame_number;
         public bool practice;
         public bool attempted;
         public bool acquired;
@@ -126,6 +142,10 @@ namespace GCCD.Research
         public float shot_ray_y;
         public float shot_ray_z;
         public float aim_error_angle_deg;
+        public float motor_peak;
+        public float motor_mean;
+        public float tracked_azimuth_degrees;
+        public float motor_update_hz;
         public float camera_yaw;
         public float camera_pitch;
         public float spawn_angle_deg;

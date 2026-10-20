@@ -180,9 +180,71 @@ class ReplayTests(unittest.TestCase):
         threats, trial_rows = evaluate(replay(records)[0])
         cond, contrasts = summarize(threats, trial_rows)
         self.assertEqual(len([r for r in cond if r["participant_id"] == "ALL"]), 8)
-        self.assertAlmostEqual(contrasts["Demo"]["primary_MH_minus_ML_minus_SH_plus_SL"], -4/3)
-        self.assertAlmostEqual(contrasts["Demo"]["secondary_MH_minus_M0"], -1/3)
-        self.assertEqual(contrasts["Demo"]["paired_participant_count"], 1)
+        self.assertAlmostEqual(contrasts["by_protocol"]["legacy_unversioned"]["Demo"]["primary_MH_minus_ML_minus_SH_plus_SL"], -4/3)
+        self.assertAlmostEqual(contrasts["by_protocol"]["legacy_unversioned"]["Demo"]["secondary_MH_minus_M0"], -1/3)
+        self.assertEqual(contrasts["by_protocol"]["legacy_unversioned"]["Demo"]["paired_participant_count"], 1)
+
+    def test_continuous_and_fixed_are_never_pooled(self):
+        records = events_for_trial("SL", "1", neutralized=1)
+        for record in records:
+            record["payload"]["protocol_version"] = "fixed_warning_v1"
+        records_2 = events_for_trial("SL", "2")
+        for record in records_2:
+            record["payload"]["protocol_version"] = "continuous_listener_relative_v2"
+        threats, trials = evaluate(replay(records + records_2)[0])
+        rows, comparisons = summarize(threats, trials)
+        all_rows = [r for r in rows if r["participant_id"] == "ALL" and r["condition"] == "SL"]
+        self.assertEqual(len(all_rows), 2)
+        self.assertEqual({r["failure_probability"] for r in all_rows}, {0, 1})
+        self.assertEqual(set(comparisons["by_protocol"]), {"fixed_warning_v1", "continuous_listener_relative_v2"})
+        self.assertEqual(comparisons["by_protocol"]["fixed_warning_v1"]["Demo"]["observed_failure_probability"]["SL"], 0)
+        self.assertEqual(comparisons["by_protocol"]["continuous_listener_relative_v2"]["Demo"]["observed_failure_probability"]["SL"], 1)
+
+    def test_360_degree_stream_aggregates_observed_mock_samples_only(self):
+        records = events_for_trial("SL", "1", neutralized=2, attempted=1)
+        levels = [0.0] * 40
+        levels[0] = .5
+        levels[39] = .25
+        records.extend([
+            event("haptic_update", "1", .2, "SL", output_status="mock_simulated_not_delivered",
+                  motor_levels_csv=",".join(str(v) for v in levels), motor_peak=.5, motor_mean=.01875,
+                  active_sound_sources=1, motor_frame_number=1, motor_update_hz=20, delivered=False),
+            event("haptic_update", "1", 1.2, "SL", output_status="mock_simulated_not_delivered",
+                  motor_levels_csv=",".join(str(v) for v in levels), motor_peak=.5, motor_mean=.01875,
+                  active_sound_sources=1, motor_frame_number=21, motor_update_hz=20, delivered=False),
+            event("haptic_tracking", "1", .2, "SL", target="t0", tracked_azimuth_degrees=179),
+            event("haptic_tracking", "1", 1.2, "SL", target="t0", tracked_azimuth_degrees=-179),
+            event("haptic_stop", "1", 2.1, "SL", output_status="immediate_all_channel_zero"),
+        ])
+        threats, trials = evaluate(replay(records)[0])
+        self.assertEqual(trials[0]["haptic_sampled_frames"], 2)
+        self.assertEqual(trials[0]["haptic_reported_max_frame_number"], 21)
+        self.assertAlmostEqual(trials[0]["haptic_mean_sampled_motor_occupancy"], 2/40)
+        self.assertEqual(trials[0]["haptic_max_sampled_active_motors"], 2)
+        self.assertEqual(trials[0]["haptic_max_sampled_azimuth_step_deg"], 2)
+        self.assertEqual(trials[0]["haptic_stop_events"], 1)
+        self.assertEqual(trials[0]["haptic_measurement_scope"], "submitted_command_samples_only")
+        self.assertEqual(trials[0]["technical_excluded"], 0)
+        self.assertEqual(threats[0]["failure"], 0)
+
+    def test_malformed_motor_frame_is_excluded_and_diagnosed(self):
+        records = events_for_trial("SH", "1")
+        records.append(event("haptic_update", "1", .5, "SH", motor_levels_csv="0.2,0.3"))
+        _, trials = evaluate(replay(records)[0])
+        self.assertIn("invalid_motor_frame_snapshot", trials[0]["exclusion_reasons"])
+
+    def test_session_snapshot_haptic_protocol_maps_to_protocol_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory) / "events.jsonl"
+            out = Path(directory) / "out"
+            raw.write_text("\n".join(json.dumps(e) for e in events_for_trial("SL", "1", neutralized=1)))
+            (Path(directory) / "session.json").write_text(json.dumps({
+                "session_id": "session-demo", "participant_id": "participant-01", "mode": "Demo",
+                "haptic_tracking_protocol": "continuous_listener_relative_azimuth_v2",
+                "motor_profile": {"profileId": "synthetic_40_equal_angles_unverified"},
+            }))
+            main([str(raw), "--out", str(out), "--mode", "Demo"])
+            self.assertIn("continuous_listener_relative_azimuth_v2", (out / "by_condition.csv").read_text())
 
     def test_camera_wrap_and_jitter(self):
         self.assertEqual(rotation([(0, 355), (1, 5), (2, 5.5), (3, 358)]), (18.0, 1))

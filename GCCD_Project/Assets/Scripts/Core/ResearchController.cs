@@ -23,9 +23,14 @@ namespace GCCD.Research
         [Min(0.1f)] public float restSeconds = 12f;
         [Min(1f)] public float threatDistance = 7f;
         [Min(0.2f)] public float threatDiameter = 0.9f;
+        [Range(0f, 12f)] public float sourceAngleJitterDegrees = 10f;
         [Min(1f)] public float mouseSensitivity = 2.1f;
         [Range(1f, 60f)] public float cameraLogHz = 20f;
-        [Range(0.05f, 1f)] public float hapticPulseSeconds = .25f;
+        [Range(15f, 30f)] public float motorUpdateHz = 20f;
+        [Range(10f, 60f)] public float motorSpreadDegrees = 22f;
+        [Range(.001f, .3f)] public float motorAttackSeconds = .045f;
+        [Range(.001f, .3f)] public float motorReleaseSeconds = .08f;
+        [Range(.05f, 1f)] public float motorOutputCeiling = .8f;
         [Range(.1f, 5f)] public float visualWarningSeconds = 1.2f;
         [Range(2f, 30f)] public float nearMissInferenceDegrees = 12f;
         [Range(0f, 100f)] public float damagePerMiss = 10f;
@@ -64,7 +69,6 @@ namespace GCCD.Research
 
         private readonly List<Threat> threats = new List<Threat>(3);
         private readonly Dictionary<Collider, Threat> threatByCollider = new Dictionary<Collider, Threat>();
-        private readonly ResearchCalibration[] calibration = new ResearchCalibration[4];
         private readonly int[] surveyRatings = new int[9];
         private readonly bool[] surveyAnswered = new bool[9];
 
@@ -124,17 +128,8 @@ namespace GCCD.Research
             fixedPosition = transform.position;
             initialRotation = transform.rotation;
             pitch = NormalizePitch(transform.localEulerAngles.x);
-            for (int i = 0; i < calibration.Length; ++i)
-            {
-                calibration[i] = new ResearchCalibration
-                {
-                    zone = ((TorsoZone)i).ToString(),
-                    low = 0.2f,
-                    medium = 0.45f,
-                    high = 0.7f
-                };
-            }
             output = new ResearchMockHaptics();
+            InitializeSpatialMotors();
             warningClip = CreateWarningTone();
             SetCursor(false);
         }
@@ -162,8 +157,12 @@ namespace GCCD.Research
                     else
                     {
                         UpdateDeadlines(); // Missed deadlines resolve BEFORE accepting a shot on that frame.
+                        if (phase != StudyPhase.Active) return;
                         UpdateAcquisition();
+                        if (phase != StudyPhase.Active) return;
                         UpdateShooting();
+                        if (phase != StudyPhase.Active) return;
+                        UpdateMotorTracking(false);
                         UpdateCameraLogging();
                     }
                 }
@@ -239,26 +238,6 @@ namespace GCCD.Research
             return string.Join("  →  ", Array.ConvertAll(BuildOrder(StableHash(participantCode.Trim()) % 8), c => c.code));
         }
 
-        private bool CalibrationReady(out string reason)
-        {
-            for (int i = 0; i < calibration.Length; ++i)
-            {
-                ResearchCalibration c = calibration[i];
-                if (!(c.low > 0f && c.low < c.medium && c.medium < c.high && c.high <= 1f))
-                {
-                    reason = c.zone + ": low < medium < high ≤ 1 and low > 0 required.";
-                    return false;
-                }
-                if (!c.confirmed || !c.comfortable || !c.distinguishable)
-                {
-                    reason = c.zone + ": researcher and participant must confirm comfortable distinguishability.";
-                    return false;
-                }
-            }
-            reason = "";
-            return true;
-        }
-
         private bool ValidateSetup()
         {
             participantCode = participantCode.Trim();
@@ -281,19 +260,24 @@ namespace GCCD.Research
                 preparationMinimum < .1f || preparationMaximum < preparationMinimum ||
                 threatDeadlineSeconds <= 0 || activeTrialSeconds <= threatDeadlineSeconds ||
                 threatDistance < 1 || threatDiameter <= .1f || cameraLogHz < 1 ||
-                hapticPulseSeconds < .05f || hapticPulseSeconds > 1f ||
+                sourceAngleJitterDegrees < 0 || sourceAngleJitterDegrees > 12f ||
+                motorUpdateHz < 15f || motorUpdateHz > 30f ||
+                motorSpreadDegrees < 10f || motorSpreadDegrees > 60f ||
+                motorAttackSeconds < .001f || motorAttackSeconds > .3f ||
+                motorReleaseSeconds < .001f || motorReleaseSeconds > .3f ||
+                motorOutputCeiling < .05f || motorOutputCeiling > 1f ||
                 visualWarningSeconds < .1f || visualWarningSeconds > 5f ||
                 nearMissInferenceDegrees < 2f || nearMissInferenceDegrees > 30f)
             {
                 protocolError = "프로토콜 값 오류: 준비 최대≥최소, 0<deadline<trial, 거리/직경/샘플주파수>0, 조건당 1~200시행.";
                 return false;
             }
+            if (!motorProfile.Validate(out protocolError, mode != StudyMode.Demo)) return false;
             if (mode != StudyMode.Demo && (!output.IsPhysicalHardware || !output.IsVerifiedReady))
             {
-                protocolError = "Pilot/Main 시작 차단: 검증된 실제 햅틱 SDK·4구역 배치·연결 테스트가 필요합니다.";
+                protocolError = "Pilot/Main 시작 차단: 검증된 SDK·40모터 인덱스·방위각·강도 교정이 필요합니다.";
                 return false;
             }
-            if (mode != StudyMode.Demo && !CalibrationReady(out protocolError)) return false;
             protocolError = "";
             return true;
         }
@@ -329,15 +313,23 @@ namespace GCCD.Research
                 active_duration_seconds = activeTrialSeconds,
                 target_distance = threatDistance,
                 target_size = threatDiameter,
+                source_angle_jitter_degrees = sourceAngleJitterDegrees,
                 damage_per_failure = damagePerMiss,
                 mouse_sensitivity = mouseSensitivity,
                 camera_sample_hz = cameraLogHz,
-                haptic_pulse_seconds = hapticPulseSeconds,
+                haptic_pulse_seconds = 0f, // Removed short pulse in continuous tracking v2.
                 visual_warning_seconds = visualWarningSeconds,
                 near_miss_inference_angle_degrees = nearMissInferenceDegrees,
+                motor_update_hz = motorUpdateHz,
+                motor_spread_degrees = motorSpreadDegrees,
+                motor_attack_seconds = motorAttackSeconds,
+                motor_release_seconds = motorReleaseSeconds,
+                motor_output_ceiling = motorOutputCeiling,
+                motor_layout_status = motorProfile.physicalLayoutVerified
+                    ? "physical_layout_flag_set_sdk_not_verified" : "virtual_unverified_no_physical_output",
+                motor_profile = motorProfile,
                 rest_seconds = restSeconds,
-                assigned_order = assignedOrder,
-                calibration = calibration
+                assigned_order = assignedOrder
             };
             logger = new ResearchJsonlWriter();
             if (!logger.Open(snapshot))
@@ -349,22 +341,18 @@ namespace GCCD.Research
             Log("session_start", null, p =>
             {
                 p.event_source = "operator";
-                p.reason = "research_session_started";
+                p.reason = "research_session_started_continuous_360_motor_protocol_v2";
             });
             if (phase == StudyPhase.Error) return;
-            for (int i = 0; i < calibration.Length; i++)
+            Log("motor_profile", null, p =>
             {
-                var c = calibration[i];
-                Log("calibration", null, p =>
-                {
-                    p.event_source = "operator_report";
-                    p.zone = c.zone;
-                    p.reason = string.Format(CultureInfo.InvariantCulture,
-                        "low={0:F4};medium={1:F4};high={2:F4};comfortable={3};distinguishable={4};confirmed={5}",
-                        c.low, c.medium, c.high, c.comfortable, c.distinguishable, c.confirmed);
-                });
-                if (phase == StudyPhase.Error) return;
-            }
+                p.event_source = "40_channel_profile_session_snapshot";
+                p.reason = motorProfile.provenance;
+                p.output_status = motorProfile.physicalLayoutVerified
+                    ? "operator_layout_flag_unverified_sdk" : "virtual_layout_not_physically_verified";
+                p.active_sound_sources = 0;
+            });
+            if (phase == StudyPhase.Error) return;
             phase = practiceTrials > 0 ? StudyPhase.PracticeReady : StudyPhase.BlockReady;
             SetCursor(false);
         }
@@ -384,6 +372,7 @@ namespace GCCD.Research
 
         private void StartTrial(bool practice)
         {
+            StopMotorTracking();
             ClearThreats();
             currentIsPractice = practice;
             trialId = sessionId + (practice ? "_P" + (practiceCompleted + 1).ToString("D3") :
@@ -439,10 +428,11 @@ namespace GCCD.Research
 
         private List<TorsoZone> PlanZones()
         {
-            // Rotate four single sectors and four complementary 3-of-4 combinations.
-            // The mapping is independent of intensity, preserving spatial stimulus balance.
+            // Repeat the exact same sector schedule across intensity conditions.
+            // Four single sectors and complementary 3-of-4 combinations are balanced
+            // when trialsPerBlock is a multiple of four; order does not alter geometry.
             int index = currentIsPractice ? practiceCompleted : trialIndex;
-            int cycle = (index + (currentIsPractice ? 0 : blockIndex)) % 4;
+            int cycle = index % 4;
             int count = CurrentCondition.threat_count;
             var planned = new List<TorsoZone>(count);
             if (count == 1) planned.Add((TorsoZone)cycle);
@@ -458,6 +448,7 @@ namespace GCCD.Research
             warningTriggeredAt = Now;
             trialEndAt = warningTriggeredAt + activeTrialSeconds;
             phase = StudyPhase.Active;
+            BeginMotorTracking();
             lastYaw = transform.eulerAngles.y;
             lastCameraSampleYaw = lastYaw;
             Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(researchCamera);
@@ -466,12 +457,22 @@ namespace GCCD.Research
             List<TorsoZone> zones = PlanZones();
             foreach (TorsoZone zone in zones)
             {
-                float angle = AngleForZone(zone);
+                // Continuous source bearing within each balanced spawn sector. Seed
+                // ignores condition intensity and block index, so comparisons pair
+                // identical directions for same participant/threat count/repetition.
+                int repeatedIndex = currentIsPractice ? practiceCompleted : trialIndex;
+                int angleSeed = StableHash(scheduleSeed + "|" +
+                    (currentIsPractice ? "P" : "T") + "|" +
+                    CurrentCondition.threat_count + "|" + repeatedIndex + "|" + zone);
+                float angle = AngleForZone(zone) +
+                    (((float)new System.Random(angleSeed).NextDouble() * 2f) - 1f) *
+                    sourceAngleJitterDegrees;
                 Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * facing;
                 Vector3 worldPosition = fixedPosition + direction * threatDistance + Vector3.down * .35f;
                 // Reject a spawn if any part of the complete target volume can be seen.
                 bool outside = !GeometryUtility.TestPlanesAABB(frustumPlanes,
-                    new Bounds(worldPosition, Vector3.one * threatDiameter));
+                    new Bounds(worldPosition,
+                        new Vector3(threatDiameter, threatDiameter * 2.4f, threatDiameter)));
                 float actualAngularOffset = Vector3.Angle(facing, direction);
                 Vector3 towardTarget = worldPosition - fixedPosition;
                 bool obstructed = Physics.Raycast(fixedPosition, towardTarget.normalized,
@@ -499,7 +500,12 @@ namespace GCCD.Research
                     go.transform.position = worldPosition;
                     go.transform.localScale = Vector3.one * threatDiameter;
                     var renderer = go.GetComponent<Renderer>();
-                    if (renderer != null) renderer.material.color = new Color(.9f, .22f, .17f);
+                    if (renderer != null) renderer.enabled = false;
+                    Vector3 towardPlayer = fixedPosition - worldPosition;
+                    towardPlayer.y = 0f;
+                    if (towardPlayer.sqrMagnitude > .001f)
+                        go.transform.rotation = Quaternion.LookRotation(towardPlayer.normalized);
+                    ConstructHostileSilhouette(go);
                     threat.gameObject = go;
                     threat.collider = go.GetComponent<Collider>();
                     if (threat.collider != null) threatByCollider[threat.collider] = threat;
@@ -510,8 +516,9 @@ namespace GCCD.Research
                     source.minDistance = .75f;
                     source.maxDistance = 24f;
                     source.volume = .8f;
+                    source.loop = false;
                     source.clip = warningClip;
-                    source.Play();  // Same visual+3D audio stimulus regardless of intensity.
+                    source.Play();  // Same brief audible cue in every condition; world sound origin stays registered.
                 }
                 else
                 {
@@ -547,81 +554,10 @@ namespace GCCD.Research
                     p.warning_duration = visualWarningSeconds;
                 });
                 if (phase != StudyPhase.Active) break;
-                EmitHaptic(target);
+                BeginTargetHaptic(target);
             }
+            if (phase == StudyPhase.Active) UpdateMotorTracking(true);
             UpdateCameraLogging();
-        }
-
-        private float CalibratedStrength(TorsoZone zone, string level)
-        {
-            ResearchCalibration c = calibration[(int)zone];
-            switch (level)
-            {
-                case "low": return c.low;
-                case "medium": return c.medium;
-                case "high": return c.high;
-                default: return 0f;
-            }
-        }
-
-        private void EmitHaptic(Threat threat)
-        {
-            float strength = CalibratedStrength(threat.zone, CurrentCondition.intensity_level);
-            if (strength == 0f)
-            {
-                Log("haptic_result", threat, p =>
-                {
-                    p.event_source = "zero_control";
-                    p.output_status = "not_requested";
-                    p.strength = 0f;
-                    p.delivered = false;
-                    p.warning_duration = hapticPulseSeconds;
-                });
-                return; // True zero-haptic control; no device call.
-            }
-            Log("haptic_request", threat, p =>
-            {
-                p.event_source = output.Name;
-                p.strength = strength;
-                p.valid = threat.spawnValid;
-                p.warning_duration = hapticPulseSeconds;
-            });
-            if (phase != StudyPhase.Active) return;
-            HapticDelivery delivery;
-            try
-            {
-                delivery = threat.spawnValid
-                    ? output.Request(threat.zone, strength, hapticPulseSeconds, threat.id)
-                    : new HapticDelivery
-                    {
-                        status = "blocked_invalid_spawn", source = output.Name,
-                        physicallyDelivered = false, accepted = false
-                    };
-            }
-            catch (Exception ex)
-            {
-                delivery = new HapticDelivery
-                {
-                    status = "exception_" + ex.GetType().Name,
-                    source = output.Name,
-                    physicallyDelivered = false, accepted = false
-                };
-                currentTrialValid = false;
-            }
-            Log("haptic_result", threat, p =>
-            {
-                p.event_source = delivery.source;
-                p.output_status = delivery.status;
-                p.delivered = delivery.physicallyDelivered;
-                p.strength = strength;
-                p.warning_duration = hapticPulseSeconds;
-                p.valid = delivery.accepted && threat.spawnValid;
-            });
-            if (mode != StudyMode.Demo && !delivery.physicallyDelivered)
-            {
-                currentTrialValid = false;
-                AbortSession("Research hardware failed during a Pilot/Main trial.");
-            }
         }
 
         private void UpdateAcquisition()
@@ -708,6 +644,8 @@ namespace GCCD.Research
             intended.neutralized = true;  // Identical target HP = 1.
             intended.neutralizedAt = Now - warningTriggeredAt;
             if (intended.gameObject != null) intended.gameObject.SetActive(false);
+            UpdateMotorTracking(true);
+            if (phase == StudyPhase.Error) return;
             Log("neutralized", intended, p =>
             {
                 p.event_source = "one_hit_to_neutralize";
@@ -725,6 +663,13 @@ namespace GCCD.Research
                 if (threat.neutralized || threat.attacked || Now < threat.deadline) continue;
                 threat.attacked = true;
                 if (!threat.spawnValid) continue; // Invalid trials are excluded, never silently counted as misses.
+                if (threat.gameObject != null)
+                {
+                    AudioSource sound = threat.gameObject.GetComponent<AudioSource>();
+                    if (sound != null) sound.Stop();
+                }
+                UpdateMotorTracking(true);
+                if (phase == StudyPhase.Error) return;
                 failedCount++;
                 hp = Mathf.Max(0f, hp - damagePerMiss); // No death mechanic.
                 Log("attack", threat, p =>
@@ -781,7 +726,7 @@ namespace GCCD.Research
         private void EndTrial(string reason)
         {
             if (phase != StudyPhase.Active && phase != StudyPhase.Preparation) return;
-            output.StopAll();
+            StopMotorTracking();
             // Trial_end summarizes every scheduled target with planned and valid counts.
             int validTargets = 0;
             foreach (Threat threat in threats) if (threat.spawnValid) validTargets++;
@@ -887,6 +832,7 @@ namespace GCCD.Research
             if (phase == StudyPhase.Error) return;
             sessionClosed = true;
             logger?.Dispose();
+            StopMotorTracking();
             phase = StudyPhase.Finished;
             SetCursor(false);
         }
@@ -906,7 +852,7 @@ namespace GCCD.Research
             }
             sessionClosed = true;
             logger?.Dispose();
-            output?.StopAll();
+            StopMotorTracking();
             ClearThreats();
             phase = StudyPhase.Error;
             SetCursor(false);
@@ -922,6 +868,7 @@ namespace GCCD.Research
                 phase = phase.ToString(),
                 output_mode = output.IsPhysicalHardware && output.IsVerifiedReady ? "real" : "mock",
                 device_verified = output.IsPhysicalHardware && output.IsVerifiedReady,
+                motor_profile_id = motorProfile != null ? motorProfile.profileId : "",
                 practice = currentIsPractice,
                 block_index = currentIsPractice ? -1 : blockIndex,
                 trial_index = currentIsPractice ? practiceCompleted : trialIndex,
@@ -969,6 +916,58 @@ namespace GCCD.Research
             return clip;
         }
 
+        // Visual primitives intentionally share the original target's single collider.
+        // Disabling child colliders immediately prevents inaccurate rays and inflated
+        // collision/occlusion footprints. The root sphere remains the sole hit target.
+        private static void ConstructHostileSilhouette(GameObject root)
+        {
+            Color armor = new Color(.17f, .22f, .25f);
+            Color fabric = new Color(.08f, .11f, .13f);
+            AddHostilePart(root, PrimitiveType.Capsule, "Armored torso",
+                new Vector3(0f, -.02f, 0f), new Vector3(.72f, .67f, .38f), armor);
+            AddHostilePart(root, PrimitiveType.Sphere, "Combat helmet",
+                new Vector3(0f, .63f, 0f), new Vector3(.55f, .52f, .51f), armor);
+            AddHostilePart(root, PrimitiveType.Cube, "Red threat visor",
+                new Vector3(0f, .65f, .24f), new Vector3(.43f, .13f, .09f),
+                new Color(.94f, .15f, .1f));
+            AddHostilePart(root, PrimitiveType.Capsule, "Left arm",
+                new Vector3(-.44f, -.10f, 0f), new Vector3(.28f, .63f, .28f), fabric);
+            AddHostilePart(root, PrimitiveType.Capsule, "Right arm",
+                new Vector3(.44f, -.10f, 0f), new Vector3(.28f, .63f, .28f), fabric);
+            AddHostilePart(root, PrimitiveType.Capsule, "Left leg",
+                new Vector3(-.22f, -.89f, 0f), new Vector3(.3f, .67f, .3f), fabric);
+            AddHostilePart(root, PrimitiveType.Capsule, "Right leg",
+                new Vector3(.22f, -.89f, 0f), new Vector3(.3f, .67f, .3f), fabric);
+            AddHostilePart(root, PrimitiveType.Cube, "Tactical rig",
+                new Vector3(0f, -.12f, .22f), new Vector3(.49f, .45f, .13f),
+                new Color(.25f, .28f, .27f));
+        }
+
+        private static void AddHostilePart(GameObject parent, PrimitiveType shape, string name,
+            Vector3 localPosition, Vector3 localScale, Color tint)
+        {
+            GameObject part = GameObject.CreatePrimitive(shape);
+            part.name = name;
+            part.transform.SetParent(parent.transform, false);
+            part.transform.localPosition = localPosition;
+            part.transform.localScale = localScale;
+            Collider hitCollider = part.GetComponent<Collider>();
+            if (hitCollider != null)
+            {
+                hitCollider.enabled = false;
+                Destroy(hitCollider);
+            }
+            Renderer visual = part.GetComponent<Renderer>();
+            if (visual != null)
+            {
+                // Avoid material instantiation for every trial and target.
+                var props = new MaterialPropertyBlock();
+                props.SetColor("_BaseColor", tint); // URP
+                props.SetColor("_Color", tint);     // Built-in compatibility
+                visual.SetPropertyBlock(props);
+            }
+        }
+
         private void ClearThreats()
         {
             foreach (Threat t in threats)
@@ -985,7 +984,7 @@ namespace GCCD.Research
                 Log("session_end", null, p => { p.event_source = "application"; p.valid = false; p.reason = "interrupted"; });
                 sessionClosed = true;
             }
-            output?.StopAll();
+            StopMotorTracking();
             logger?.Dispose();
         }
 
@@ -1001,7 +1000,7 @@ namespace GCCD.Research
                 });
                 sessionClosed = true;
             }
-            output?.StopAll();
+            StopMotorTracking();
             output?.Dispose();
             logger?.Dispose();
             if (warningClip != null) Destroy(warningClip);

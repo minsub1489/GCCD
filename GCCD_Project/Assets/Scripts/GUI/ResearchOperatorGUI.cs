@@ -57,7 +57,7 @@ namespace GCCD.Research
             GUILayout.BeginArea(new Rect(left, top, Mathf.Min(1020f, w - 2 * left), h - top - 10f));
             panelScroll = GUILayout.BeginScrollView(panelScroll);
             Title("GCCD | 몸통 방향성 햅틱 경고 실험");
-            Text("동시 위협 수 (1 / 3) × 진동 강도 (무 / 약 / 중 / 강) · 8조건 반복측정", smallStyle);
+            Text("동시 위협 수 (1 / 3) × 진동 강도 (무 / 약 / 중 / 강) · 연속 360° 소리 위치 추적 (v2)", smallStyle);
             GUILayout.Space(10f);
             if (phase == StudyPhase.Setup) DrawSetup();
             else if (phase == StudyPhase.Calibration) DrawCalibration();
@@ -105,7 +105,7 @@ namespace GCCD.Research
             }, GUILayout.MinHeight(42f));
             Text(mode == StudyMode.Demo
                 ? "데모는 실제 진동을 출력하지 않습니다. 운영 동작과 로그만 시험할 수 있습니다."
-                : "Pilot/Main에는 검증된 실제 햅틱 SDK, 4구역 배치 및 참가자별 강도 보정이 필요합니다.",
+                : "Pilot/Main에는 검증된 실제 X40 SDK, 40모터 위치 프로필, 참가자별 강도 보정이 필요합니다.",
                 smallStyle);
             BigGap();
             GUILayout.Label("익명 참가자 코드", bodyStyle);
@@ -131,6 +131,8 @@ namespace GCCD.Research
             Text("고정 시행 " + activeTrialSeconds.ToString("F1") + "초 | 경고 후 마감 " +
                  threatDeadlineSeconds.ToString("F1") + "초 | 준비 지터 " +
                  preparationMinimum.ToString("F1") + "~" + preparationMaximum.ToString("F1") + "초", smallStyle);
+            Text("새 실험 프로토콜: 고정 4구역 경고 → 월드 소리 발생점의 방위각을 시선 기준 " +
+                 motorUpdateHz.ToString("F0") + "Hz로 연속 추적. 실험 설계 변경 기록.", smallStyle);
             BigGap();
             if (BigButton("1. 강도 보정·장치 확인 화면으로"))
             {
@@ -145,23 +147,75 @@ namespace GCCD.Research
             Text("출력 장치: " + output.Name, bodyStyle);
             Text(output.IsPhysicalHardware && output.IsVerifiedReady ? "연결 검증됨" :
                 "실제 장치 출력 없음 · Demo만 시작 가능", dangerStyle);
-            Text("구역별 약·중·강 강도를 설정합니다. 보정 수치는 임의 초기값이며 참가자 확인 전 실험값이 아닙니다.",
-                smallStyle);
-            BigGap();
-            for (int i = 0; i < calibration.Length; ++i)
+            Text("40모터 개별 배치와 강도 프로필 (X40 실제 인덱스 확인 전 데모용 가상 링)", smallStyle);
+            if (motorProfile == null || motorProfile.motors == null || motorProfile.motors.Length != 40)
             {
-                ResearchCalibration c = calibration[i];
-                GUILayout.BeginVertical(GUI.skin.box);
-                Text(c.zone, bodyStyle);
-                c.low = CalibrationSlider("약", c.low);
-                c.medium = CalibrationSlider("중", c.medium);
-                c.high = CalibrationSlider("강", c.high);
-                GUI.enabled = mode != StudyMode.Demo && output.IsPhysicalHardware && output.IsVerifiedReady;
-                c.distinguishable = GUILayout.Toggle(c.distinguishable, "구역 내 약/중/강 구별 가능");
-                c.comfortable = GUILayout.Toggle(c.comfortable, "최고 강도도 고통 없고 편안함");
-                c.confirmed = GUILayout.Toggle(c.confirmed, "참가자 반응·구역 장치 배치 확인 완료");
-                GUI.enabled = true;
-                GUILayout.EndVertical();
+                Text("프로필에 40채널이 모두 지정되지 않았습니다. Inspector에서 수정하거나 가상 미리보기를 복구하세요.", dangerStyle);
+                if (BigButton("40채널 가상 미리보기 기본값 복구"))
+                    motorProfile = SpatialMotorProfile.CreateVirtualPreview();
+                return;
+            }
+            if (!motorProfile.Validate(out string currentProfileError))
+            {
+                Text("배치 매핑 데이터가 유효하지 않습니다: " + currentProfileError, dangerStyle);
+                if (BigButton("잘못된 프로필을 40채널 가상 미리보기로 초기화"))
+                    motorProfile = SpatialMotorProfile.CreateVirtualPreview();
+                return;
+            }
+            Text(motorProfile.provenance, dangerStyle);
+            Text("배치: " + motorProfile.profileId + " · 실제 레이아웃 검증: " +
+                 (motorProfile.physicalLayoutVerified ? "사용자 표시됨 (SDK는 별도 검증 필요)" : "미검증"),
+                 smallStyle);
+            Text("소리 위치를 따라 360° 연속 회전하며, 진동은 위협 처리가 끝나면 즉시 중지됩니다.", smallStyle);
+            Text("데모 링 미리보기는 디바이스에 명령을 전송하지 않습니다.", smallStyle);
+            BigGap();
+            GUILayout.Label("가상 소리 위치: " + previewAzimuthDegrees.ToString("F0") + "° " +
+                "(0° 정면, +90° 오른쪽, ±180° 뒤)", smallStyle);
+            previewAzimuthDegrees = GUILayout.HorizontalSlider(previewAzimuthDegrees, -180f, 180f,
+                GUILayout.MaxWidth(780f));
+            previewIntensity = GUILayout.Toolbar(previewIntensity, new[] { "약", "중", "강" },
+                GUILayout.MinHeight(38f));
+            DrawMotorRing(PreviewMotorMap(), 300f);
+            BigGap();
+            Text("모터 보정 프로필 편집 (가상 index ≠ 실제 X40 index)", smallStyle);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("◀ 이전 모터", GUILayout.Width(160)))
+                previewSelectedMotor = (previewSelectedMotor + 39) % 40;
+            GUILayout.Label("Motor " + previewSelectedMotor, bodyStyle, GUILayout.Width(130));
+            if (GUILayout.Button("다음 모터 ▶", GUILayout.Width(160)))
+                previewSelectedMotor = (previewSelectedMotor + 1) % 40;
+            GUILayout.EndHorizontal();
+            SpatialMotor motor = motorProfile.motors[previewSelectedMotor];
+            GUILayout.BeginVertical(GUI.skin.box);
+            Text("선택 채널 index " + motor.index + " | 각도 " +
+                 motor.azimuthDegrees.ToString("F1") + "°", smallStyle);
+            float beforeAngle = motor.azimuthDegrees;
+            float beforeGain = motor.gain;
+            float beforeLow = motor.low;
+            float beforeMedium = motor.medium;
+            float beforeHigh = motor.high;
+            motor.azimuthDegrees = GUILayout.HorizontalSlider(motor.azimuthDegrees, -180f, 180f,
+                GUILayout.MaxWidth(760f));
+            motor.gain = CalibrationSlider("gain", motor.gain);
+            motor.low = CalibrationSlider("약", motor.low);
+            motor.medium = CalibrationSlider("중", motor.medium);
+            motor.high = CalibrationSlider("강", motor.high);
+            if (beforeAngle != motor.azimuthDegrees || beforeGain != motor.gain ||
+                beforeLow != motor.low || beforeMedium != motor.medium ||
+                beforeHigh != motor.high)
+            {
+                motor.placementConfirmed = false;
+                motor.strengthConfirmed = false;
+                motorProfile.physicalLayoutVerified = false;
+            }
+            motor.placementConfirmed = GUILayout.Toggle(motor.placementConfirmed,
+                "모터 물리 인덱스/각도를 별도 실측 확인함");
+            motor.strengthConfirmed = GUILayout.Toggle(motor.strengthConfirmed,
+                "참가자별 약·중·강 구분 및 편안함을 실측 확인함");
+            GUILayout.EndVertical();
+            if (!motorProfile.Validate(out string profileMessage))
+            {
+                Text("프로필 오류: " + profileMessage, dangerStyle);
             }
             BigGap();
             if (BigButton(mode == StudyMode.Demo ? "2. Demo 시작 (Mock, 실제 진동 없음)" : "2. Pilot/Main 시작"))
@@ -187,13 +241,40 @@ namespace GCCD.Research
             return Mathf.Round(changed * 100f) / 100f;
         }
 
+        private void DrawMotorRing(float[] levels, float height)
+        {
+            Rect bounds = GUILayoutUtility.GetRect(420f, height, GUILayout.ExpandWidth(true));
+            float centerX = bounds.x + Mathf.Min(bounds.width - 12f, 520f) / 2f;
+            float centerY = bounds.y + height / 2f;
+            GUI.Label(new Rect(centerX - 35, centerY - 15, 120, 30), "FWD ↑", smallStyle);
+            float radius = Mathf.Min(105f, height * .39f);
+            Color before = GUI.color;
+            for (int n = 0; n < 40; ++n)
+            {
+                SpatialMotor motor = motorProfile.motors[n];
+                float rad = motor.azimuthDegrees * Mathf.Deg2Rad;
+                float x = centerX + Mathf.Sin(rad) * radius;
+                float y = centerY - Mathf.Cos(rad) * radius;
+                float strength = levels[motor.index];
+                float brightness = .15f + .85f * strength;
+                GUI.color = new Color(brightness, strength * .7f + .15f, .18f, 1f);
+                GUI.DrawTexture(new Rect(x - 6f, y - 6f, 12, 12), Texture2D.whiteTexture);
+                if (n == previewSelectedMotor)
+                {
+                    GUI.color = before;
+                    GUI.Label(new Rect(x + 7, y - 9, 45, 21), motor.index.ToString(), smallStyle);
+                }
+            }
+            GUI.color = before;
+        }
+
         private void DrawPracticeReady()
         {
             Title("연습 · " + (practiceCompleted + 1) + "/" + practiceTrials);
             Text("고정된 위치에서 마우스를 움직여 주변을 확인하고 화면 중앙으로 조준해 왼쪽 클릭으로 표적을 무력화합니다.");
             Text("모든 위협은 경고가 발생한 순간 시야 밖에 나타납니다. 위협은 이동하지 않습니다.");
             Text("대상의 마감시간이 지나면 같은 피해량이 적용됩니다. 사망·게임오버는 없습니다.");
-            Text("모든 조건은 동일한 화면 화살표 및 방향성 음향을 사용합니다.", smallStyle);
+            Text("모든 조건은 동일한 짧은 음향·시각 경고를 사용합니다. 진동 조건에서는 소리 발생점의 360° 위치를 시점에 따라 계속 추적합니다.", smallStyle);
             BigGap();
             if (BigButton("연습 시행 시작")) StartTrial(true);
         }
@@ -204,6 +285,7 @@ namespace GCCD.Research
             Title("조건 블록 " + (blockIndex + 1) + "/8 | " + c.code);
             Text("익명 참가자 " + participantCode + " · Williams 균형 순서 " + assignedSequence, smallStyle);
             Text("동시 위협 " + c.threat_count + "개 | 강도 " + c.intensity_level);
+            Text("모터: " + motorUpdateHz.ToString("F0") + "Hz · 가상 40채널 · 월드 소리 위치 실시간 추적", smallStyle);
             Text("시행 " + (trialIndex + 1) + " / " + trialsPerBlock);
             Text("시행 중에는 자세와 위치를 고정하고 마우스로 시점만 회전하세요.");
             Text("좌클릭: 사격 · ESC: 연구 세션 중단", smallStyle);
@@ -295,6 +377,12 @@ namespace GCCD.Research
             double remaining = Math.Max(0, trialEndAt - Now);
             GUI.Box(new Rect(w / 2 - 150, 12, 300, 38),
                 "TIME " + remaining.ToString("F1") + "s    HP " + hp.ToString("F0"));
+            if (mode == StudyMode.Demo)
+            {
+                GUI.Label(new Rect(w - 240f, h - 125f, 230f, 24f),
+                    "MOCK 40-MOTOR PREVIEW (NO VIBRATION)", smallStyle);
+                DrawMotorHudPreview(w - 125f, h - 63f, 46f);
+            }
             // Equal brief visual warning for all four intensities; then target search
             // must use remembered cue information and scene perception.
             if (Now - warningTriggeredAt > visualWarningSeconds) return;
@@ -315,6 +403,22 @@ namespace GCCD.Research
                 }
                 GUI.Box(new Rect(x, y, w * .16f, 52f * uiScale), label, directionStyle);
             }
+        }
+
+        private void DrawMotorHudPreview(float cx, float cy, float radius)
+        {
+            Color original = GUI.color;
+            float[] values = motorSmoother.Current;
+            for (int i = 0; i < 40; i++)
+            {
+                SpatialMotor motor = motorProfile.motors[i];
+                float r = motor.azimuthDegrees * Mathf.Deg2Rad;
+                float brightness = .15f + .85f * values[motor.index];
+                GUI.color = new Color(brightness, .2f + values[motor.index] * .7f, .13f, 1f);
+                GUI.DrawTexture(new Rect(cx + Mathf.Sin(r) * radius - 4f,
+                    cy - Mathf.Cos(r) * radius - 4f, 8f, 8f), Texture2D.whiteTexture);
+            }
+            GUI.color = original;
         }
     }
 }

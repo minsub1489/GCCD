@@ -43,6 +43,7 @@ KINDS = {
     "invalid_spawn": "technical_exclusion", "log_error": "technical_exclusion",
     "technical_exclusion": "technical_exclusion", "session_start": "session_start", "session_end": "session_end",
     "hit": "hit", "warning": "other", "haptic_request": "other", "haptic_result": "haptic_result",
+    "haptic_update": "haptic_update", "haptic_tracking": "haptic_tracking", "haptic_stop": "haptic_stop",
     "calibration": "ignore", "block_start": "ignore", "block_end": "ignore", "survey": "ignore",
 }
 
@@ -154,6 +155,9 @@ class Trial:
     expected: int | None = None
     threats: dict[str, Threat] = field(default_factory=dict)
     shots: list[tuple[float | None, str | None]] = field(default_factory=list)
+    haptic_frames: list[dict[str, Any]] = field(default_factory=list)
+    haptic_tracking: dict[str, list[tuple[float, float]]] = field(default_factory=lambda: defaultdict(list))
+    haptic_stop_events: int = 0
     shot_indices: set[tuple[str, int]] = field(default_factory=set)
     camera: list[tuple[float, float]] = field(default_factory=list)
     damage: float = 0.0
@@ -186,7 +190,13 @@ def capture_trial_metadata(trial: Trial, event: dict[str, Any], started: bool = 
         trial.expected = int(expected)
     if started:
         trial.started = instant(event)
-    for key in ("device_verified", "hardware_verified", "output_mode", "calibration_id", "seed", "schedule_seed", "block_id", "block_index", "trial_index", "order_index", "snapshot", "duration_s", "config_hash", "practice", "intensity_level"):
+    protocol = first(event, "protocol_version", "stimulus_protocol_version", "haptic_tracking_protocol")
+    if protocol is not None:
+        if trial.metadata.get("protocol_version") and trial.metadata["protocol_version"] != str(protocol):
+            trial.error("conflicting_protocol_version")
+        else:
+            trial.metadata["protocol_version"] = str(protocol)
+    for key in ("direction_mapping_mode", "motor_profile_id", "profile_id", "device_verified", "hardware_verified", "output_mode", "calibration_id", "seed", "schedule_seed", "block_id", "block_index", "trial_index", "order_index", "snapshot", "duration_s", "config_hash", "practice", "intensity_level"):
         val = first(event, key)
         if val is not None:
             trial.metadata[key] = val
@@ -337,6 +347,34 @@ def reconstruct(path: Path) -> tuple[list[Trial], list[dict[str, Any]]]:
                 bad = status in {"failed", "error", "blocked", "disconnected", "timed_out", "timeout"}
                 if trial.mode == "Main" and status != "not_requested" and (first(event, "success", "delivered") is False or bad):
                     trial.error("haptic_output_failure")
+            elif kind == "haptic_update":
+                values_str = first(event, "motor_levels_csv")
+                values = []
+                if isinstance(values_str, str):
+                    values = [number(chunk.strip()) for chunk in values_str.split(",")]
+                if len(values) != 40 or any(v is None or v < 0 or v > 1 for v in values):
+                    trial.error("invalid_motor_frame_snapshot")
+                    continue
+                trial.haptic_frames.append({
+                    "time": t,
+                    "peak": number(first(event, "motor_peak")),
+                    "mean": number(first(event, "motor_mean")),
+                    "active_motors": sum(v > 0.0005 for v in values),
+                    "active_sources": number(first(event, "active_sound_sources")),
+                    "frame_number": number(first(event, "motor_frame_number")),
+                    "update_hz": number(first(event, "motor_update_hz")),
+                    "delivered": first(event, "delivered") is True,
+                    "output_status": first(event, "output_status"),
+                })
+            elif kind == "haptic_tracking":
+                ident = threat_id(event)
+                az = number(first(event, "tracked_azimuth_degrees"))
+                if ident is None or az is None or t is None or not -180.0001 <= az <= 180.0001:
+                    trial.error("invalid_haptic_tracking_sample")
+                else:
+                    trial.haptic_tracking[ident].append((t, az))
+            elif kind == "haptic_stop":
+                trial.haptic_stop_events += 1
             elif kind == "technical_exclusion":
                 trial.error("reported_technical_exclusion")
                 reason = first(event, "reason", "code")
@@ -387,6 +425,7 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
     trial_rows: list[dict[str, Any]] = []
     for trial in trials:
         errors = list(trial.errors)
+        protocol = trial.metadata.get("protocol_version") or "legacy_unversioned"
         def issue(code: str) -> None:
             if code not in errors:
                 errors.append(code)
@@ -443,6 +482,17 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
         path, reversals = rotation(window)
         warning_origin = 0.0  # Unity trial_time is relative to warning onset.
         first_latency = first_acquisition - warning_origin if first_acquisition is not None else None
+        # haptic_update is a 1 Hz aggregate trace of ~20 Hz frame requests.
+        # These samples cannot establish physical contact or actual duty cycle.
+        motor_frame_snapshots = len(trial.haptic_frames)
+        motor_peaks = [f["peak"] for f in trial.haptic_frames if f["peak"] is not None]
+        motor_means = [f["mean"] for f in trial.haptic_frames if f["mean"] is not None]
+        motor_occupancies = [f["active_motors"] / 40 for f in trial.haptic_frames]
+        az_steps = []
+        for az_samples in trial.haptic_tracking.values():
+            ordered = sorted(az_samples)
+            az_steps.extend(abs((next_az - prev_az + 180) % 360 - 180)
+                            for (_, prev_az), (_, next_az) in zip(ordered, ordered[1:]))
         shots_sorted = sorted(trial.shots, key=lambda v: (v[0] is None, v[0] if v[0] is not None else 0))
         first_target = shots_sorted[0][1] if shots_sorted else None
         complete = 0
@@ -459,6 +509,7 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
             latency = None if th.acquired is None or th.spawn is None else round(th.acquired - th.spawn, 6)
             threat_rows.append({
                 "participant_id": trial.participant, "session_id": trial.session, "trial_id": trial.id,
+                "protocol_version": protocol,
                 "mode": trial.mode, "condition": trial.condition, "threat_id": th.id, "zone": th.zone,
                 "spawn_time_s": th.spawn, "deadline_time_s": th.cutoff, "acquisition_time_s": th.acquired,
                 "first_acquisition_latency_s": latency, "neutralization_time_s": th.neutralized,
@@ -470,6 +521,7 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
             })
         trial_rows.append({
             "participant_id": trial.participant, "session_id": trial.session, "trial_id": trial.id,
+            "protocol_version": protocol,
             "mode": trial.mode, "condition": trial.condition, "threat_count": len(trial.threats),
             "declared_threat_count": trial.expected, "trial_start_s": trial.started, "trial_end_s": trial.ended,
             "eligible_threats": complete, "failures": failures if not exclusion and complete else None,
@@ -478,6 +530,16 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
             "first_shot_target": first_target, "first_shot_time_s": shots_sorted[0][0] if shots_sorted else None,
             "first_shot_attribution": trial.metadata.get("_first_shot_attribution"),
             "first_acquisition_latency_s": first_latency,
+            "haptic_sampled_frames": motor_frame_snapshots,
+            "haptic_reported_max_frame_number": max((f["frame_number"] for f in trial.haptic_frames if f["frame_number"] is not None), default=None),
+            "haptic_mean_sampled_peak": mean(motor_peaks) if motor_peaks else None,
+            "haptic_mean_sampled_amplitude": mean(motor_means) if motor_means else None,
+            "haptic_mean_sampled_motor_occupancy": mean(motor_occupancies) if motor_occupancies else None,
+            "haptic_max_sampled_active_motors": max((f["active_motors"] for f in trial.haptic_frames), default=None),
+            "haptic_tracked_azimuth_samples": sum(map(len, trial.haptic_tracking.values())),
+            "haptic_max_sampled_azimuth_step_deg": max(az_steps, default=None),
+            "haptic_stop_events": trial.haptic_stop_events,
+            "haptic_measurement_scope": "submitted_command_samples_only" if trial.haptic_frames else "not_measured",
             "camera_path_deg": path, "camera_reversals": reversals,
             "reported_yaw_path_deg": trial.reported_yaw_path_deg,
             "reported_turn_reversals": trial.reported_turn_reversals,
@@ -487,56 +549,62 @@ def evaluate(trials: list[Trial]) -> tuple[list[dict[str, Any]], list[dict[str, 
             "block_id": trial.metadata.get("block_id", trial.metadata.get("block_index")), "seed": trial.metadata.get("seed", trial.metadata.get("schedule_seed")),
             "calibration_id": trial.metadata.get("calibration_id"),
             "config_hash": trial.metadata.get("config_hash"),
+            "direction_mapping_mode": trial.metadata.get("direction_mapping_mode"),
+            "motor_profile_id": trial.metadata.get("motor_profile_id", trial.metadata.get("profile_id")),
             "snapshot_json": json.dumps(trial.metadata.get("snapshot"), ensure_ascii=False, sort_keys=True) if trial.metadata.get("snapshot") is not None else None,
         })
     return threat_rows, trial_rows
 
 
 def summarize(threat_rows: list[dict[str, Any]], trial_rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
-    trial_counts: dict[tuple[str, str, str], set[tuple[str, str, str]]] = defaultdict(set)
+    groups: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    trial_counts: dict[tuple[str, str, str, str], set[tuple[str, str, str]]] = defaultdict(set)
     for row in threat_rows:
         if row["failure"] is None or row["condition"] not in CONDITIONS or row["mode"] not in MODES:
             continue
         for participant in ("ALL", row["participant_id"]):
-            key = (row["mode"], participant, row["condition"])
+            key = (row["protocol_version"], row["mode"], participant, row["condition"])
             groups[key].append(row)
             trial_counts[key].add((row["participant_id"], row["session_id"], row["trial_id"]))
     summaries = []
-    for (mode, participant, code), rows in sorted(groups.items()):
+    for (protocol, mode, participant, code), rows in sorted(groups.items()):
         count = len(rows)
         summaries.append({
-            "mode": mode, "participant_id": participant, "condition": code,
-            "participants": len({r["participant_id"] for r in rows}), "trials": len(trial_counts[(mode, participant, code)]),
+            "protocol_version": protocol, "mode": mode, "participant_id": participant, "condition": code,
+            "participants": len({r["participant_id"] for r in rows}), "trials": len(trial_counts[(protocol, mode, participant, code)]),
             "threats": count, "failures": sum(r["failure"] for r in rows),
             "failure_probability": sum(r["failure"] for r in rows) / count,
             "no_response_probability": sum(r["no_response"] for r in rows) / count,
             "mean_acquisition_latency_s": mean([r["first_acquisition_latency_s"] for r in rows if r["first_acquisition_latency_s"] is not None]) if any(r["first_acquisition_latency_s"] is not None for r in rows) else None,
         })
 
-    lookup = {(r["mode"], r["participant_id"], r["condition"]): r["failure_probability"] for r in summaries}
-    contrasts: dict[str, Any] = {}
-    for mode in MODES:
-        all_codes = {code: lookup.get((mode, "ALL", code)) for code in CONDITIONS}
-        def contrast(codes: list[str], weights: list[float]) -> float | None:
-            vals = [all_codes[c] for c in codes]
-            return round(sum(w * v for w, v in zip(weights, vals)), 9) if all(v is not None for v in vals) else None
-        paired = []
-        participants = sorted({r["participant_id"] for r in summaries if r["mode"] == mode and r["participant_id"] != "ALL"})
-        for participant in participants:
-            values = [lookup.get((mode, participant, c)) for c in ("MH", "ML", "SH", "SL")]
-            if all(v is not None for v in values):
-                paired.append(sum(w * v for w, v in zip((1, -1, -1, 1), values)))
-        contrasts[mode] = {
-            "observed_failure_probability": all_codes,
-            "primary_MH_minus_ML_minus_SH_plus_SL": contrast(["MH", "ML", "SH", "SL"], [1, -1, -1, 1]),
-            "secondary_MH_minus_M0": contrast(["MH", "M0"], [1, -1]),
-            "paired_participant_primary_mean": round(mean(paired), 9) if paired else None,
-            "paired_participant_count": len(paired),
-            "warnings": ["Descriptive only; threats within trials and trials within participants are dependent.",
-                         "Participant-paired primary requires MH, ML, SH and SL for each participant; no p-values or CIs computed."]
-                        + (["One or more primary cells unavailable."] if contrast(["MH", "ML", "SH", "SL"], [1, -1, -1, 1]) is None else []),
-        }
+    lookup = {(r["protocol_version"], r["mode"], r["participant_id"], r["condition"]): r["failure_probability"] for r in summaries}
+    contrasts: dict[str, Any] = {"by_protocol": {}}
+    protocols = sorted({r["protocol_version"] for r in trial_rows})
+    for protocol in protocols:
+        mode_group = contrasts["by_protocol"][protocol] = {}
+        for mode in MODES:
+            all_codes = {code: lookup.get((protocol, mode, "ALL", code)) for code in CONDITIONS}
+            def contrast(codes: list[str], weights: list[float]) -> float | None:
+                vals = [all_codes[c] for c in codes]
+                return round(sum(w * v for w, v in zip(weights, vals)), 9) if all(v is not None for v in vals) else None
+            paired = []
+            participants = sorted({r["participant_id"] for r in summaries if r["protocol_version"] == protocol and r["mode"] == mode and r["participant_id"] != "ALL"})
+            for participant in participants:
+                values = [lookup.get((protocol, mode, participant, c)) for c in ("MH", "ML", "SH", "SL")]
+                if all(v is not None for v in values):
+                    paired.append(sum(w * v for w, v in zip((1, -1, -1, 1), values)))
+            mode_group[mode] = {
+                "observed_failure_probability": all_codes,
+                "primary_MH_minus_ML_minus_SH_plus_SL": contrast(["MH", "ML", "SH", "SL"], [1, -1, -1, 1]),
+                "secondary_MH_minus_M0": contrast(["MH", "M0"], [1, -1]),
+                "paired_participant_primary_mean": round(mean(paired), 9) if paired else None,
+                "paired_participant_count": len(paired),
+                "warnings": ["Descriptive only; threats within trials and trials within participants are dependent.",
+                             "Participant-paired primary requires MH, ML, SH and SL for each participant; no p-values or CIs computed.",
+                             "Contrast is grouped by stimulus protocol; do not pool fixed-warning and continuous-tracking sessions."]
+                            + (["One or more primary cells unavailable."] if contrast(["MH", "ML", "SH", "SL"], [1, -1, -1, 1]) is None else []),
+            }
     contrasts["technical_exclusions"] = sum(r["technical_excluded"] for r in trial_rows)
     contrasts["no_threat_trials"] = sum(r["threat_count"] == 0 for r in trial_rows)
     return summaries, contrasts
@@ -586,6 +654,7 @@ def main(argv: list[str] | None = None) -> int:
                 trial.error("session_snapshot_id_mismatch")
             if snapshot_participant is not None and str(snapshot_participant) != trial.participant:
                 trial.error("participant_snapshot_id_mismatch")
+            capture_trial_metadata(trial, session_snapshot)
             trial.metadata.setdefault("snapshot", session_snapshot)
             trial.metadata.setdefault("config_hash", config_hash)
             if trial.mode is None:
@@ -601,12 +670,12 @@ def main(argv: list[str] | None = None) -> int:
     condition_rows, contrasts = summarize(threat_rows, trial_rows)
     args.out.mkdir(parents=True, exist_ok=True)
     write_csv(args.out / "per_threat.csv", threat_rows, [
-        "participant_id", "session_id", "trial_id", "mode", "condition", "threat_id", "zone", "spawn_time_s", "deadline_time_s", "acquisition_time_s", "first_acquisition_latency_s", "neutralization_time_s", "failure", "no_response", "attempted", "shot_count", "inferred_near_miss_shots", "first_shot_target", "damage_total", "technical_excluded", "exclusion_reasons",
+        "participant_id", "session_id", "trial_id", "protocol_version", "mode", "condition", "threat_id", "zone", "spawn_time_s", "deadline_time_s", "acquisition_time_s", "first_acquisition_latency_s", "neutralization_time_s", "failure", "no_response", "attempted", "shot_count", "inferred_near_miss_shots", "first_shot_target", "damage_total", "technical_excluded", "exclusion_reasons",
     ])
     write_csv(args.out / "per_trial.csv", trial_rows, [
-        "participant_id", "session_id", "trial_id", "mode", "condition", "threat_count", "declared_threat_count", "trial_start_s", "trial_end_s", "eligible_threats", "failures", "failure_rate", "no_responses", "first_shot_target", "first_shot_time_s", "first_shot_attribution", "first_acquisition_latency_s", "camera_path_deg", "camera_reversals", "reported_yaw_path_deg", "reported_turn_reversals", "camera_metric_window", "damage_total", "damage_events", "technical_excluded", "exclusion_reasons", "block_id", "seed", "calibration_id", "config_hash", "snapshot_json",
+        "participant_id", "session_id", "trial_id", "protocol_version", "mode", "condition", "threat_count", "declared_threat_count", "trial_start_s", "trial_end_s", "eligible_threats", "failures", "failure_rate", "no_responses", "first_shot_target", "first_shot_time_s", "first_shot_attribution", "first_acquisition_latency_s", "haptic_sampled_frames", "haptic_reported_max_frame_number", "haptic_mean_sampled_peak", "haptic_mean_sampled_amplitude", "haptic_mean_sampled_motor_occupancy", "haptic_max_sampled_active_motors", "haptic_tracked_azimuth_samples", "haptic_max_sampled_azimuth_step_deg", "haptic_stop_events", "haptic_measurement_scope", "camera_path_deg", "camera_reversals", "reported_yaw_path_deg", "reported_turn_reversals", "camera_metric_window", "damage_total", "damage_events", "technical_excluded", "exclusion_reasons", "block_id", "seed", "calibration_id", "config_hash", "direction_mapping_mode", "motor_profile_id", "snapshot_json",
     ])
-    write_csv(args.out / "by_condition.csv", condition_rows, ["mode", "participant_id", "condition", "participants", "trials", "threats", "failures", "failure_probability", "no_response_probability", "mean_acquisition_latency_s"])
+    write_csv(args.out / "by_condition.csv", condition_rows, ["protocol_version", "mode", "participant_id", "condition", "participants", "trials", "threats", "failures", "failure_probability", "no_response_probability", "mean_acquisition_latency_s"])
     (args.out / "contrasts.json").write_text(json.dumps(contrasts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (args.out / "parse_warnings.json").write_text(json.dumps(log_errors, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     provenance = {
@@ -616,6 +685,8 @@ def main(argv: list[str] | None = None) -> int:
         "selected_mode": args.mode,
         "analysis": "stdlib replay.py; warning-relative seconds; deadline equality=failure; descriptive only",
     }
+    provenance["protocol_versions"] = sorted({r["protocol_version"] for r in trial_rows})
+    provenance["protocol_separation_enforced"] = True
     (args.out / "provenance.json").write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"mode={args.mode} trials={len(trial_rows)} threats={len(threat_rows)} excluded={contrasts['technical_exclusions']} parse_warnings={len(log_errors)}")
     if not trial_rows:
