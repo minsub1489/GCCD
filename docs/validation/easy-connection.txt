@@ -1,0 +1,4 @@
+Connected: True
+Status: 조끼 연결됨 · Player 자동 연결 · 로그인 불필요
+Pulse: PLAYER_REQUEST_SENT_PHYSICAL_UNCONFIRMED
+Error: 

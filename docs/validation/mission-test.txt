@@ -1,0 +1,1 @@
+PASS imported meshes=45; collect 3 supplies; raycast 5 targets; simulated surprise pulse; cleanup and menu return. No human/physical validation.

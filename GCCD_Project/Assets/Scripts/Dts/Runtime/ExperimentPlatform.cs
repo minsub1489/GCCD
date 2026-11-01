@@ -166,6 +166,7 @@ namespace GCCD.Dts
         }
         void Update()
         {
+            UpdateEasyConnection();
             if(Input.GetKeyDown(KeyCode.F9)){if(IsRunning())Pause("Researcher dashboard opened during trial.");operatorVisible=!operatorVisible;}
             if(Input.GetKeyDown(KeyCode.Escape)&&IsRunning())Pause("Operator/participant pause.");
             if(metadata!=null&&metadata.experiment_type=="B"&&(Phase==TrialPhase.Prepare||Phase==TrialPhase.Pulse||Phase==TrialPhase.Response))UpdateView();
@@ -264,7 +265,7 @@ namespace GCCD.Dts
         static void SetCursor(bool locked){Cursor.lockState=locked?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=!locked;}
         void OnApplicationFocus(bool focus){if(!focus&&IsRunning())Pause("Application lost focus.");}
         void OnApplicationPause(bool paused){if(paused&&IsRunning())Pause("Application paused.");}
-        void OnDestroy(){haptics.Stop();if(store!=null){if(record!=null&&!store.Completed.Contains(record.trial_id)){record.technical_failure=true;record.interrupted=true;record.error="Application terminated.";try{store.Commit(record.trial_id,JsonUtility.ToJson(record,true));DataExporter.Export(Folder);}catch(Exception){/* started journal remains recoverable */}}store.Dispose();}if(fireSound)Destroy(fireSound);}
+        void OnDestroy(){haptics.Dispose();if(store!=null){if(record!=null&&!store.Completed.Contains(record.trial_id)){record.technical_failure=true;record.interrupted=true;record.error="Application terminated.";try{store.Commit(record.trial_id,JsonUtility.ToJson(record,true));DataExporter.Export(Folder);}catch(Exception){/* started journal remains recoverable */}}store.Dispose();}if(fireSound)Destroy(fireSound);}
         void MakeFireSound(){const int rate=22050;float[] samples=new float[2205];var r=new StableRandom(1701);for(int i=0;i<samples.Length;i++)samples[i]=(float)((r.Unit()*2-1)*Math.Exp(-i/250.0)*.15);fireSound=AudioClip.Create("Fixed external shot",samples.Length,1,rate,false);fireSound.SetData(samples,0);}
         void ClearTargets(){foreach(var t in targets)if(t)Destroy(t);targets.Clear();targetIds.Clear();}
         void CreateBEnvironment(){var floor=GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name="B independent task arena";floor.transform.position=new Vector3(0,-.1f,0);floor.transform.localScale=new Vector3(90,.2f,90);targets.Add(floor);}

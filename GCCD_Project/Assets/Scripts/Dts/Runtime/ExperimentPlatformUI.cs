@@ -29,6 +29,7 @@ namespace GCCD.Dts
         void OnGUI()
         {
             InitStyles();
+            ApplyComfortableSkin();
             if(Phase==TrialPhase.Setup){DrawSetup();return;}
             if(operatorVisible){DrawOperator();return;}
             float w=Math.Min(880,Screen.width-40);GUILayout.BeginArea(new Rect((Screen.width-w)/2,30,w,Screen.height-60),GUI.skin.box);
@@ -49,7 +50,7 @@ namespace GCCD.Dts
             GUILayout.EndArea();
         }
         void Guard(Action action){try{action();}catch(Exception e){notice=e.GetBaseException().Message;}}
-        void DrawSetup()
+        void DrawAdvancedSetup()
         {
             GUILayout.BeginArea(new Rect(20,20,Screen.width-40,Screen.height-40),GUI.skin.box);
             GUILayout.Label("GCCD · 거리 우선 방향 억제각 실험",titleStyle);

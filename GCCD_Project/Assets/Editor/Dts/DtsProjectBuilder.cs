@@ -24,7 +24,7 @@ namespace GCCD.Editor
             Directory.CreateDirectory("Assets/Scenes");EditorSceneManager.SaveScene(scene,ScenePath);
             EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene(ScenePath,true)};
             PlayerSettings.companyName="GCCD";PlayerSettings.productName="Distance Priority Haptic Study";PlayerSettings.bundleVersion="0.1.0-dts";
-            PlayerSettings.runInBackground=false;PlayerSettings.defaultScreenWidth=1280;PlayerSettings.defaultScreenHeight=900;PlayerSettings.fullScreenMode=FullScreenMode.Windowed;
+            PlayerSettings.runInBackground=true;PlayerSettings.defaultScreenWidth=1280;PlayerSettings.defaultScreenHeight=900;PlayerSettings.fullScreenMode=FullScreenMode.Windowed;
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
             AssetDatabase.SaveAssets();Debug.Log("DTS_SCENE_GENERATED "+ScenePath);
         }

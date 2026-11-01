@@ -47,7 +47,7 @@ namespace GCCD.Editor
                 Debug.LogWarning("GCCD_SDK2_INCOMPLETE: prefab found, but Bhaptics.SDK2.BhapticsLibrary is missing.");
                 return;
             }
-            if (GameObject.Find("[bhaptics]") == null)
+            if (!Resources.FindObjectsOfTypeAll<GameObject>().Any(obj => obj.scene.IsValid() && obj.name == "[bhaptics]"))
             {
                 PrefabUtility.InstantiatePrefab(prefab);
                 Debug.Log("GCCD_SDK2_PREFAB_PLACED: SDK prefab initialized by official plugin.");
