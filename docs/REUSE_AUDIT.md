@@ -35,3 +35,13 @@
 3. 18계열/6블록, 원형 응답, 세션 무결성 및 실패 처리.
 4. 파일럿 설정 잠금과 B의 고정 스냅샷/첫 대응.
 5. Unity 컴파일/씬/플레이 흐름 검증, 가능한 실행 빌드 및 미검증 항목 기록.
+
+## Additional iCloud reference audit
+
+The initial iCloud Git read was delayed by file synchronization. After it completed, these additional references were inspected read-only:
+`Projects/GCCD/GCCD_Project/Assets/_Project/ContinuousHaptics/Runtime/BHapticsVestOutput.cs` and `HapticSpatialMapper.cs`.
+
+- BHapticsVestOutput supports a 40-channel backend and device identity checks, but imposes durationMillis <= 250 and stops the previous owned request for continuous frames. It is not directly compatible with the new 500ms single composite pulse.
+- HapticSpatialMapper includes elevation/pole blending, a hard-coded X40MotorLayout and total-budget largest-remainder quantization. Those policies differ from this study's horizontal mapping and per-motor maximum composition.
+- Multiple untracked duplicate ` 2.cs` / ` 2.meta` files were present in that iCloud working tree. They were preserved as user/sync material and were not deleted.
+- Source code presence does not establish physical mapping correctness or hardware acceptance. The new runtime retains configurable verified profiles and one SDK composite call per event.
