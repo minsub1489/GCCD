@@ -1,0 +1,6 @@
+PASS actual Unity Play Mode: 108 A trials and 24 B events.
+Frames advanced: 372
+B raycast: nearest first hit / external miss / no response timeout; frontal target excluded; all 5 sources logged and nearest 3 selected.
+Synthetic SOFTWARE TEST ONLY. No human responses or physical haptics.
+A: /Users/minsub/Documents/GitHub/GCCD/GCCD/.test-build/playmode-fc25f0fb9c854cceab91ca01ab3d05b8/DEVELOPMENT/A/PLAYMODE_TEST/20261101T175645_8a7c5fb5
+B: /Users/minsub/Documents/GitHub/GCCD/GCCD/.test-build/playmode-fc25f0fb9c854cceab91ca01ab3d05b8/DEVELOPMENT/B/PLAYMODE_TEST/20261101T175647_c6372910

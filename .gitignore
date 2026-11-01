@@ -35,3 +35,8 @@ GCCD_Project/Assets/Bhaptics/
 GCCD_Project/Assets/Bhaptics.meta
 GCCD_Project/mono_crash.*.json
 build-mac.log
+
+.test-build/
+ExperimentData/
+validation-data/
+docs/validation/*.log

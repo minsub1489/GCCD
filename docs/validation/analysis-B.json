@@ -1,0 +1,32 @@
+{
+  "provenance": {
+    "participant_id": "PLAYMODE_TEST",
+    "session_id": "20261101T175647_c6372910",
+    "mode": "DEVELOPMENT",
+    "experiment_type": "B",
+    "config_hash": "209703dd8a20718de63042e583400a34557d3ce22a9d0eaf03a86e6d0e897527"
+  },
+  "interpretation": "Descriptive only. Simulation and training are not participant evidence. Failures/timeouts remain in the B success-rate denominator.",
+  "by_theta": [
+    {
+      "theta": 0,
+      "committed": 12,
+      "valid": 12,
+      "technical_failure_rate": 0.0,
+      "joint_accuracy": null,
+      "timeout_rate": 0.3333333333333333,
+      "game_success_rate": 0.3333333333333333,
+      "successful_game_response_seconds": 0.1000000000003638
+    },
+    {
+      "theta": 45,
+      "committed": 12,
+      "valid": 12,
+      "technical_failure_rate": 0.0,
+      "joint_accuracy": null,
+      "timeout_rate": 0.3333333333333333,
+      "game_success_rate": 0.3333333333333333,
+      "successful_game_response_seconds": 0.1000000000003638
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+Source: existing licensed local Asset Store cache, bHaptics Haptic Plugin.unitypackage
+SHA256: b2cbfa03eb4b35fb2a4185096bf4d3942e61f3dcc07de9e73898e9eadf11dbbb
+Vendor semantic version is not exposed in the cache filename; record the actual installed SDK version during hardware acceptance. No version was inferred from old source comments.
+Local SDK source: PlayMotors delegates the supplied array length to native playDot; PlaySingleMotor allocates a 32-element Vest array.
+Official docs: https://docs.bhaptics.com/sdk/unity/references/library
+The cached archive pathname records contain a trailing newline/00 suffix; Unity ImportPackage produced no installed assets. Imported asset and asset.meta payloads unchanged into the normalized Assets/Bhaptics paths after checking path prefixes/traversal. SDK source and binaries are Git-ignored. No app credentials copied from other projects.
+No physical output or compatibility verification has been performed.

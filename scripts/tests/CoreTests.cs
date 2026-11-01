@@ -57,6 +57,11 @@ class CoreTests
         Test("distance distributions matched across theta",()=>{var plan=ScenarioGenerator.PlanA(1,0,90);var expected=string.Join(",",plan.Where(t=>t.Theta==0).SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x));foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(string.Join(",",g.SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x)),expected);});
         Test("same distance categories allowed",()=>Eq(ScenarioGenerator.PlanA(1,0,90).Any(t=>t.Threats.Select(x=>DistanceEncoding.Bin(x.Distance)).Distinct().Count()==1),true));
         Test("invalid FOV rejects",()=>Throws(()=>ScenarioGenerator.PlanA(1,0,360)));
+        Test("families reflect minimum pairwise gap",()=>{double[] edges={0,15,30,45,60,90,120};foreach(var t in ScenarioGenerator.PlanA(10,3,90)){double gap=180;for(int a=0;a<3;a++)for(int b=a+1;b<3;b++)gap=Math.Min(gap,Angles.Difference(t.Threats[a].Bearing,t.Threats[b].Bearing));int bin=t.Family/3;Eq(gap>edges[bin]&&gap<edges[bin+1],true);}});
+        Test("config rejects non-finite FOV",()=>{var c=new ExperimentConfig{HorizontalFov=double.NaN};Eq(c.Problems(false,false,false).Length>0,true);});
+        Test("matching invalid tolerance",()=>Throws(()=>ResponseScorer.Score(ABC(),new Response[0],double.NaN)));
+        Test("pending trial survives restart",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}"))s.Begin("T002","{}");using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)){Eq(s.Pending.Single(),"T002");s.Commit("T002","{}");Eq(s.Pending.Length,0);}}finally{Directory.Delete(dir,true);}});
+        Test("resume metadata mismatch refuses",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){}Throws(()=>new SessionStore(dir,"P001","DEVELOPMENT","A","{different}",true));}finally{Directory.Delete(dir,true);}});
         Test("B five active nearest three",()=>{foreach(var t in ScenarioGenerator.PlanB(4,1,90,45)){Eq(t.Threats.Length,5);Eq(ThreatPolicy.Apply(t.Threats,t.Theta).Selected.Length,3);}});
         Test("B refuses zero candidate",()=>Throws(()=>ScenarioGenerator.PlanB(4,1,90,0)));
         Test("game first miss permanent fail",()=>{var g=new FirstActionTracker("A",4);g.Shot(1,"A",false,false);g.Shot(2,"A",true,false);Eq(g.Success,false);Eq(g.Target,"A");});
@@ -66,6 +71,7 @@ class CoreTests
         Test("CSV quotes newline and comma",()=>Eq(CsvTable.Escape("a,\"b\"\nc"),"\"a,\"\"b\"\"\nc\""));
         Test("session commits reject duplicates and resume",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){s.Begin("T001","{} ");s.Commit("T001","{}");Throws(()=>s.Begin("T001","{}"));}using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)) Eq(s.Completed.Contains("T001"),true);}finally{Directory.Delete(dir,true);}});
         Test("anonymous path validation",()=>Throws(()=>new SessionStore("/tmp/no-write","../real name","DEVELOPMENT","A","{}")));
+        Test("committed journal corruption detected",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try{using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){s.Begin("T001","{}");s.Commit("T001","{\"score\":0}");}string f=Path.Combine(dir,"journal","T001.committed.json");File.WriteAllText(f,File.ReadAllText(f).Replace("score","other"));bool rejected=false;try{using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)){} }catch(InvalidDataException){rejected=true;}Eq(rejected,true);}finally{Directory.Delete(dir,true);}});
         Console.WriteLine("RESULT " + passed + " passed, " + failed + " failed");
         Environment.ExitCode=failed==0?0:1;
     }

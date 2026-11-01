@@ -1,0 +1,3 @@
+PASS: 108 A trials, pulse/response/questionnaire, 0-3 markers, delete/edit, timeout preservation, separate simulation tag, invariant checks, CSV export, duplicate-free complete-session resume, technical interruption, unverified MAIN gate, 648 stimulus condition outputs.
+Data: /Users/minsub/Documents/GitHub/GCCD/GCCD/.test-build/validation-c85a9dd1baa64c4e9acb61d1d0602876/DEVELOPMENT/A/SOFTWARE_TEST/20261101T175920_4a90befe
+Not a hardware or human participant test.

@@ -1,0 +1,62 @@
+PASS 0 retains coincident sources
+PASS 15 inclusive boundary
+PASS 30 inclusive boundary
+PASS 45 inclusive boundary
+PASS 60 inclusive boundary
+PASS 90 inclusive boundary
+PASS suppressed source never suppresses
+PASS circular wrap
+PASS opposite
+PASS normalized bearing
+PASS atan2 right clockwise
+PASS yaw relative
+PASS finite input
+PASS distance input
+PASS unknown theta rejected
+PASS tie ordinal ID
+PASS input order independent
+PASS no refill
+PASS parent nearest retained
+PASS all retained
+PASS filter eligibility
+PASS duplicate IDs rejected
+PASS distance endpoints
+PASS distance clamp
+PASS distance boundaries
+PASS invalid calibration
+PASS max composition
+PASS quantized endpoint
+PASS profile duplicate channel
+PASS unverified physical mapping rejected
+PASS zero response denominator three
+PASS matching permutes responses
+PASS suppressed remains denominator
+PASS one response cannot match twice
+PASS direction and distance joint required
+PASS ambiguous overlap flagged
+PASS independent distance accuracy
+PASS response cap
+PASS 18 families each 6 conditions
+PASS exact provided counterbalance rows
+PASS position balance
+PASS reproducible all snapshots
+PASS all generated threats offscreen and unique distance
+PASS distance distributions matched across theta
+PASS same distance categories allowed
+PASS invalid FOV rejects
+PASS families reflect minimum pairwise gap
+PASS config rejects non-finite FOV
+PASS matching invalid tolerance
+PASS pending trial survives restart
+PASS resume metadata mismatch refuses
+PASS B five active nearest three
+PASS B refuses zero candidate
+PASS game first miss permanent fail
+PASS front task excluded
+PASS deadline inclusive timeout
+PASS output equivalence uses submitted integers
+PASS CSV quotes newline and comma
+PASS session commits reject duplicates and resume
+PASS anonymous path validation
+FAIL committed journal corruption detected: expected True, actual False
+RESULT 60 passed, 1 failed

@@ -1,17 +1,19 @@
-name: Research data checks
+name: Distance priority software checks
 on:
   push:
     branches: [main]
   pull_request:
 jobs:
-  analysis:
+  algorithms-and-analysis:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile Python modules
-        run: python -m compileall -q analysis
-      - name: Run replay tests
-        run: python -m unittest discover -s analysis/tests -p 'test_*.py' -v
+      - name: Install C# compiler for pure algorithm tests
+        run: sudo apt-get update && sudo apt-get install -y mono-mcs
+      - name: Pure C# checks
+        run: ./scripts/run-core-tests.sh
+      - name: Descriptive analysis checks
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v

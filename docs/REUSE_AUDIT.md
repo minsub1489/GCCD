@@ -21,7 +21,7 @@
 
 ## 장비/API 조사
 
-- Unity 에디터 설치 및 macOS 모듈 존재. Windows Build Support는 설치되어 있지 않음.
+- 최초 조사: Unity 에디터와 macOS 모듈 존재, Windows Build Support 미설치. 이후 동일 6000.3.24f1의 windows-mono 모듈만 추가 설치하여 Windows 빌드를 생성함. 엔진 업그레이드 없음.
 - 공식 Asset Store 로컬 캐시 `bHaptics Haptic Plugin.unitypackage` 존재. vendor 코드는 Git 배포 제외.
 - [공식 PlayMotors 문서](https://docs.bhaptics.com/sdk/unity/references/library)는 Vest를 Pro32로 명시한다.
 - 설치 캐시의 BhapticsLibrary는 PlayMotors(int,int[],int), IsConnect, GetDevices, StopInt를 제공한다.
