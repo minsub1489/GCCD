@@ -1,0 +1,5 @@
+scripts/tests/CoreTests.cs(5,7): error CS0246: The type or namespace name `GCCD' could not be found. Are you missing an assembly reference?
+scripts/tests/CoreTests.cs(13,12): error CS0246: The type or namespace name `Threat' could not be found. Are you missing an assembly reference?
+scripts/tests/CoreTests.cs(14,12): error CS0246: The type or namespace name `Threat' could not be found. Are you missing an assembly reference?
+scripts/tests/CoreTests.cs(15,12): error CS0246: The type or namespace name `MotorProfile' could not be found. Are you missing an assembly reference?
+Compilation failed: 4 error(s), 0 warnings
