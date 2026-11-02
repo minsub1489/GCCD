@@ -41,7 +41,7 @@ namespace GCCD.Dts
                     values[m.Index]=Math.Max(values[m.Index],Math.Max(0,Math.Min(1,value)));
                 }
             }
-            return values.Select(v=>(int)Math.Round(100*v,MidpointRounding.AwayFromZero)).ToArray();
+            return values.Select(v=>(int)Math.Round(Math.Round(100*v,10),MidpointRounding.AwayFromZero)).ToArray();
         }
     }
     public sealed class ConditionOutput {public int Theta;public string[] SelectedIds,RetainedIds,SuppressedIds;public int[] Motors;public int Duration;}

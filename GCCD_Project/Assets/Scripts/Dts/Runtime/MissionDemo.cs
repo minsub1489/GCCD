@@ -8,7 +8,7 @@ namespace GCCD.Dts
     public sealed partial class ExperimentPlatform
     {
         public void StartMission(){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.Physical=connectionReady;enabled=false;}
-        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MotorComposer.Compose(p.Kept,config.Mapping,MissionDemo.MissionLow,MissionDemo.MissionHigh);config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,200,config,!physical,true);}
+        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MotorComposer.Compose(p.Kept,MissionX40Profile(),MissionDemo.MissionLow,MissionDemo.MissionHigh);config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,200,config,!physical,true);}
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}

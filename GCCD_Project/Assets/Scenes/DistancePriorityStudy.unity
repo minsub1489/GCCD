@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1425088910
+--- !u!1 &862336003
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,327 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1425088914}
-  - component: {fileID: 1425088913}
-  - component: {fileID: 1425088912}
-  - component: {fileID: 1425088911}
-  m_Layer: 0
-  m_Name: GCCD Controlled FPS Experiment
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1425088911
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425088910}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa5095a1dc2aa404ebd4d0a8a76a66e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GCCD.Dts.ExperimentPlatform
-  config:
-    Version: dts-protocol-draft-1
-    Seed: 1102
-    CounterbalanceRow: 0
-    PulseMilliseconds: 500
-    HorizontalFov: 90
-    Low: 0.15
-    High: 0.75
-    DirectionTolerance: -1
-    FirstActionDeadline: -1
-    FrontTaskSectorDegrees: -1
-    CandidateTheta: -1
-    BEventsPerCondition: 12
-    FinalSampleSize: -1
-    CandidateSelectionRule: 
-    CandidateEvidence: 
-    SampleSizeRationale: 
-    MinimumEffect: 
-    CandidateTieRule: 
-    ExclusionRule: 
-    StatisticalModel: 
-    TrainingCriterion: 
-    TrainingExitRule: 
-    TrainingMaximumRetries: -1
-    TrainingTripleTrials: 3
-    TrainingMinimumJointAccuracy: -1
-    TrainingMinimumTrials: -1
-    PilotMinimumDirectionAccuracy: -1
-    PilotMinimumDistanceAccuracy: -1
-    PilotMaximumIdenticalPairRate: -1
-    PilotCriteriaRegisteredAt: 
-    PilotEvidencePath: 
-    PilotEvidenceSha256: 
-    PilotCriteriaPassed: 0
-    DurationConfirmed: 0
-    IntensityConfirmed: 0
-    BodyCameraAlignmentConfirmed: 0
-    Raw40TransportConfirmed: 0
-    PhysicalConcurrencyConfirmed: 0
-    AllowRaw40CalibrationProbe: 0
-    TransportEvidence: 
-    VerifiedDeviceName: 
-    SdkPackageVersion: unverified-local-cache
-    LockedHash: 
-    Mapping:
-      Version: virtual-preview-v1
-      Provenance: Synthetic circular 40-channel preview; NOT an X40 index map
-      PhysicalLayoutVerified: 0
-      Motors:
-      - Index: 0
-        Bearing: 0
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 1
-        Bearing: 9
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 2
-        Bearing: 18
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 3
-        Bearing: 27
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 4
-        Bearing: 36
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 5
-        Bearing: 45
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 6
-        Bearing: 54
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 7
-        Bearing: 63
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 8
-        Bearing: 72
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 9
-        Bearing: 81
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 10
-        Bearing: 90
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 11
-        Bearing: 99
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 12
-        Bearing: 108
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 13
-        Bearing: 117
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 14
-        Bearing: 126
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 15
-        Bearing: 135
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 16
-        Bearing: 144
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 17
-        Bearing: 153
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 18
-        Bearing: 162
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 19
-        Bearing: 171
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 20
-        Bearing: 180
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 21
-        Bearing: 189
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 22
-        Bearing: 198
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 23
-        Bearing: 207
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 24
-        Bearing: 216
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 25
-        Bearing: 225
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 26
-        Bearing: 234
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 27
-        Bearing: 243
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 28
-        Bearing: 252
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 29
-        Bearing: 261
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 30
-        Bearing: 270
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 31
-        Bearing: 279
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 32
-        Bearing: 288
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 33
-        Bearing: 297
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 34
-        Bearing: 306
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 35
-        Bearing: 315
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 36
-        Bearing: 324
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 37
-        Bearing: 333
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 38
-        Bearing: 342
-        Gain: 1
-        PlacementConfirmed: 0
-      - Index: 39
-        Bearing: 351
-        Gain: 1
-        PlacementConfirmed: 0
-  Participant: PTEST
-  Mode: DEVELOPMENT
-  Experiment: A
-  DataRootOverride: 
-  IndependentBParticipantConfirmed: 0
---- !u!81 &1425088912
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425088910}
-  m_Enabled: 1
---- !u!20 &1425088913
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425088910}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.04, g: 0.055, b: 0.075, a: 1}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 200
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 50
-  m_BladeCount: 5
-  m_Curvature: {x: 2, y: 11}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
-  orthographic: 0
-  orthographic size: 5
-  m_Depth: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!4 &1425088914
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425088910}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.7, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1429637131
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1429637133}
-  - component: {fileID: 1429637132}
+  - component: {fileID: 862336005}
+  - component: {fileID: 862336004}
   m_Layer: 0
   m_Name: Uniform task light
   m_TagString: Untagged
@@ -455,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!108 &1429637132
+--- !u!108 &862336004
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1429637131}
+  m_GameObject: {fileID: 862336003}
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
@@ -520,16 +201,336 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &1429637133
+--- !u!4 &862336005
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1429637131}
+  m_GameObject: {fileID: 862336003}
   serializedVersion: 2
   m_LocalRotation: {x: 0.4226183, y: 0, z: 0, w: 0.9063078}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1166170913
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1166170917}
+  - component: {fileID: 1166170916}
+  - component: {fileID: 1166170915}
+  - component: {fileID: 1166170914}
+  m_Layer: 0
+  m_Name: GCCD Controlled FPS Experiment
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1166170914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166170913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa5095a1dc2aa404ebd4d0a8a76a66e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GCCD.Dts.ExperimentPlatform
+  config:
+    Version: dts-protocol-draft-1
+    Seed: 1102
+    CounterbalanceRow: 0
+    PulseMilliseconds: 500
+    HorizontalFov: 90
+    Low: 0.15
+    High: 0.75
+    DirectionTolerance: -1
+    FirstActionDeadline: -1
+    FrontTaskSectorDegrees: -1
+    CandidateTheta: -1
+    BEventsPerCondition: 12
+    FinalSampleSize: -1
+    CandidateSelectionRule: 
+    CandidateEvidence: 
+    SampleSizeRationale: 
+    MinimumEffect: 
+    CandidateTieRule: 
+    ExclusionRule: 
+    StatisticalModel: 
+    TrainingCriterion: 
+    TrainingExitRule: 
+    TrainingMaximumRetries: -1
+    TrainingTripleTrials: 3
+    TrainingMinimumJointAccuracy: -1
+    TrainingMinimumTrials: -1
+    PilotMinimumDirectionAccuracy: -1
+    PilotMinimumDistanceAccuracy: -1
+    PilotMaximumIdenticalPairRate: -1
+    PilotCriteriaRegisteredAt: 
+    PilotEvidencePath: 
+    PilotEvidenceSha256: 
+    PilotCriteriaPassed: 0
+    DurationConfirmed: 0
+    IntensityConfirmed: 0
+    BodyCameraAlignmentConfirmed: 0
+    Raw40TransportConfirmed: 0
+    PhysicalConcurrencyConfirmed: 0
+    AllowRaw40CalibrationProbe: 0
+    TransportEvidence: 
+    VerifiedDeviceName: 
+    SdkPackageVersion: unverified-local-cache
+    LockedHash: 
+    Mapping:
+      Version: x40-grid-v1-F0B0S0
+      Provenance: bHaptics legacy VisualFeedback + visualizer front/back 4x5 index
+        order; eight-column angular approximation, physical confirmation required
+      PhysicalLayoutVerified: 0
+      Motors:
+      - Index: 0
+        Bearing: 292.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 1
+        Bearing: 337.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 2
+        Bearing: 22.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 3
+        Bearing: 67.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 4
+        Bearing: 292.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 5
+        Bearing: 337.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 6
+        Bearing: 22.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 7
+        Bearing: 67.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 8
+        Bearing: 292.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 9
+        Bearing: 337.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 10
+        Bearing: 22.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 11
+        Bearing: 67.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 12
+        Bearing: 292.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 13
+        Bearing: 337.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 14
+        Bearing: 22.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 15
+        Bearing: 67.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 16
+        Bearing: 292.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 17
+        Bearing: 337.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 18
+        Bearing: 22.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 19
+        Bearing: 67.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 20
+        Bearing: 247.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 21
+        Bearing: 202.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 22
+        Bearing: 157.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 23
+        Bearing: 112.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 24
+        Bearing: 247.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 25
+        Bearing: 202.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 26
+        Bearing: 157.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 27
+        Bearing: 112.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 28
+        Bearing: 247.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 29
+        Bearing: 202.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 30
+        Bearing: 157.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 31
+        Bearing: 112.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 32
+        Bearing: 247.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 33
+        Bearing: 202.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 34
+        Bearing: 157.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 35
+        Bearing: 112.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 36
+        Bearing: 247.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 37
+        Bearing: 202.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 38
+        Bearing: 157.5
+        Gain: 1
+        PlacementConfirmed: 0
+      - Index: 39
+        Bearing: 112.5
+        Gain: 1
+        PlacementConfirmed: 0
+  Participant: PTEST
+  Mode: DEVELOPMENT
+  Experiment: A
+  DataRootOverride: 
+  IndependentBParticipantConfirmed: 0
+--- !u!81 &1166170915
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166170913}
+  m_Enabled: 1
+--- !u!20 &1166170916
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166170913}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.04, g: 0.055, b: 0.075, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 1
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &1166170917
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1166170913}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -539,5 +540,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1425088914}
-  - {fileID: 1429637133}
+  - {fileID: 1166170917}
+  - {fileID: 862336005}

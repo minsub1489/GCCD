@@ -32,8 +32,8 @@ namespace GCCD.Dts
         }
         public void Submit(int[] values,int duration)
         {
-            if(!VestConnected)throw new InvalidOperationException("Player에 연결된 조끼가 없습니다.");if(values==null||values.Length!=40)throw new ArgumentException("40 channels required.");
-            var requests=new Request[2];for(int side=0;side<2;side++){var dots=new Dot[20];for(int i=0;i<20;i++){int v=values[side*20+i];if(v<0||v>100)throw new ArgumentException("Motor range.");dots[i]=new Dot{Index=i,Intensity=v};}requests[side]=new Request{Type="frame",Key=key+side,Frame=new Frame{DurationMillis=duration,Position=201+side,DotPoints=dots}};}
+            if(!VestConnected)throw new InvalidOperationException("Player에 연결된 조끼가 없습니다.");var panels=X40Layout.Split(values);
+            var requests=new Request[2];for(int side=0;side<2;side++){var dots=new Dot[20];for(int i=0;i<20;i++){int v=panels[side][i];if(v<0||v>100)throw new ArgumentException("Motor range.");dots[i]=new Dot{Index=i,Intensity=v};}requests[side]=new Request{Type="frame",Key=key+side,Frame=new Frame{DurationMillis=duration,Position=201+side,DotPoints=dots}};}
             Send(JsonUtility.ToJson(new Message{Submit=requests})).GetAwaiter().GetResult();
         }
         async Task Send(string message){using(var timeout=new CancellationTokenSource(700)){await sendLock.WaitAsync(timeout.Token).ConfigureAwait(false);try{byte[] bytes=Encoding.UTF8.GetBytes(message);await socket.SendAsync(new ArraySegment<byte>(bytes),WebSocketMessageType.Text,true,timeout.Token).ConfigureAwait(false);}finally{sendLock.Release();}}}

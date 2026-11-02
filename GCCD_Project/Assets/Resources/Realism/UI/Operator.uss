@@ -86,3 +86,12 @@
 .results-save-row { flex-direction:row; align-items:center; }
 .results-path { flex-grow:1; flex-shrink:1; font-size:13px; color:rgb(159,181,177); white-space:normal; margin-right:16px; }
 .results-save-row > .button { height:44px; font-size:15px; margin-right:8px; }
+
+.direction-overlay { position:absolute; left:0; right:0; top:0; bottom:0; background-color:rgba(5,10,14,.96); justify-content:center; align-items:center; }
+.direction-card { width:680px; padding:32px; background-color:rgb(14,24,29); border-width:1px; border-color:rgb(62,85,88); border-radius:5px; }
+.direction-title { font-size:34px; -unity-font-style:bold; margin-bottom:20px; }
+.direction-buttons { flex-direction:row; }
+.direction-button { flex-grow:1; margin-right:8px; font-size:21px; }
+.direction-message { font-size:18px; color:rgb(221,193,128); white-space:normal; margin-top:12px; margin-bottom:18px; }
+.direction-card .unity-toggle { margin-top:10px; margin-bottom:10px; font-size:17px; color:rgb(215,226,220); }
+.direction-card .unity-foldout { margin-top:12px; margin-bottom:20px; font-size:17px; }

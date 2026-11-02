@@ -20,7 +20,7 @@ namespace GCCD.Dts
         public bool Raw40TransportConfirmed,PhysicalConcurrencyConfirmed,AllowRaw40CalibrationProbe;
         public string TransportEvidence="",VerifiedDeviceName="",SdkPackageVersion="unverified-local-cache";
         public string LockedHash="";
-        public MotorProfile Mapping=MotorProfile.Virtual();
+        public MotorProfile Mapping=X40Layout.Profile();
         public string[] Problems(bool main,bool experimentB,bool physical)
         {
             var errors=new List<string>();

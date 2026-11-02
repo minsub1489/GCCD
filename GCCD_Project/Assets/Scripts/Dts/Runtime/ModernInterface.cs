@@ -23,7 +23,7 @@ namespace GCCD.Dts
             var style=Resources.Load<StyleSheet>("Realism/UI/Operator");if(style)root.styleSheets.Add(style);
             string family=System.Array.Find(new[]{"Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR","Arial"},x=>System.Array.IndexOf(Font.GetOSInstalledFontNames(),x)>=0);
             font=family==null?Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"):Font.CreateDynamicFontFromOSFont(family,22);root.style.unityFontDefinition=FontDefinition.FromFont(font);
-            BuildLobby();BuildHud();BuildMaps();BuildResults();
+            BuildLobby();BuildHud();BuildMaps();BuildResults();BuildDirectionTest();
         }
         VisualElement Element(VisualElement parent,string classes){var e=new VisualElement();foreach(var c in classes.Split(' '))e.AddToClassList(c);parent.Add(e);return e;}
         Label Label(VisualElement parent,string value,string classes){var l=new Label(value);foreach(var c in classes.Split(' '))l.AddToClassList(c);parent.Add(l);return l;}
@@ -39,7 +39,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
-            testButton=Button(card,"짧은 진동 확인",()=>{try{platform.TestConnectionPulse();pulseError="";}catch(System.Exception e){pulseError=e.Message;}},"button outline");
+            testButton=Button(card,"짧은 진동 · 방향 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";
             pulse=Label(card,"","small muted");confirmButton=Button(card,"진동이 느껴졌어요",()=>platform.ConfirmPulse(),"text-button");
             Button(card,"출력 중지",()=>platform.StopMissionHaptics(),"text-button muted");
         }
@@ -61,7 +61,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var mission=GetComponent<MissionDemo>();bool game=mission&&mission.HasWorld;
             bool home=platform.enabled&&platform.Phase==TrialPhase.Setup&&!platform.AdvancedVisible;
             Showing=home||game;root.style.display=Showing?DisplayStyle.Flex:DisplayStyle.None;lobby.style.display=home?DisplayStyle.Flex:DisplayStyle.None;hud.style.display=game?DisplayStyle.Flex:DisplayStyle.None;
-            if(home){device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(platform.ConnectionReady);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=platform.PulseStatus.Contains("느껴졌나요")?DisplayStyle.Flex:DisplayStyle.None;lobbyError.text=platform.Error;}
+            if(home){device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=platform.Error;}
             if(game){
                 var points=mission.SupplyPositions;for(int i=0;i<3;i++){
                     bool visible=i<points.Length;Vector3 v=visible?GetComponent<Camera>().WorldToViewportPoint(points[i]):Vector3.zero;visible=visible&&v.z>0&&v.x>0&&v.x<1&&v.y>0&&v.y<1;
@@ -71,7 +71,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
                 threatNotice.text=mission.OutputText;threatNotice.style.display=string.IsNullOrEmpty(threatNotice.text)?DisplayStyle.None:DisplayStyle.Flex;
                 objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
         }
-        void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);RefreshResults(m,m&&m.HasWorld);}
+        void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);RefreshResults(m,m&&m.HasWorld);RefreshDirectionTest();}
         void OnDestroy(){if(document)Destroy(document);if(panel)Destroy(panel);if(font)Destroy(font);if(scrimTexture)Destroy(scrimTexture);}
     }
 }

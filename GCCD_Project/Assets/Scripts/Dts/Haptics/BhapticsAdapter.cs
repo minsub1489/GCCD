@@ -16,7 +16,7 @@ namespace GCCD.Dts
     public sealed class BhapticsAdapter
     {
         readonly LocalPlayerClient local=new LocalPlayerClient();
-        bool useLocal;public string Transport {get{return useLocal?"local-player-v1":"sdk2";}}
+        bool useLocal;public string Transport {get{return useLocal?"local-player-v1":"not-connected";}}
         public Func<double> Clock;
         double Now {get{return Clock!=null?Clock():Time.realtimeSinceStartupAsDouble;}}
         public string[] ConnectedVestNames {get;private set;}=new string[0];
@@ -77,14 +77,7 @@ namespace GCCD.Dts
                 else{config.Mapping.Validate(true);if(!config.Raw40TransportConfirmed||!config.PhysicalConcurrencyConfirmed)throw new InvalidOperationException("X40 transport/concurrency unverified.");}
                 string reason;if(!Ready(config,out reason))throw new InvalidOperationException(reason);
 if(useLocal){if(!calibrationProbe&&!config.TransportEvidence.Contains("local-player-v1"))throw new InvalidOperationException("새 Player 출력 경로의 교정을 먼저 확인하세요.");local.Submit(frame,milliseconds);r.submitted=true;r.status="PLAYER_REQUEST_SENT_PHYSICAL_UNCONFIRMED";return r;}
-#if GCCD_BHAPTICS_SDK2
-                // Exactly ONE composite array per event. Never Stop() between threat contributions.
-                r.request_id=BhapticsLibrary.PlayMotors((int)PositionType.Vest,(int[])frame.Clone(),milliseconds);
-                if(r.request_id<0)throw new InvalidOperationException("SDK rejected composite frame.");
-                owned.Add(r.request_id);r.submitted=true;r.status="SDK_REQUEST_ACCEPTED_PHYSICAL_UNCONFIRMED";
-#else
-                throw new InvalidOperationException("SDK adapter disabled.");
-#endif
+                throw new InvalidOperationException("X40는 Player 앞20/뒤20 직접 연결을 사용해야 합니다. 연결을 다시 확인하세요.");
             }
             catch(Exception e){r.status="TECHNICAL_FAILURE";r.error=e.GetBaseException().Message;Stop();}
             finally{r.submit_returned=Now;}

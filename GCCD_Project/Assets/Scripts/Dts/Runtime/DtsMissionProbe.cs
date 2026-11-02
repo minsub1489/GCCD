@@ -16,7 +16,12 @@ namespace GCCD.Dts
             var camera=GetComponent<Camera>();float originalFar=camera.farClipPlane;bool originalHdr=camera.allowHDR;Color originalSky=RenderSettings.ambientSkyColor;Color originalFog=RenderSettings.fogColor;
             if(!GetComponent<ModernInterface>()||!GetComponent<ModernInterface>().HasLobby)Fail("Modern lobby initialization");
             yield return null;yield return null;
-            var ui=GetComponent<UIDocument>().rootVisualElement;Submit(ui.Q<Button>(className:"primary"));yield return null;yield return null;
+            var ui=GetComponent<UIDocument>().rootVisualElement;
+            Submit(ui.Q<Button>("openDirectionCheck"));yield return null;
+            if(ui.Q("directionCheck").resolvedStyle.display==DisplayStyle.None||Enumerable.Range(0,4).Any(i=>ui.Q<Button>("testDirection"+i)==null))Fail("Four direction lobby test UI");
+            yield return CaptureInterface("x40-direction-ui.png");
+            Submit(ui.Q<Button>("closeDirectionCheck"));yield return null;
+            Submit(ui.Q<Button>(className:"primary"));yield return null;yield return null;
             var m=GetComponent<MissionDemo>();if(!m||!m.HasWorld)Fail("World initialization");m.Physical=false;m.SetPaused(false);
             double time=Time.realtimeSinceStartupAsDouble;m.Clock=()=>time;
             int meshes=FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None).Length;if(meshes<100)Fail("Detailed environment not placed");
@@ -41,9 +46,11 @@ namespace GCCD.Dts
             var frozen=transform.position;int oldAmmo=m.Ammo;double oldElapsed=m.Elapsed;time+=60;m.StepMovement(Vector2.one,true,true,.02f);m.Fire(Vector3.forward);m.Reload();m.SetPaused(false);m.ToggleMap();
             if(transform.position!=frozen||m.Ammo!=oldAmmo||m.Elapsed!=oldElapsed||!m.IsPaused||m.MapVisible)Fail("Response blocks gameplay and timers");
             yield return null;var response=ui.Q<MissionMapView>("responseMap");if(!response.Interactive||ui.Q("threatResponse").resolvedStyle.display==DisplayStyle.None)Fail("Response map visible");
-            response.ClearClassList();response.AddToClassList("mission-map");response.AddToClassList("response-map");
             ClickMap(response,.25f,.75f);if(m.ResponseMarkers.Length!=1||Math.Abs(m.ResponseMarkers[0].X+18)>.001||Math.Abs(m.ResponseMarkers[0].Z+5.5)>.001)Fail("Pointer click world coordinate mismatch "+string.Join(";",m.ResponseMarkers.Select(v=>v.X+","+v.Z)));
             m.ClearResponseMarkers();
+            response.transform.scale=new Vector3(.8f,.8f,1);ClickMap(response,.75f,.25f);
+            if(m.ResponseMarkers.Length!=1||Math.Abs(m.ResponseMarkers[0].X-18)>.001||Math.Abs(m.ResponseMarkers[0].Z-33.5)>.001)Fail("Scaled map pointer mismatch");
+            response.transform.scale=Vector3.one;m.ClearResponseMarkers();
             response.SelectAt(new Vector2(response.contentRect.width/2,response.contentRect.height/2));if(m.ResponseMarkers.Length!=1)Fail("Map click creates response");m.UndoResponseMarker();if(m.ResponseMarkers.Length!=0)Fail("Undo response marker");m.ToggleResponseMarker(-28,8);
             Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length<1||m.EnemyPositions.Length>3)Fail("Deferred random threats appear after answer");
             // An empty answer is valid and must not disclose a required marker count.
@@ -57,13 +64,17 @@ namespace GCCD.Dts
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
             string beforeExport=File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"));m.ExportMissionData();if(File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"))!=beforeExport)Fail("Duplicate-free re-export");
-            var settings=GetComponent<UIDocument>().panelSettings;var resultTexture=new RenderTexture(1600,1000,24);settings.targetTexture=resultTexture;
-            yield return null;yield return null;yield return null;
-            var previous=RenderTexture.active;RenderTexture.active=resultTexture;var screenshot=new Texture2D(1600,1000,TextureFormat.RGB24,false);screenshot.ReadPixels(new Rect(0,0,1600,1000),0,0);screenshot.Apply();File.WriteAllBytes("mission-results-ui.png",screenshot.EncodeToPNG());RenderTexture.active=previous;settings.targetTexture=null;Destroy(resultTexture);Destroy(screenshot);
+            yield return CaptureInterface("mission-results-ui.png");
             File.WriteAllText("results-folder.txt",m.CsvFolder);Debug.Log("DTS_RESULT_FLOW_PASS");
             m.Exit();yield return null;if(!p.enabled||GetComponent<CharacterController>()||GetComponent<MissionImageEffect>())Fail("Mission cleanup");
             if(camera.farClipPlane!=originalFar||camera.allowHDR!=originalHdr||RenderSettings.ambientSkyColor!=originalSky||RenderSettings.fogColor!=originalFog)Fail("Research render settings restored");
             File.WriteAllText("mission-result.txt","PASS meshes="+meshes+"; indoor door traversal; jump/landing; crouch/ceiling clearance; Tab map; ADS/audio; supplies/hits/reload; haptic response freezes gameplay/timers; sources hidden; map click/undo; UI submit resumes; empty answer; cleanup. Physical sound and haptics unverified.");Debug.Log("DTS_MISSION_PROBE_PASS");EditorApplication.Exit(0);
+        }
+        IEnumerator CaptureInterface(string filename)
+        {
+            var settings=GetComponent<UIDocument>().panelSettings;var resultTexture=new RenderTexture(1600,1000,24);settings.targetTexture=resultTexture;
+            yield return null;yield return null;yield return null;
+            var previous=RenderTexture.active;RenderTexture.active=resultTexture;var screenshot=new Texture2D(1600,1000,TextureFormat.RGB24,false);screenshot.ReadPixels(new Rect(0,0,1600,1000),0,0);screenshot.Apply();File.WriteAllBytes(filename,screenshot.EncodeToPNG());RenderTexture.active=previous;settings.targetTexture=null;Destroy(resultTexture);Destroy(screenshot);
         }
         void ClickMap(MissionMapView map,float u,float v)
         {

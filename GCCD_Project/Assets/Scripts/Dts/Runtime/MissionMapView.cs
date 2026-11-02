@@ -10,7 +10,7 @@ namespace GCCD.Dts
         public bool Interactive,Detailed;
         public Vector3[] ActualSources=new Vector3[0];public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
-        Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect((contentRect.width-72*scale)/2,(contentRect.height-78*scale)/2,72*scale,78*scale);}}
+        Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect(contentRect.x+(contentRect.width-72*scale)/2,contentRect.y+(contentRect.height-78*scale)/2,72*scale,78*scale);}}
         public MissionMapView()
         {
             AddToClassList("mission-map");generateVisualContent+=Draw;

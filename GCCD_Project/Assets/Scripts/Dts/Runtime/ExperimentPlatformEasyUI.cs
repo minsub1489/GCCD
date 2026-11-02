@@ -34,18 +34,7 @@ namespace GCCD.Dts
             if(reason.Contains("does not match"))return "연결된 조끼를 기다리고 있습니다. Player에서 조끼가 연결되어 있는지 확인하세요.";
             return "연결 확인 필요 · "+reason;
         }
-        public OutputReceipt TestConnectionPulse()
-        {
-            ConnectEasy();if(!connectionReady)throw new InvalidOperationException(connectionText);
-            // This button is an explicit calibration request, not a research verification claim.
-            physicalProbe=true;config.AllowRaw40CalibrationProbe=true;
-            var frame=new int[40];frame[0]=20;
-            var receipt=haptics.Submit(frame,200,config,false,true);
-            string folder=Path.Combine(Root,"CALIBRATION");Directory.CreateDirectory(folder);
-            SessionStore.AtomicWrite(Path.Combine(folder,"connection-"+Guid.NewGuid().ToString("N")+".json"),"{\"frame\":["+string.Join(",",frame)+"],\"receipt\":"+JsonUtility.ToJson(receipt)+"}");
-            feltPulse=false;pulseSubmitted=receipt.submitted;testText=receipt.submitted?"짧은 진동을 요청했습니다. 조끼에서 느껴졌나요?":"출력 실패 · "+receipt.error;
-            return receipt;
-        }
+        public OutputReceipt TestConnectionPulse(){return TestDirectionPulse(0);}
         Texture2D Solid(Color color){var t=new Texture2D(1,1);t.SetPixel(0,0,color);t.Apply();return t;}
         void ApplyComfortableSkin()
         {
