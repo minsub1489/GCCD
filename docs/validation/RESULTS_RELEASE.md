@@ -7,6 +7,6 @@ GREEN: C# 83 passed / 0 failed. 순서 무관 1대1 매칭, 중복·추가 표�
 
 Unity DTS_RESULT_FLOW_PASS 및 DTS_MISSION_PROBE_PASS: 실제 회수·명중 후 완료, 완료 이전 정답 접근 차단, 결과 UI 표시, 실제 위치 지도, CSV 3종 존재, 화면 체험 구분과 재저장 중복 방지를 확인했다. PanelSettings targetTexture를 이용해 실제 UI 렌더를 검토했다. 표시값은 명시적인 소프트웨어 테스트 응답이며 참가자 측정값이 아니다.
 
-Python csv 파서로 UTF-8 BOM, 열 수, 빈 응답 0%/오차 빈값, 종합 합계와 요청/시뮬레이션 분리를 확인했다. 기존 분석기 unittest 5개도 실행한다. 커버리지 비율은 측정하지 않았다.
+Python csv 파서로 UTF-8 BOM, 열 수, 빈 응답 0%/오차 빈값, 종합 합계와 요청/시뮬레이션 분리를 확인했다. 기존 분석기 unittest 5개도 통과했다. Windows/macOS Release 빌드와 연구 플랫폼 DTS_SOFTWARE_VALIDATION_PASS를 확인했다. 커버리지 비율은 측정하지 않았다.
 
 미션 강도를 8~20%에서 20~45%로 올리고 기존 DistanceEncoding 선형 함수를 재사용했다. 실제 세기의 착용 체감·모터 매핑·Windows 실기기 실행은 확인하지 않았다. 연구 A/B의 개인별 강도 설정과 채점 코드는 변경하지 않았다.
