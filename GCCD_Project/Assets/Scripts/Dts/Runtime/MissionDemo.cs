@@ -8,7 +8,7 @@ namespace GCCD.Dts
     public sealed partial class ExperimentPlatform
     {
         public void StartMission(){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.Physical=connectionReady;enabled=false;}
-        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MotorComposer.Compose(p.Kept,MissionX40Profile(),MissionDemo.MissionLow,MissionDemo.MissionHigh);config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,200,config,!physical,true);}
+        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MissionHapticEncoding.Compose(p.Kept,MissionX40Profile());config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,MissionHapticEncoding.DurationMilliseconds,config,!physical,true);}
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}
@@ -19,7 +19,7 @@ namespace GCCD.Dts
     }
     public sealed partial class MissionDemo:MonoBehaviour
     {
-        public const double MissionLow=.20,MissionHigh=.45;
+        public const double MissionLow=MissionHapticEncoding.Low,MissionHigh=MissionHapticEncoding.High;
         public ExperimentPlatform Owner;public bool Physical;public Func<double> Clock;
         GameObject world,weapon,muzzle;CharacterController body;Camera cam;Color oldBackground;bool oldFog;
         readonly Dictionary<Collider,GameObject> shootable=new Dictionary<Collider,GameObject>();readonly List<GameObject> supplies=new List<GameObject>();

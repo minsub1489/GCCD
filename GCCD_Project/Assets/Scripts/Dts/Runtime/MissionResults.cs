@@ -8,7 +8,7 @@ namespace GCCD.Dts
 {
     public sealed class MissionEventResult
     {
-        public string Id,State,Group,OutputStatus,Utc,MappingVersion;public bool Eligible;public double ResponseSeconds;
+        public string Id,State,Group,OutputStatus,Utc,MappingVersion,HapticEncoding;public bool Eligible;public double ResponseSeconds,IntensityLow,IntensityHigh;
         public Vector3 Observer;public float Yaw;public Vector3[] Sources,Marks;public MissionLocationScore Score;
     }
     public sealed partial class MissionDemo
@@ -32,7 +32,7 @@ namespace GCCD.Dts
                     var record=JsonUtility.FromJson<MissionThreatRecord>(File.ReadAllText(path));
                     if(record==null||record.source_positions==null||record.source_positions.Length==0||record.response_positions==null||record.receipt==null)throw new InvalidDataException("Incomplete event record");
                     string group=record.pulse_interrupted?"INTERRUPTED":record.receipt.simulated?"SIMULATED":record.receipt.submitted?"REQUESTED_UNCONFIRMED":"OUTPUT_FAILED";
-                    var item=new MissionEventResult{MappingVersion=record.mapping_version??"unknown-legacy-map",Utc=record.utc,Id=record.event_id,State=record.state,Group=group,OutputStatus=record.receipt.status,ResponseSeconds=record.response_seconds,Observer=record.observer_position,Yaw=record.observer_yaw,Sources=record.source_positions,Marks=record.response_positions,Eligible=record.state=="completed"&&(group=="SIMULATED"||group=="REQUESTED_UNCONFIRMED")};
+                    var item=new MissionEventResult{MappingVersion=record.mapping_version??"unknown-legacy-map",HapticEncoding=record.haptic_encoding??"unknown-legacy-encoding",IntensityLow=record.intensity_low,IntensityHigh=record.intensity_high,Utc=record.utc,Id=record.event_id,State=record.state,Group=group,OutputStatus=record.receipt.status,ResponseSeconds=record.response_seconds,Observer=record.observer_position,Yaw=record.observer_yaw,Sources=record.source_positions,Marks=record.response_positions,Eligible=record.state=="completed"&&(group=="SIMULATED"||group=="REQUESTED_UNCONFIRMED")};
                     item.Score=MissionLocationScorer.Score(Points(item.Sources),Points(item.Marks),item.Observer.x,item.Observer.z,item.Yaw,ResultTolerance);loaded.Add(item);
                 }
                 // Filenames are random identifiers; replay order uses the original UTC event times.
@@ -46,15 +46,15 @@ namespace GCCD.Dts
         }
         [Serializable] sealed class MissionSummaryRecord
         {
-            public string mode="MISSION_DEMO",session_id,state,utc;public bool not_research_data=true;public double tolerance_m=ResultTolerance,active_seconds,intensity_low=MissionLow,intensity_high=MissionHigh;public int shots_fired,drone_hits,supplies;
+            public string mode="MISSION_DEMO",haptic_encoding=MissionHapticEncoding.Version,session_id,state,utc;public bool not_research_data=true;public double tolerance_m=ResultTolerance,active_seconds,intensity_low=MissionLow,intensity_high=MissionHigh;public int shots_fired,drone_hits,supplies;
         }
         static MissionSpawnPoint[] Points(Vector3[] positions){return positions.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();}
         static string Line(params object[] values){return CsvTable.Line(values.Select(v=>v is string&&((string)v).Length>0&&"=+-@\t\r".IndexOf(((string)v)[0])>=0?(object)("'"+v):v).ToArray());}
         void SaveCsv(string name,StringBuilder text){SessionStore.AtomicWrite(Path.Combine(CsvFolder,name),"\ufeff"+text.ToString());}
         void WriteEventCsv()
         {
-            var csv=new StringBuilder();csv.AppendLine("event_index,event_id,state,output_group,output_status,eligible,tolerance_m,source_count,response_count,correct,missed,false_marks,recall,precision,f1,mean_position_error_m,mean_direction_error_deg,mean_range_error_m,response_seconds,observer_x,observer_z,observer_yaw,mode,not_research_data,mapping_version");
-            for(int i=0;i<reviewEvents.Count;i++){var e=reviewEvents[i];var s=e.Score;csv.AppendLine(Line(i+1,e.Id,e.State,e.Group,e.OutputStatus,e.Eligible,ResultTolerance,s.SourceCount,s.ResponseCount,e.Eligible?(object)s.Correct:null,e.Eligible?(object)s.Missed:null,e.Eligible?(object)s.FalseMarks:null,e.Eligible?s.Recall:null,e.Eligible?s.Precision:null,e.Eligible?s.F1:null,e.Eligible?s.MeanPositionError:null,e.Eligible?s.MeanDirectionError:null,e.Eligible?s.MeanRangeError:null,e.ResponseSeconds,e.Observer.x,e.Observer.z,e.Yaw,"MISSION_DEMO",true,e.MappingVersion));}
+            var csv=new StringBuilder();csv.AppendLine("event_index,event_id,state,output_group,output_status,eligible,tolerance_m,source_count,response_count,correct,missed,false_marks,recall,precision,f1,mean_position_error_m,mean_direction_error_deg,mean_range_error_m,response_seconds,observer_x,observer_z,observer_yaw,mode,not_research_data,mapping_version,haptic_encoding,intensity_low,intensity_high");
+            for(int i=0;i<reviewEvents.Count;i++){var e=reviewEvents[i];var s=e.Score;csv.AppendLine(Line(i+1,e.Id,e.State,e.Group,e.OutputStatus,e.Eligible,ResultTolerance,s.SourceCount,s.ResponseCount,e.Eligible?(object)s.Correct:null,e.Eligible?(object)s.Missed:null,e.Eligible?(object)s.FalseMarks:null,e.Eligible?s.Recall:null,e.Eligible?s.Precision:null,e.Eligible?s.F1:null,e.Eligible?s.MeanPositionError:null,e.Eligible?s.MeanDirectionError:null,e.Eligible?s.MeanRangeError:null,e.ResponseSeconds,e.Observer.x,e.Observer.z,e.Yaw,"MISSION_DEMO",true,e.MappingVersion,e.HapticEncoding,e.IntensityLow,e.IntensityHigh));}
             SaveCsv("events.csv",csv);
         }
         void WritePositionCsv()

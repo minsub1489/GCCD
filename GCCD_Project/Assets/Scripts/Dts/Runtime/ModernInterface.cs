@@ -39,7 +39,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
-            testButton=Button(card,"짧은 진동 · 방향 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";
+            testButton=Button(card,"진동 · 방향/거리 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";
             pulse=Label(card,"","small muted");confirmButton=Button(card,"진동이 느껴졌어요",()=>platform.ConfirmPulse(),"text-button");
             Button(card,"출력 중지",()=>platform.StopMissionHaptics(),"text-button muted");
         }

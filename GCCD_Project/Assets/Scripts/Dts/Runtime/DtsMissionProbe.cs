@@ -20,6 +20,13 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("openDirectionCheck"));yield return null;
             if(ui.Q("directionCheck").resolvedStyle.display==DisplayStyle.None||Enumerable.Range(0,4).Any(i=>ui.Q<Button>("testDirection"+i)==null))Fail("Four direction lobby test UI");
             yield return CaptureInterface("x40-direction-ui.png");
+            Submit(ui.Q<Button>("showDistanceCheck"));yield return null;
+            if(ui.Q("distancePane").resolvedStyle.display==DisplayStyle.None||ui.Q("directionPane").resolvedStyle.display!=DisplayStyle.None||Enumerable.Range(0,3).Any(i=>ui.Q<Button>("testDistance"+i)==null))Fail("Three distance strengths lobby UI");
+            int[] peaks={40,25,10};for(int level=0;level<3;level++)if(p.DistanceCheckPreview(level).Max()!=peaks[level]||!p.DistanceCheckPreview(level).SequenceEqual(MissionHapticEncoding.CheckFrame(0,level,p.MissionX40Profile())))Fail("Distance preview differs from mission output");
+            p.ConfirmDistancePulse();p.ConfirmDirectionPulse();if(p.DistanceCheckCount!=0||p.DirectionCheckCount!=0||p.CanConfirmDistance||p.CanConfirmDirection||ui.Q<Button>("confirmHapticCheck").enabledSelf)Fail("Confirmation accepted without submitted pulse");
+            yield return CaptureInterface("x40-distance-ui.png");
+            Submit(ui.Q<Button>("showDirectionCheck"));yield return null;if(ui.Q("directionPane").resolvedStyle.display==DisplayStyle.None||ui.Q("distancePane").resolvedStyle.display!=DisplayStyle.None)Fail("Direction tab restoration");
+            Debug.Log("DTS_DISTANCE_PREFLIGHT_PASS");
             Submit(ui.Q<Button>("closeDirectionCheck"));yield return null;
             Submit(ui.Q<Button>(className:"primary"));yield return null;yield return null;
             var m=GetComponent<MissionDemo>();if(!m||!m.HasWorld)Fail("World initialization");m.Physical=false;m.SetPaused(false);
@@ -63,6 +70,7 @@ namespace GCCD.Dts
             if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
+            if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.2||e.IntensityHigh!=.8))Fail("Recorded haptic encoding range");
             string beforeExport=File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"));m.ExportMissionData();if(File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"))!=beforeExport)Fail("Duplicate-free re-export");
             yield return CaptureInterface("mission-results-ui.png");
             File.WriteAllText("results-folder.txt",m.CsvFolder);Debug.Log("DTS_RESULT_FLOW_PASS");
@@ -73,7 +81,7 @@ namespace GCCD.Dts
         IEnumerator CaptureInterface(string filename)
         {
             var settings=GetComponent<UIDocument>().panelSettings;var resultTexture=new RenderTexture(1600,1000,24);settings.targetTexture=resultTexture;
-            yield return null;yield return null;yield return null;
+            yield return null;yield return null;yield return new WaitForSecondsRealtime(.2f);
             var previous=RenderTexture.active;RenderTexture.active=resultTexture;var screenshot=new Texture2D(1600,1000,TextureFormat.RGB24,false);screenshot.ReadPixels(new Rect(0,0,1600,1000),0,0);screenshot.Apply();File.WriteAllBytes(filename,screenshot.EncodeToPNG());RenderTexture.active=previous;settings.targetTexture=null;Destroy(resultTexture);Destroy(screenshot);
         }
         void ClickMap(MissionMapView map,float u,float v)
