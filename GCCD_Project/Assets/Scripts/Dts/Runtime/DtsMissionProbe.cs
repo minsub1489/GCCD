@@ -41,6 +41,9 @@ namespace GCCD.Dts
             var frozen=transform.position;int oldAmmo=m.Ammo;double oldElapsed=m.Elapsed;time+=60;m.StepMovement(Vector2.one,true,true,.02f);m.Fire(Vector3.forward);m.Reload();m.SetPaused(false);m.ToggleMap();
             if(transform.position!=frozen||m.Ammo!=oldAmmo||m.Elapsed!=oldElapsed||!m.IsPaused||m.MapVisible)Fail("Response blocks gameplay and timers");
             yield return null;var response=ui.Q<MissionMapView>("responseMap");if(!response.Interactive||ui.Q("threatResponse").resolvedStyle.display==DisplayStyle.None)Fail("Response map visible");
+            response.ClearClassList();response.AddToClassList("mission-map");response.AddToClassList("response-map");
+            ClickMap(response,.25f,.75f);if(m.ResponseMarkers.Length!=1||Math.Abs(m.ResponseMarkers[0].X+18)>.001||Math.Abs(m.ResponseMarkers[0].Z+5.5)>.001)Fail("Pointer click world coordinate mismatch "+string.Join(";",m.ResponseMarkers.Select(v=>v.X+","+v.Z)));
+            m.ClearResponseMarkers();
             response.SelectAt(new Vector2(response.contentRect.width/2,response.contentRect.height/2));if(m.ResponseMarkers.Length!=1)Fail("Map click creates response");m.UndoResponseMarker();if(m.ResponseMarkers.Length!=0)Fail("Undo response marker");m.ToggleResponseMarker(-28,8);
             Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length<1||m.EnemyPositions.Length>3)Fail("Deferred random threats appear after answer");
             // An empty answer is valid and must not disclose a required marker count.
@@ -49,6 +52,8 @@ namespace GCCD.Dts
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
+            var reviewed=m.ReviewEvents[0];if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
+            if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
             string beforeExport=File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"));m.ExportMissionData();if(File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"))!=beforeExport)Fail("Duplicate-free re-export");
@@ -59,6 +64,12 @@ namespace GCCD.Dts
             m.Exit();yield return null;if(!p.enabled||GetComponent<CharacterController>()||GetComponent<MissionImageEffect>())Fail("Mission cleanup");
             if(camera.farClipPlane!=originalFar||camera.allowHDR!=originalHdr||RenderSettings.ambientSkyColor!=originalSky||RenderSettings.fogColor!=originalFog)Fail("Research render settings restored");
             File.WriteAllText("mission-result.txt","PASS meshes="+meshes+"; indoor door traversal; jump/landing; crouch/ceiling clearance; Tab map; ADS/audio; supplies/hits/reload; haptic response freezes gameplay/timers; sources hidden; map click/undo; UI submit resumes; empty answer; cleanup. Physical sound and haptics unverified.");Debug.Log("DTS_MISSION_PROBE_PASS");EditorApplication.Exit(0);
+        }
+        void ClickMap(MissionMapView map,float u,float v)
+        {
+            Rect c=map.contentRect;float scale=Mathf.Min((c.width-28)/72,(c.height-28)/78);
+            var local=new Vector2(c.x+(c.width-72*scale)/2+72*scale*u,c.y+(c.height-78*scale)/2+78*scale*v);var panel=map.LocalToWorld(local);
+            using(var click=PointerDownEvent.GetPooled(new Event{type=EventType.MouseDown,mousePosition=panel,button=0}))map.SendEvent(click);
         }
         void Place(Vector3 position){var body=GetComponent<CharacterController>();body.enabled=false;transform.position=position;transform.rotation=Quaternion.identity;body.enabled=true;Physics.SyncTransforms();}
         void Submit(Button button){if(button==null)Fail("Missing UI button");button.Focus();using(var submit=NavigationSubmitEvent.GetPooled())button.SendEvent(submit);}
