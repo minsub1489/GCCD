@@ -1,6 +1,6 @@
 # 현재 실행 방법
 
-**[빠른 시작 안내](docs/QUICK_START.md)** 를 먼저 보세요. 시작 화면에서 Player의 조끼를 자동으로 찾습니다. 로그인/App ID/API Key 없이 Player 로컬 연결을 사용합니다. **작전 시작**으로 공업지대 보급품 회수 미션을 플레이합니다.
+**[Windows 실행 파일 다운로드](https://github.com/minsub1489/GCCD/releases/tag/v0.3.0-indoor)** · **[빠른 시작 안내](docs/QUICK_START.md)** 시작 화면에서 Player의 조끼를 자동으로 찾습니다. 로그인/App ID/API Key 없이 Player 로컬 연결을 사용합니다. **작전 시작**으로 공업지대 보급품 회수 미션을 플레이합니다.
 
 실사 기반 PBR 벽돌·아스팔트, 스캔한 드럼통·방호벽·군용 상자, HDR 하늘과 AKM 모델을 포함합니다. 실내 작업실·창고 16개와 복도를 연결했습니다. 우클릭 조준, 좌클릭 연사, Space 점프, C 앉기, Tab 미니맵을 지원합니다. 위협 진동 요청 때 게임을 멈추고, 실제 개수를 숨긴 위치 응답 지도에서 표시를 완료하면 재개합니다. 실행 중 에셋 다운로드가 필요하지 않습니다. 기존 실험 A/B는 **연구자 설정**에서 운영합니다.
 
@@ -31,7 +31,7 @@ Windows 실행 파일은 `GCCD_Project/Builds/Windows/GCCD.exe`입니다. **같�
 
 기존 bHaptics Player의 페어링과 연결 설정을 유지합니다. [장비 확인 절차](docs/HARDWARE_ACCEPTANCE.md)를 따르세요.
 
-- 공식 SDK는 기존 로컬 Asset Store 캐시에서 가져왔으며 저장소 배포에서 제외합니다. 다른 PC에는 정식 **bHaptics Haptic Plugin (SDK2)**를 설치하세요. 임의 업그레이드가 필요하지 않습니다.
+- 공식 SDK2는 선택 기능이며 저장소에 포함되지 않습니다. 기본 Player 직접 연결은 SDK 설치 없이 동작하도록 구성합니다. SDK2 경로를 사용하려면 해당 PC에 정식 **bHaptics Haptic Plugin (SDK2)**를 설치하세요.
 - **GCCD → bHaptics SDK2 → Check Official SDK and Add Prefab / Enable Compile-Time Adapter**로 공식 초기화 프리팹과 어댑터를 확인합니다. 기본 씬의 초기화 프리팹은 비활성 상태입니다. 개발 모드는 SDK를 초기화하거나 진동을 출력하지 않습니다.
 - 공식 Developer Window에서 기존 앱을 연결·배포한 뒤 **Device Check → 공식 SDK 초기화 및 연결 확인**을 누릅니다. 키는 연구 설정·로그·Git에 저장하지 않습니다.
 - 공식 [PlayMotors 문서](https://docs.bhaptics.com/sdk/unity/references/library)는 Vest의 32모터 배열을 명시합니다. 로컬 SDK 구현은 배열 길이를 네이티브 API에 전달하지만 이것만으로 X40 40채널 호환성을 증명하지 않습니다. 32모터 맵을 복사하거나 `PlaySingleMotor`를 X40 인덱스 테스트에 사용하지 않습니다.
