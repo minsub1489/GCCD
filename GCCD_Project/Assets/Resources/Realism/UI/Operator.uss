@@ -57,3 +57,18 @@
 .weapon-hud { background-color:rgba(8,15,18,.74); padding:16px 20px; border-radius:3px; }
 .hud-controls { background-color:rgba(8,15,18,.65); padding:8px 12px; border-radius:3px; color:rgb(210,223,214); }
 .threat-notice { background-color:rgba(8,15,18,.74); padding:8px 12px; border-radius:3px; }
+
+.mini-map-panel { position:absolute; right:42px; top:94px; width:292px; height:375px; background-color:rgba(8,15,18,.95); padding:12px; border-radius:4px; }
+.mini-map-panel > .eyebrow { margin-bottom:5px; }
+.mission-map { flex-grow:1; min-height:100px; overflow:hidden; }
+.map-room-label { position:absolute; width:80px; font-size:10px; color:rgb(163,180,179); -unity-text-align:middle-center; }
+.response-overlay { position:absolute; left:0; right:0; top:0; bottom:0; background-color:rgb(8,14,18); align-items:center; justify-content:center; }
+.response-shell { width:92%; max-width:1320px; height:92%; }
+.response-heading { margin-bottom:20px; }
+.response-title { font-size:38px; -unity-font-style:bold; margin-bottom:12px; }
+.response-description { font-size:17px; color:rgb(185,201,197); white-space:normal; margin-bottom:20px; }
+.response-body { flex-direction:row; flex-grow:1; min-height:0; }
+.response-map { flex-grow:1; margin-right:32px; background-color:rgb(16,26,31); border-width:1px; border-color:rgb(56,77,81); border-radius:4px; }
+.response-tools { width:330px; justify-content:center; }
+.response-tools > .objective-title { font-size:23px; white-space:normal; }
+.response-tools > .button { font-size:17px; }

@@ -17,7 +17,7 @@ namespace GCCD.Editor
                 if(ti!=null){bool normal=Path.GetFileName(path).ToLowerInvariant().Contains("normal");bool linear=normal||path.Contains("packed-metal")||path.Contains("roughness")||path.Contains("Metallic");ti.textureType=normal?TextureImporterType.NormalMap:TextureImporterType.Default;ti.sRGBTexture=!linear;ti.maxTextureSize=2048;ti.wrapMode=TextureWrapMode.Repeat;ti.mipmapEnabled=true;ti.anisoLevel=8;ti.filterMode=FilterMode.Trilinear;ti.SaveAndReimport();}
                 var mi=AssetImporter.GetAtPath(path) as ModelImporter;if(mi!=null){mi.isReadable=true;mi.materialImportMode=ModelImporterMaterialImportMode.None;mi.SaveAndReimport();}
             }
-            foreach(string asset in new[]{"asphalt_02","brick_wall_001","barrel_03","concrete_road_barrier","old_military_crate","akm"})
+            foreach(string asset in new[]{"asphalt_02","brick_wall_001","barrel_03","concrete_road_barrier","old_military_crate","akm","concrete_floor_worn_001","painted_plaster_wall"})
             {
                 string prefix=root+"/"+asset+"/";bool gun=asset=="akm";
                 var mat=new Material(Shader.Find("Standard"));mat.name=asset;mat.enableInstancing=true;

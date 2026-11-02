@@ -22,9 +22,9 @@ namespace GCCD.Dts
         public ExperimentPlatform Owner;public bool Physical;public Func<double> Clock;
         GameObject world,weapon,muzzle;CharacterController body;Camera cam;Color oldBackground;bool oldFog;
         readonly Dictionary<Collider,GameObject> shootable=new Dictionary<Collider,GameObject>();readonly List<GameObject> supplies=new List<GameObject>();
-        int hits,collected,ammo=30,fired,spawnSeed;float yaw,pitch,vertical,aimBlend,recoil,walkAmount,weaponTop;double nextThreat,lastThreat,started,nextShot,reloadUntil,lastHit,flashUntil;string output="",folder;bool paused,complete,aiming,exited;
+        int originalLayer;int hits,collected,ammo=30,fired,spawnSeed;float yaw,pitch,vertical,aimBlend,recoil,walkAmount,weaponTop;double nextThreat,lastThreat,started,nextShot,reloadUntil,lastHit,flashUntil;string output="",folder;bool paused,complete,aiming,exited;
         System.Random rng;AudioSource gunAudio;AudioClip shotClip,reloadClip;Light muzzleLight;
-        double Now {get{return Clock!=null?Clock():Time.realtimeSinceStartupAsDouble;}}
+        double Now {get{return playClock.Read(RealNow);}}
         public int ShotsHit{get{return hits;}}public int SuppliesCollected{get{return collected;}}public bool HasWorld{get{return world!=null;}}
         public int Ammo{get{return ammo;}}public int ShotsFired{get{return fired;}}public bool IsReloading{get{return reloadUntil>Now;}}public bool IsPaused{get{return paused;}}public bool IsComplete{get{return complete;}}public bool IsAiming{get{return aiming;}}public bool HitMarker{get{return Now-lastHit<.15&&lastHit>0;}}
         public bool HasGunAudio{get{return shotClip&&gunAudio;}}public int SpawnSeed{get{return spawnSeed;}}public string OutputText{get{return Now-lastThreat<2.5?output:"";}}
@@ -32,12 +32,12 @@ namespace GCCD.Dts
         public double Elapsed{get{return Now-started;}}public Vector3[] EnemyPositions{get{return shootable.Values.Where(x=>x).Select(x=>x.transform.position).ToArray();}}
         void Start()
         {
-            cam=GetComponent<Camera>();oldBackground=cam.backgroundColor;oldFog=RenderSettings.fog;
-            transform.SetPositionAndRotation(new Vector3(0,1.7f,-14),Quaternion.identity);yaw=0;
-            body=gameObject.AddComponent<CharacterController>();body.height=1.7f;body.center=new Vector3(0,-.8f,0);body.radius=.3f;
+            originalLayer=gameObject.layer;gameObject.layer=30;cam=GetComponent<Camera>();oldBackground=cam.backgroundColor;oldFog=RenderSettings.fog;
+            transform.SetPositionAndRotation(new Vector3(-22,1.77f,-12),Quaternion.identity);yaw=0;
+            body=gameObject.AddComponent<CharacterController>();body.height=1.8f;body.center=new Vector3(0,-.8f,0);body.radius=.3f;body.stepOffset=.25f;
             world=new GameObject("MISSION ONLY · Photographed freight terminal");BuildEnvironment();Physics.SyncTransforms();
             spawnSeed=UnityEngine.Random.Range(1,int.MaxValue);rng=new System.Random(spawnSeed);
-            var points=MissionSpawnPlanner.Plan(spawnSeed,5,0,-14,0,false,Occupied);foreach(var p in points)SpawnEnemy(new Vector3((float)p.X,1.9f,(float)p.Z));
+            var points=MissionSpawnPlanner.Plan(spawnSeed,5,transform.position.x,transform.position.z,0,false,Occupied,true);foreach(var p in points)SpawnEnemy(new Vector3((float)p.X,1.9f,(float)p.Z));
             weapon=RealModel("akm",Vector3.zero,.88f,Pbr("akm"),false,Quaternion.AngleAxis(90,Vector3.forward)*Quaternion.Euler(0,90,180));weaponTop=weapon.GetComponentsInChildren<Renderer>().Max(r=>r.bounds.max.y);foreach(var r in weapon.GetComponentsInChildren<Renderer>())r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;weapon.transform.SetParent(transform,false);weapon.transform.localPosition=new Vector3(.22f,-weaponTop-.08f,.56f);weapon.transform.localRotation=Quaternion.identity;
             foreach(var c in weapon.GetComponentsInChildren<Collider>())Destroy(c);
             muzzle=GameObject.CreatePrimitive(PrimitiveType.Sphere);muzzle.name="Muzzle flash";Destroy(muzzle.GetComponent<Collider>());muzzle.transform.SetParent(transform);muzzle.transform.localPosition=new Vector3(.17f,-.08f,1.0f);muzzle.transform.localScale=new Vector3(.07f,.07f,.16f);var glow=new Material(Shader.Find("Standard"));glow.EnableKeyword("_EMISSION");glow.SetColor("_EmissionColor",new Color(6,3,.5f));muzzle.GetComponent<Renderer>().sharedMaterial=glow;ownedVisuals.Add(glow);muzzle.SetActive(false);
@@ -63,16 +63,18 @@ namespace GCCD.Dts
         {var p=GameObject.CreatePrimitive(shape);p.transform.SetParent(parent.transform,false);p.transform.localPosition=at;p.transform.localScale=scale;p.transform.localRotation=rotation==default(Quaternion)?Quaternion.identity:rotation;p.GetComponent<Renderer>().sharedMaterial=material;Destroy(p.GetComponent<Collider>());}
         void Update()
         {
-            if(Input.GetKeyDown(KeyCode.Escape))SetPaused(!paused);
+            if(Input.GetKeyDown(KeyCode.Escape)&&!IsThreatResponse)SetPaused(!paused);
             if(paused||complete)return;
             float sensitivity=aiming?1.0f:1.8f;yaw+=Input.GetAxis("Mouse X")*sensitivity;pitch=Mathf.Clamp(pitch-Input.GetAxis("Mouse Y")*sensitivity,-75,75);transform.rotation=Quaternion.Euler(pitch-recoil*.35f,yaw,0);
-            Vector3 walk=Quaternion.Euler(0,yaw,0)*new Vector3(Input.GetAxisRaw("Horizontal"),0,Input.GetAxisRaw("Vertical"));walkAmount=walk.magnitude;walk=Vector3.ClampMagnitude(walk,1)*(Input.GetKey(KeyCode.LeftShift)&&!aiming?5.7f:3.5f);vertical=body.isGrounded?-2:vertical-9.81f*Time.deltaTime;walk.y=vertical;body.Move(walk*Time.deltaTime);
+            if(Input.GetKeyDown(KeyCode.C))SetCrouched(!crouched);
+            if(Input.GetKeyDown(KeyCode.Tab))ToggleMap();
+            StepMovement(new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical")),Input.GetKeyDown(KeyCode.Space),Input.GetKey(KeyCode.LeftShift),Time.deltaTime);
             SetAiming(Input.GetMouseButton(1));if(Input.GetMouseButton(0))Fire(transform.forward);if(Input.GetKeyDown(KeyCode.R))Reload();if(Input.GetKeyDown(KeyCode.E))CollectNearby();
             StepWeapon(Time.deltaTime);
             if(Now>=nextThreat&&Now-lastThreat>3)ThreatEvent();
             if(collected>=3&&hits>=5){complete=true;SetPaused(true);}
         }
-        public void SetAiming(bool value){aiming=value&&!IsReloading;}
+        public void SetAiming(bool value){aiming=value&&!IsReloading&&!paused;}
         public void StepWeapon(float dt)
         {
             if(!weapon||!cam)return;if(reloadUntil>0&&Now>=reloadUntil){ammo=30;reloadUntil=0;}
@@ -83,32 +85,41 @@ namespace GCCD.Dts
             muzzle.transform.localPosition=Vector3.Lerp(new Vector3(.22f,-.1f,1),new Vector3(0,-.01f,.95f),aimBlend);
             bool flash=Now<flashUntil;muzzle.SetActive(flash);muzzleLight.intensity=flash?2.5f:0;
         }
-        public bool Reload(){if(IsReloading||ammo==30)return false;reloadUntil=Now+1.7;aiming=false;if(reloadClip)gunAudio.PlayOneShot(reloadClip,.65f);return true;}
-        public bool CollectNearby(){var item=supplies.FirstOrDefault(s=>s&&Vector3.Distance(s.transform.position,transform.position)<3);if(!item)return false;supplies.Remove(item);Destroy(item);collected++;nextThreat=Math.Min(nextThreat,Now+.8);return true;}
+        public bool Reload(){if(paused||complete||IsReloading||ammo==30)return false;reloadUntil=Now+1.7;aiming=false;if(reloadClip)gunAudio.PlayOneShot(reloadClip,.65f);return true;}
+        public bool CollectNearby(){if(paused||complete)return false;var item=supplies.FirstOrDefault(s=>s&&Vector3.Distance(s.transform.position,transform.position)<3);if(!item)return false;supplies.Remove(item);Destroy(item);collected++;nextThreat=Math.Min(nextThreat,Now+.8);return true;}
         public bool Fire(Vector3 direction)
         {
-            if(IsReloading||Now<nextShot||ammo==0)return false;
+            if(paused||complete||IsReloading||Now<nextShot||ammo==0)return false;
             nextShot=Now+.13;ammo--;fired++;recoil=Mathf.Min(5,recoil+1.4f);flashUntil=Now+.045;gunAudio.pitch=UnityEngine.Random.Range(.96f,1.04f);gunAudio.PlayOneShot(shotClip);
-            RaycastHit hit;bool success=Physics.Raycast(transform.position,direction,out hit,90,~0,QueryTriggerInteraction.Ignore)&&shootable.ContainsKey(hit.collider);
+            RaycastHit hit;bool didHit=Physics.Raycast(transform.position,direction,out hit,90,~(1<<30),QueryTriggerInteraction.Ignore);
+            bool success=didHit&&shootable.ContainsKey(hit.collider);
             if(success){hits++;lastHit=Now;var target=shootable[hit.collider];shootable.Remove(hit.collider);Destroy(target);}
-            if(Physics.Raycast(transform.position,direction,out hit,90))Impact(hit.point,hit.normal);
+            if(didHit)Impact(hit.point,hit.normal);
             return success;
         }
         void Impact(Vector3 p,Vector3 n){var spark=GameObject.CreatePrimitive(PrimitiveType.Sphere);spark.name="Impact";Destroy(spark.GetComponent<Collider>());spark.transform.position=p+n*.03f;spark.transform.localScale=Vector3.one*.05f;spark.GetComponent<Renderer>().sharedMaterial=orange;Destroy(spark,.2f);}
         public void ThreatEvent()
         {
+            if(paused||complete||IsThreatResponse)return;
             lastThreat=Now;nextThreat=Now+9+rng.NextDouble()*5;
             try{
-                var locations=MissionSpawnPlanner.Plan(rng.Next(),3,transform.position.x,transform.position.z,yaw,true,Occupied);
-                var threats=locations.Select((p,i)=>{var at=new Vector3((float)p.X,1.9f,(float)p.Z);SpawnEnemy(at);var delta=at-transform.position;return new Threat("M"+i,true,true,true,at.x,at.y,at.z,delta.magnitude,Angles.Bearing(delta.x,delta.z,yaw));}).ToArray();
-                var receipt=Owner.MissionPulse(threats,Physical);output=receipt.simulated?"외부 위협 감지":receipt.submitted?"외부 위협 · 햅틱 전송":"조끼 연결 확인 필요";
-                SessionStore.AtomicWrite(Path.Combine(folder,"event-"+Guid.NewGuid().ToString("N")+".json"),"{\"mode\":\"MISSION_DEMO\",\"not_research_data\":true,\"seed\":"+spawnSeed+",\"receipt\":"+JsonUtility.ToJson(receipt)+"}");
+                int count=rng.Next(1,4);
+                var locations=MissionSpawnPlanner.Plan(rng.Next(),count,transform.position.x,transform.position.z,yaw,true,Occupied,true);
+                var threats=locations.Select((p,i)=>{var at=new Vector3((float)p.X,1.9f,(float)p.Z);var delta=at-transform.position;return new Threat("M"+i,true,true,true,at.x,at.y,at.z,delta.magnitude,Angles.Bearing(delta.x,delta.z,yaw));}).ToArray();
+                var receipt=Owner.MissionPulse(threats,Physical);
+                output=receipt.simulated?"화면 체험 · 위치를 표시해 주세요":receipt.submitted?"위치 응답 대기":"조끼 출력 실패 · 체험 응답";
+                BeginThreatResponse(threats,receipt);
             }catch(ArgumentException){output="생성할 공간이 부족합니다. 개방된 구역으로 이동하세요.";}
         }
-        public void SetPaused(bool value){paused=value;if(!value)nextShot=Math.Max(nextShot,Now+.15);if(value){aiming=false;if(Owner)Owner.StopMissionHaptics();}Cursor.lockState=value?CursorLockMode.None:CursorLockMode.Locked;Cursor.visible=value;}
+        public void SetPaused(bool value)
+        {
+            if(!value&&(IsThreatResponse||complete))return;
+            if(value&&IsThreatResponse&&RealNow<responseReadyAt)responseRecord.pulse_interrupted=true;
+            ApplyPause(value,value);
+        }
         void OnApplicationFocus(bool focused){if(!focused)SetPaused(true);}
         public void Exit(){if(exited)return;exited=true;Cleanup();Owner.EndMission();Destroy(this);}
-        void Cleanup(){if(cam){cam.backgroundColor=oldBackground;RenderSettings.fog=oldFog;RestoreEnvironment();}if(gunAudio){gunAudio.Stop();Destroy(gunAudio);}if(muzzle)Destroy(muzzle);if(muzzleLight)Destroy(muzzleLight.gameObject);var effect=GetComponent<MissionImageEffect>();if(effect)Destroy(effect);if(world)Destroy(world);if(weapon)Destroy(weapon);if(body)Destroy(body);}
+        void Cleanup(){gameObject.layer=originalLayer;AbortThreatResponse();if(Owner)Owner.StopMissionHaptics();if(cam){cam.backgroundColor=oldBackground;RenderSettings.fog=oldFog;RestoreEnvironment();}if(gunAudio){gunAudio.Stop();Destroy(gunAudio);}if(muzzle)Destroy(muzzle);if(muzzleLight)Destroy(muzzleLight.gameObject);var effect=GetComponent<MissionImageEffect>();if(effect)Destroy(effect);if(world)Destroy(world);if(weapon)Destroy(weapon);if(body)Destroy(body);}
         void OnDestroy(){if(!exited)Cleanup();}
     }
 }

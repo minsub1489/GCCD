@@ -5,14 +5,14 @@ namespace GCCD.Dts
     public struct MissionSpawnPoint {public double X,Z;}
     public static class MissionSpawnPlanner
     {
-        public static MissionSpawnPoint[] Plan(int seed,int count,double playerX,double playerZ,double yaw,bool offscreen,Func<double,double,bool> occupied)
+        public static MissionSpawnPoint[] Plan(int seed,int count,double playerX,double playerZ,double yaw,bool offscreen,Func<double,double,bool> occupied,bool expanded=false)
         {
             if(count<1||count>12||occupied==null)throw new ArgumentException("Invalid spawn request.");
             Angles.Finite(playerX);Angles.Finite(playerZ);Angles.Finite(yaw);
             var random=new StableRandom(seed);var points=new List<MissionSpawnPoint>();
             for(int attempt=0;attempt<4096&&points.Count<count;attempt++)
             {
-                double x=-9.2+18.4*random.Unit(),z=-23+69*random.Unit();
+                double x=expanded?-35+70*random.Unit():-9.2+18.4*random.Unit(),z=-23+(expanded?74:69)*random.Unit();
                 double dx=x-playerX,dz=z-playerZ,d2=dx*dx+dz*dz;
                 if(d2<36||d2>36*36||occupied(x,z))continue;
                 if(offscreen&&!Angles.IsOffscreen(Angles.Bearing(dx,dz,yaw),100))continue;

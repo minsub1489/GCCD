@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 namespace GCCD.Dts
 {
     [DisallowMultipleComponent]
-    public sealed class ModernInterface:MonoBehaviour
+    public sealed partial class ModernInterface:MonoBehaviour
     {
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
         Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton;Font font;
@@ -23,7 +23,7 @@ namespace GCCD.Dts
             var style=Resources.Load<StyleSheet>("Realism/UI/Operator");if(style)root.styleSheets.Add(style);
             string family=System.Array.Find(new[]{"Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR","Arial"},x=>System.Array.IndexOf(Font.GetOSInstalledFontNames(),x)>=0);
             font=family==null?Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"):Font.CreateDynamicFontFromOSFont(family,22);root.style.unityFontDefinition=FontDefinition.FromFont(font);
-            BuildLobby();BuildHud();
+            BuildLobby();BuildHud();BuildMaps();
         }
         VisualElement Element(VisualElement parent,string classes){var e=new VisualElement();foreach(var c in classes.Split(' '))e.AddToClassList(c);parent.Add(e);return e;}
         Label Label(VisualElement parent,string value,string classes){var l=new Label(value);foreach(var c in classes.Split(' '))l.AddToClassList(c);parent.Add(l);return l;}
@@ -37,7 +37,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             Button(content,"작전 시작    →",()=>platform.StartMission(),"button primary");
             var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.Practice(),"button secondary");Button(secondary,"연구자 설정",()=>platform.OpenAdvanced(),"button secondary");
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
-            var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD  이동     마우스 우클릭  조준     좌클릭  발사     E  회수","control-hint");
+            var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
             testButton=Button(card,"짧은 진동 확인",()=>{try{platform.TestConnectionPulse();pulseError="";}catch(System.Exception e){pulseError=e.Message;}},"button outline");
             pulse=Label(card,"","small muted");confirmButton=Button(card,"진동이 느껴졌어요",()=>platform.ConfirmPulse(),"text-button");
@@ -51,7 +51,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             for(int i=0;i<3;i++)supplyMarkers[i]=Label(hud,"","supply-marker");
             reticle=Element(hud,"reticle");Element(reticle,"cross-top");Element(reticle,"cross-bottom");Element(reticle,"cross-left");Element(reticle,"cross-right");marker=Label(hud,"×","hit-marker");
             var weapon=Element(hud,"weapon-hud");Label(weapon,"AKM  /  7.62","eyebrow");ammo=Label(weapon,"30","ammo");ammoProgress=Element(weapon,"reload-bar");status=Label(weapon,"R  재장전","small muted");
-            Label(hud,"WASD  이동   SHIFT  달리기   E  보급품 회수   ESC  메뉴","hud-controls");
+            Label(hud,"WASD 이동  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도  ·  E 회수  ·  ESC 메뉴","hud-controls");
             pause=Element(hud,"pause-overlay");var panel=Element(pause,"pause-content");Label(panel,"OPERATION CONTROL","eyebrow accent");pauseTitle=Label(panel,"일시정지","pause-title");continueButton=Button(panel,"작전 계속",()=>GetComponent<MissionDemo>().SetPaused(false),"button primary");Button(panel,"로비로 돌아가기",()=>GetComponent<MissionDemo>().Exit(),"button secondary");
             foreach(var e in hud.Query<VisualElement>().ToList())e.pickingMode=PickingMode.Ignore;
             pause.pickingMode=PickingMode.Position;foreach(var b in pause.Query<Button>().ToList())b.pickingMode=PickingMode.Position;
@@ -69,8 +69,9 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
                     if(visible){supplyMarkers[i].style.left=Length.Percent(v.x*100);supplyMarkers[i].style.top=Length.Percent((1-v.y)*100);float distance=Vector3.Distance(transform.position,points[i]);supplyMarkers[i].text=distance<3?"[E] 회수":"◇  "+Mathf.RoundToInt(distance)+" m";}
                 }
                 threatNotice.text=mission.OutputText;threatNotice.style.display=string.IsNullOrEmpty(threatNotice.text)?DisplayStyle.None:DisplayStyle.Flex;
-                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
+                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
         }
+        void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);}
         void OnDestroy(){if(document)Destroy(document);if(panel)Destroy(panel);if(font)Destroy(font);if(scrimTexture)Destroy(scrimTexture);}
     }
 }

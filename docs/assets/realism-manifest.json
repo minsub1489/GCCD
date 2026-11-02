@@ -132,6 +132,42 @@
       "source_url": "https://opengameart.org/sites/default/files/akm54.blend",
       "sha256": "4fe01a2cc27c6d31136e7a776fcef56fc9d336dd0d93e128b2f42778e94cf4d6",
       "bytes": 42527467
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_worn_001/concrete_floor_worn_001_diff_2k.jpg",
+      "bytes": 482906,
+      "sha256": "e29b45cdcd6d02fae3c087c456196ffa750779a9b62e7071aa3831dc322a0cc4"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_2k.jpg",
+      "bytes": 870609,
+      "sha256": "3b782137e34d63fd59b2e92b4e27b2ee4d082caf9dd23f00dc7ab4da5513daef"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_worn_001/concrete_floor_worn_001_rough_2k.jpg",
+      "bytes": 735249,
+      "sha256": "b904992f0d75da2c41edf832bbb838622cca076f48f7913065a152c3b640690e"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/painted_plaster_wall/painted_plaster_wall_diff_2k.jpg",
+      "bytes": 3132937,
+      "sha256": "6fd812ed8dd5be1873c29aeef38ce9bf1fb30a22c6d4b3a12db725e98c26a1be"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/painted_plaster_wall/painted_plaster_wall_nor_gl_2k.jpg",
+      "bytes": 4048392,
+      "sha256": "2d601a46ed5ce2af866741c53cafa3cba472620c272e633b6484d4de16a80eb1"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/painted_plaster_wall/painted_plaster_wall_rough_2k.jpg",
+      "bytes": 1595466,
+      "sha256": "35aad595469533cc3b7cc209cc6c7e065d660211f02c867f4492d3b371b1fee1"
     }
   ],
   "audio_sources": [
@@ -175,6 +211,11 @@
       "sha256": "6cd78dd06b142db35e67116b677a2e14b95b63c064fd594dccc4e7f903c6a44d"
     },
     {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/concrete_floor_worn_001.mat",
+      "bytes": 2419,
+      "sha256": "9d863da7367bd49f5377943c7509c7325da3c27fc5e1ca882879a2562d755040"
+    },
+    {
       "file": "GCCD_Project/Assets/Resources/Realism/Materials/concrete_road_barrier.mat",
       "bytes": 2417,
       "sha256": "94682df502180591418f18c7b087d4ed89c63f42ad7ce6113c29df0ea33c94e6"
@@ -183,6 +224,11 @@
       "file": "GCCD_Project/Assets/Resources/Realism/Materials/old_military_crate.mat",
       "bytes": 2414,
       "sha256": "837fe4491965fd0a44b578f5b248f06daf6dc3187f7bf223e4e37c634f68c44b"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/painted_plaster_wall.mat",
+      "bytes": 2416,
+      "sha256": "61f232dae5403a437fcb87406029144b294b70ea455b7395721a04652a0a689d"
     },
     {
       "file": "GCCD_Project/Assets/Resources/Realism/Materials/sky.mat",
@@ -196,13 +242,18 @@
     },
     {
       "file": "GCCD_Project/Assets/Resources/Realism/UI/Operator.uss",
-      "bytes": 5608,
-      "sha256": "84aac2a45ef8ab8a7977a35b69b21004ac016f7785e7bc107f6ddcfaffd4376a"
+      "bytes": 6835,
+      "sha256": "f58f72557a9d5cb451ef47b6d45a2027c31809cc0dcb56afc388307f8790955d"
     },
     {
       "file": "GCCD_Project/Assets/Resources/Realism/UI/lobby-background.png",
-      "bytes": 1526485,
-      "sha256": "6d36d14cbdfb08dcf10ccb1fd916a4f798e019b0c63b9e070381c788e6a5d7fa"
+      "bytes": 1404113,
+      "sha256": "451d9bc4c7783493cd0b2e830a39770a940bd760710d17b43a754e6519db4e83"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/WorldLabel.shader",
+      "bytes": 695,
+      "sha256": "c83ffc04c95b361c001a330c824ea0c75a5f791c633a16e2a4cc61894cc9856c"
     },
     {
       "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_AmbientOcclusion.png",
@@ -310,6 +361,26 @@
       "sha256": "96a124344ee8ace616cf4397324b7b2e47c4f07b6961d12bc19a7b90d2bf61a0"
     },
     {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/albedo.jpg",
+      "bytes": 482906,
+      "sha256": "e29b45cdcd6d02fae3c087c456196ffa750779a9b62e7071aa3831dc322a0cc4"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/normal.jpg",
+      "bytes": 870609,
+      "sha256": "3b782137e34d63fd59b2e92b4e27b2ee4d082caf9dd23f00dc7ab4da5513daef"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/packed-metal.png",
+      "bytes": 3245695,
+      "sha256": "51702eb5a56a8307030cf3e627d54f4e38cb55d12b3c2bffcccebe297439e881"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_floor_worn_001/roughness.jpg",
+      "bytes": 735249,
+      "sha256": "b904992f0d75da2c41edf832bbb838622cca076f48f7913065a152c3b640690e"
+    },
+    {
       "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/albedo.jpg",
       "bytes": 3189621,
       "sha256": "51832691e0769a04246b61222e5df1ce7dc22e9c7162f786a314409ac76d643c"
@@ -368,6 +439,26 @@
       "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/roughness.jpg",
       "bytes": 2450827,
       "sha256": "7a97ae31a5ee0a9e80f13868e475b76f20d9cd012bd9e6b80d8356a5d7c94455"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/albedo.jpg",
+      "bytes": 3132937,
+      "sha256": "6fd812ed8dd5be1873c29aeef38ce9bf1fb30a22c6d4b3a12db725e98c26a1be"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/normal.jpg",
+      "bytes": 4048392,
+      "sha256": "2d601a46ed5ce2af866741c53cafa3cba472620c272e633b6484d4de16a80eb1"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/packed-metal.png",
+      "bytes": 2666266,
+      "sha256": "d6e15edba1e615179ce0af2a31e934766b85b783809a84cf0d2dbe99873cf34d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/painted_plaster_wall/roughness.jpg",
+      "bytes": 1595466,
+      "sha256": "35aad595469533cc3b7cc209cc6c7e065d660211f02c867f4492d3b371b1fee1"
     }
   ]
 }

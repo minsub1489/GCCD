@@ -10,6 +10,8 @@
 | Asphalt 02 / Poly Haven | 도로 PBR 질감 | https://polyhaven.com/a/asphalt_02 |
 | Brick Wall 001 / Poly Haven | 창고 외벽 PBR 질감 | https://polyhaven.com/a/brick_wall_001 |
 | Industrial Sunset 02 PureSky / Poly Haven | 2K HDR 하늘 | https://polyhaven.com/a/industrial_sunset_02_puresky |
+| Concrete Floor Worn 001 / Dimitrios Savva, Rico Cilliers (Poly Haven) | 실내 바닥 2K PBR | https://polyhaven.com/a/concrete_floor_worn_001 |
+| Painted Plaster Wall / Amal Kumar (Poly Haven) | 실내 벽·천장 2K PBR | https://polyhaven.com/a/painted_plaster_wall |
 | Weathered AKM Rifle / LonesomeDucky | AKM 소총 | https://opengameart.org/content/weathered-akm-rifle |
 | Random Gunfire SFX / iamoneabe | 발사음 | https://opengameart.org/content/random-gunfire-sfx |
 | Gun Reload Sounds / SpringySpringo | 소총 재장전음 | https://opengameart.org/content/gun-reload-sounds |
