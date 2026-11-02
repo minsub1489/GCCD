@@ -35,7 +35,7 @@ namespace GCCD.Editor
         static void Build(BuildTarget target,string path)
         {
             if(!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone,target))throw new InvalidOperationException("Build support module unavailable: "+target);
-            Generate();var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{ScenePath},target=target,locationPathName=path,options=BuildOptions.Development});
+            Generate();var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{ScenePath},target=target,locationPathName=path,options=BuildOptions.None});
             if(report.summary.result!=BuildResult.Succeeded)throw new Exception("Build failed: "+report.summary.result);
             Debug.Log("DTS_BUILD_SUCCESS "+target+" "+report.summary.totalSize);
         }

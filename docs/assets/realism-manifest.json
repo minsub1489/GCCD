@@ -1,0 +1,373 @@
+{
+  "license": "CC0-1.0",
+  "original_downloads": [
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/model.fbx",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/fbx/2k/barrel_03/barrel_03_2k.fbx",
+      "sha256": "7128ff67ee64d3f04393fd2663b07c6512c91135ceae602ab763bb0ff8b5bf5e",
+      "bytes": 63996
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/barrel_03/barrel_03_diff_2k.jpg",
+      "sha256": "7fdd72264cfbf3e21d8caa0aca4ae4942c2004192cea89b84e88dfd49567f6c5",
+      "bytes": 581642
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/barrel_03/barrel_03_nor_gl_2k.jpg",
+      "sha256": "6d639b6203b68a123d0dddd136fdbb6dc06fbc6c36898bd4f35c15a742a78ecc",
+      "bytes": 496907
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/barrel_03/barrel_03_rough_2k.jpg",
+      "sha256": "9fcae31a333d7efa2603eddb7fb1d089b156037e359bb1578116ec5a9511cf4d",
+      "bytes": 1011647
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/metal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/barrel_03/barrel_03_metal_2k.jpg",
+      "sha256": "da4818ef33f14ba93ea3038b718fc28e7dffba2a5ee31a9be7011aeeda5774f3",
+      "bytes": 348545
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/model.fbx",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/fbx/2k/concrete_road_barrier/concrete_road_barrier_2k.fbx",
+      "sha256": "f6a9c2a0a7bc9cc22468f1eda214490b981a12ddc5cbcc2dc8af6c29a3db366e",
+      "bytes": 2887532
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/concrete_road_barrier/concrete_road_barrier_diff_2k.jpg",
+      "sha256": "51832691e0769a04246b61222e5df1ce7dc22e9c7162f786a314409ac76d643c",
+      "bytes": 3189621
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/concrete_road_barrier/concrete_road_barrier_nor_gl_2k.jpg",
+      "sha256": "8e48a287ae58a53030635c585d57a2da72660531a907a8e6cd04836bc60bf3a3",
+      "bytes": 3888469
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/concrete_road_barrier/concrete_road_barrier_rough_2k.jpg",
+      "sha256": "81962e45c3d42e7c1f3d0be4ecbb15c59df57c31a0bf21289c9ea8e3c206f27a",
+      "bytes": 2087357
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/model.fbx",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/fbx/2k/old_military_crate/old_military_crate_2k.fbx",
+      "sha256": "04cac900338f11be5fe0a280b100e3c709eb9febc4ad75364d59cd9770b33d3d",
+      "bytes": 354396
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/old_military_crate/old_military_crate_diff_2k.jpg",
+      "sha256": "ebc666e42a5d276195f2589243e2c202f3cd166216c96e7d6a776feada85002d",
+      "bytes": 2968985
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/old_military_crate/old_military_crate_nor_gl_2k.jpg",
+      "sha256": "121a513b6d70be49f6ff17ddb0a04e8ff217f7a580ed93cacebae907e4907c98",
+      "bytes": 3184154
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/old_military_crate/old_military_crate_rough_2k.jpg",
+      "sha256": "7a97ae31a5ee0a9e80f13868e475b76f20d9cd012bd9e6b80d8356a5d7c94455",
+      "bytes": 2450827
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/metal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/old_military_crate/old_military_crate_metal_2k.jpg",
+      "sha256": "5d500fcc38916dcaab7021f075ab0e161cd0fd35133ff3ab51c212f38e9e8d75",
+      "bytes": 129724
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_diff_2k.jpg",
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c",
+      "bytes": 3075676
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_nor_gl_2k.jpg",
+      "sha256": "ffe49db71a0fd34c1e259625df66a302a237597d6ef655307987ec4e45bc6f21",
+      "bytes": 4943950
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_2k.jpg",
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c",
+      "bytes": 2230457
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/albedo.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brick_wall_001/brick_wall_001_diffuse_2k.jpg",
+      "sha256": "aefa7f3743282de2c7df4e4282c868de204239ac3c94e818b1ef74f2a2d74f1a",
+      "bytes": 2043756
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/normal.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brick_wall_001/brick_wall_001_nor_gl_2k.jpg",
+      "sha256": "62cc36d391b2f73c3855fd745a5815686db59d73bf3ef9db2ad96ca27eb97e32",
+      "bytes": 1160617
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/roughness.jpg",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brick_wall_001/brick_wall_001_rough_2k.jpg",
+      "sha256": "96a124344ee8ace616cf4397324b7b2e47c4f07b6961d12bc19a7b90d2bf61a0",
+      "bytes": 788257
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/industrial-sky.hdr",
+      "source_url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/2k/industrial_sunset_02_puresky_2k.hdr",
+      "sha256": "439d7e99b34bd3727896d9a06247d4bd80d8276f208f4fdefce919ce74b602c3",
+      "bytes": 4132592
+    },
+    {
+      "file": ".test-build/realism/akm.blend",
+      "source_url": "https://opengameart.org/sites/default/files/akm54.blend",
+      "sha256": "4fe01a2cc27c6d31136e7a776fcef56fc9d336dd0d93e128b2f42778e94cf4d6",
+      "bytes": 42527467
+    }
+  ],
+  "audio_sources": [
+    "https://opengameart.org/sites/default/files/gunfire_sfx.wav",
+    "https://opengameart.org/sites/default/files/assaultriflereload1_0.wav"
+  ],
+  "resources": [
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Audio/reload.wav",
+      "bytes": 274476,
+      "sha256": "efb2d724d634eabe6ba8d3065686abca848bb7497d4d43a5e4aed5e5ea23016f"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Audio/rifle-shot.wav",
+      "bytes": 114704,
+      "sha256": "3d1478535ef9518a28fd3cc4e94ffd9f1fe594538a2e6a0d61dc2ceaf188ae79"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/FilmFinish.shader",
+      "bytes": 534,
+      "sha256": "7f93bde52532c5936f4ea2191d52c62a0020c8f3201cd86b91cbee4dd6cdf41d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/akm.mat",
+      "bytes": 2399,
+      "sha256": "2799f7866ae0716829e59d6bc1126191653e355513e708fd6133ed5f676327a6"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/asphalt_02.mat",
+      "bytes": 2406,
+      "sha256": "fbd33858c464dd91e0727de26f9829ecf2492af2e7ab5f92c3a0ddec60ff5945"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/barrel_03.mat",
+      "bytes": 2405,
+      "sha256": "858fe6db9dbd6d598d140222999bb22217ae5b47fb41dcbb430849132472d8b0"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/brick_wall_001.mat",
+      "bytes": 2410,
+      "sha256": "6cd78dd06b142db35e67116b677a2e14b95b63c064fd594dccc4e7f903c6a44d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/concrete_road_barrier.mat",
+      "bytes": 2417,
+      "sha256": "94682df502180591418f18c7b087d4ed89c63f42ad7ce6113c29df0ea33c94e6"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/old_military_crate.mat",
+      "bytes": 2414,
+      "sha256": "837fe4491965fd0a44b578f5b248f06daf6dc3187f7bf223e4e37c634f68c44b"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/Materials/sky.mat",
+      "bytes": 1113,
+      "sha256": "e8e8530c4873f1045c5fb108425b49cfe30d31f8a15d69bc2d30dd00af952882"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/UI/DefaultTheme.tss",
+      "bytes": 38,
+      "sha256": "682e2b1c6cc1d6e332c15f56c840f7d8282cb1e5bc627eb6664580352a752fda"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/UI/Operator.uss",
+      "bytes": 5608,
+      "sha256": "84aac2a45ef8ab8a7977a35b69b21004ac016f7785e7bc107f6ddcfaffd4376a"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/UI/lobby-background.png",
+      "bytes": 1526485,
+      "sha256": "6d36d14cbdfb08dcf10ccb1fd916a4f798e019b0c63b9e070381c788e6a5d7fa"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_AmbientOcclusion.png",
+      "bytes": 890905,
+      "sha256": "676b5282bb5d90d20e526bfe9a9286102a879c8ca28181ab9b3cdaaeb7087e6b"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_BaseColor.png",
+      "bytes": 3205765,
+      "sha256": "b0e941b775ec1062b3321738cd60776ccd7c2082cee3c0e2e3a34b9852cf76c0"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_Metallic.png",
+      "bytes": 108478,
+      "sha256": "97a3073e4d5de6ffcc883050c3944c2e198fb127ba3e63c29c4f3f5811456b30"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_Normal.png",
+      "bytes": 4747641,
+      "sha256": "c1c911db7d65251e9c2dc386e94807fb45bd4296405053519fbe440768e4d013"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/Material_Roughness.png",
+      "bytes": 2509580,
+      "sha256": "d7d17dec4ffba87ec7cccfde8e99277c960cb0b96d9df76258bf41fc8c326e66"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/packed-metal.png",
+      "bytes": 2530047,
+      "sha256": "876c23ef3f314d0b3f885d3a55425c816839e6ad6ec823e666838dc3f8040be0"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/akm/weapon.fbx",
+      "bytes": 206812,
+      "sha256": "a60a58a115ad2907bfd52c2d5a4fce26927447d14aee9b01b626852252c2d046"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/albedo.jpg",
+      "bytes": 3075676,
+      "sha256": "28f5ba8690553f192c0e5e1a5ff40f34765b4b93f4cc7059b1a3e9c795b6c28c"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/normal.jpg",
+      "bytes": 4943950,
+      "sha256": "ffe49db71a0fd34c1e259625df66a302a237597d6ef655307987ec4e45bc6f21"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/packed-metal.png",
+      "bytes": 4302767,
+      "sha256": "4f84eef0a62779db33ad023d653a3d9486b24831b5550621d926fea2fd87b543"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/asphalt_02/roughness.jpg",
+      "bytes": 2230457,
+      "sha256": "b9a516b61b7040a9245ac206642d5f767ad9589a0169c4a1668221429e8a998c"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/albedo.jpg",
+      "bytes": 581642,
+      "sha256": "7fdd72264cfbf3e21d8caa0aca4ae4942c2004192cea89b84e88dfd49567f6c5"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/metal.jpg",
+      "bytes": 348545,
+      "sha256": "da4818ef33f14ba93ea3038b718fc28e7dffba2a5ee31a9be7011aeeda5774f3"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/model.fbx",
+      "bytes": 63996,
+      "sha256": "7128ff67ee64d3f04393fd2663b07c6512c91135ceae602ab763bb0ff8b5bf5e"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/normal.jpg",
+      "bytes": 496907,
+      "sha256": "6d639b6203b68a123d0dddd136fdbb6dc06fbc6c36898bd4f35c15a742a78ecc"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/packed-metal.png",
+      "bytes": 4688829,
+      "sha256": "7cd48cf74147a6983487b55d5a82a3afdede697dab6e7c82259852b636b5e237"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/barrel_03/roughness.jpg",
+      "bytes": 1011647,
+      "sha256": "9fcae31a333d7efa2603eddb7fb1d089b156037e359bb1578116ec5a9511cf4d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/albedo.jpg",
+      "bytes": 2043756,
+      "sha256": "aefa7f3743282de2c7df4e4282c868de204239ac3c94e818b1ef74f2a2d74f1a"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/normal.jpg",
+      "bytes": 1160617,
+      "sha256": "62cc36d391b2f73c3855fd745a5815686db59d73bf3ef9db2ad96ca27eb97e32"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/packed-metal.png",
+      "bytes": 2304328,
+      "sha256": "fc21d5a048c3a420c36527ecc2950dfe689dcb77491013b6ac4ac5122ff001ad"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/brick_wall_001/roughness.jpg",
+      "bytes": 788257,
+      "sha256": "96a124344ee8ace616cf4397324b7b2e47c4f07b6961d12bc19a7b90d2bf61a0"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/albedo.jpg",
+      "bytes": 3189621,
+      "sha256": "51832691e0769a04246b61222e5df1ce7dc22e9c7162f786a314409ac76d643c"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/model.fbx",
+      "bytes": 2887532,
+      "sha256": "f6a9c2a0a7bc9cc22468f1eda214490b981a12ddc5cbcc2dc8af6c29a3db366e"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/normal.jpg",
+      "bytes": 3888469,
+      "sha256": "8e48a287ae58a53030635c585d57a2da72660531a907a8e6cd04836bc60bf3a3"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/packed-metal.png",
+      "bytes": 3165561,
+      "sha256": "b7d12dd3cef335360e8b702bbc81f7ad6a394418c6196506c7e7dadce7f7a65e"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/concrete_road_barrier/roughness.jpg",
+      "bytes": 2087357,
+      "sha256": "81962e45c3d42e7c1f3d0be4ecbb15c59df57c31a0bf21289c9ea8e3c206f27a"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/industrial-sky.hdr",
+      "bytes": 4132592,
+      "sha256": "439d7e99b34bd3727896d9a06247d4bd80d8276f208f4fdefce919ce74b602c3"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/albedo.jpg",
+      "bytes": 2968985,
+      "sha256": "ebc666e42a5d276195f2589243e2c202f3cd166216c96e7d6a776feada85002d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/metal.jpg",
+      "bytes": 129724,
+      "sha256": "5d500fcc38916dcaab7021f075ab0e161cd0fd35133ff3ab51c212f38e9e8d75"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/model.fbx",
+      "bytes": 354396,
+      "sha256": "04cac900338f11be5fe0a280b100e3c709eb9febc4ad75364d59cd9770b33d3d"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/normal.jpg",
+      "bytes": 3184154,
+      "sha256": "121a513b6d70be49f6ff17ddb0a04e8ff217f7a580ed93cacebae907e4907c98"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/packed-metal.png",
+      "bytes": 3644063,
+      "sha256": "4c60dfe1685cecac1a9e3071801dc4b91d48227932d241746a50ec7ace04b655"
+    },
+    {
+      "file": "GCCD_Project/Assets/Resources/Realism/old_military_crate/roughness.jpg",
+      "bytes": 2450827,
+      "sha256": "7a97ae31a5ee0a9e80f13868e475b76f20d9cd012bd9e6b80d8356a5d7c94455"
+    }
+  ]
+}

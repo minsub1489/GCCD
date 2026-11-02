@@ -36,7 +36,7 @@ namespace GCCD.Dts
         public string ConfigPath{get{return Path.Combine(Application.persistentDataPath,"DtsSettings","experiment_config.json");}}
         string Root{get{return string.IsNullOrEmpty(DataRootOverride)?Path.Combine(Application.persistentDataPath,"ExperimentData"):DataRootOverride;}}
         public string FrozenHash(ExperimentConfig c){string old=c.LockedHash;c.LockedHash="";string result=SessionStore.Hash(JsonUtility.ToJson(c));c.LockedHash=old;return result;}
-        void Awake(){haptics.Clock=()=>Now;view=GetComponent<Camera>();view.nearClipPlane=.05f;view.farClipPlane=100;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);SetHorizontalFov(config.HorizontalFov);MakeFireSound();}
+        void Awake(){if(Application.isPlaying&&!GetComponent<ModernInterface>())gameObject.AddComponent<ModernInterface>();haptics.Clock=()=>Now;view=GetComponent<Camera>();view.nearClipPlane=.05f;view.farClipPlane=100;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);SetHorizontalFov(config.HorizontalFov);MakeFireSound();}
         void SetHorizontalFov(double hfov){view.fieldOfView=(float)(2*Math.Atan(Math.Tan(hfov*Math.PI/360)/Math.Max(.1,view.aspect))*180/Math.PI);}
         public void SaveConfig(){Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));SessionStore.AtomicWrite(ConfigPath,JsonUtility.ToJson(config,true));}
         public void LoadConfig(){config=JsonUtility.FromJson<ExperimentConfig>(File.ReadAllText(ConfigPath));if(config==null||config.Mapping==null)throw new ArgumentException("Invalid config file.");}

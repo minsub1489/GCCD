@@ -28,6 +28,7 @@ namespace GCCD.Dts
         }
         void OnGUI()
         {
+            var modern=GetComponent<ModernInterface>();if(modern&&modern.Showing)return;
             InitStyles();
             ApplyComfortableSkin();
             if(Phase==TrialPhase.Setup){DrawSetup();return;}
