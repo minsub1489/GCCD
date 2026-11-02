@@ -25,7 +25,7 @@ namespace GCCD.Dts
         {
             public string mode="MISSION_DEMO",event_id,state,utc;public bool not_research_data=true;public int seed;
             public Vector3 observer_position;public float observer_yaw;public Vector3[] source_positions,response_positions;
-            public OutputReceipt receipt;public double response_seconds;public bool pulse_interrupted;
+            public OutputReceipt receipt;public double response_seconds;public double intensity_low=MissionLow,intensity_high=MissionHigh;public bool pulse_interrupted;
         }
         void BeginThreatResponse(Threat[] threats,OutputReceipt receipt)
         {

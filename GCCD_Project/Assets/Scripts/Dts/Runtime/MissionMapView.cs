@@ -8,6 +8,7 @@ namespace GCCD.Dts
         public Vector3 PlayerPosition;public float PlayerYaw;public Vector3[] Supplies=new Vector3[0];
         public MissionSpawnPoint[] Markers=new MissionSpawnPoint[0];public Action<double,double> Picked;
         public bool Interactive,Detailed;
+        public Vector3[] ActualSources=new Vector3[0];public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
         Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect((contentRect.width-72*scale)/2,(contentRect.height-78*scale)/2,72*scale,78*scale);}}
         public MissionMapView()
@@ -43,6 +44,9 @@ namespace GCCD.Dts
             foreach(var supply in Supplies)Circle(p,Point(supply.x,supply.z),3.5f,new Color(.47f,.78f,.61f));
             Vector2 at=Point(PlayerPosition.x,PlayerPosition.z);float yaw=PlayerYaw*Mathf.Deg2Rad;Vector2 forward=new Vector2(Mathf.Sin(yaw),-Mathf.Cos(yaw)),right=new Vector2(-forward.y,forward.x);
             p.fillColor=new Color(.55f,.85f,.89f);p.BeginPath();p.MoveTo(at+forward*10);p.LineTo(at-forward*6+right*6);p.LineTo(at-forward*3);p.LineTo(at-forward*6-right*6);p.ClosePath();p.Fill();
+            p.lineWidth=1.5f;p.strokeColor=new Color(.65f,.72f,.70f,.7f);
+            for(int i=0;i<Markers.Length&&i<MatchedSourceIndices.Length;i++){int j=MatchedSourceIndices[i];if(j>=0&&j<ActualSources.Length)Line(p,Point(Markers[i].X,Markers[i].Z),Point(ActualSources[j].x,ActualSources[j].z));}
+            foreach(var source in ActualSources){Vector2 pos=Point(source.x,source.z);Circle(p,pos,9,new Color(.3f,.83f,.66f));Circle(p,pos,5,new Color(.08f,.12f,.14f));}
             foreach(var marker in Markers){Vector2 pos=Point(marker.X,marker.Z);Circle(p,pos,7,new Color(.91f,.68f,.29f));Circle(p,pos,2,new Color(.12f,.13f,.12f));}
             p.strokeColor=new Color(.45f,.62f,.65f);p.lineWidth=1;p.BeginPath();p.MoveTo(r.min);p.LineTo(new Vector2(r.xMax,r.yMin));p.LineTo(r.max);p.LineTo(new Vector2(r.xMin,r.yMax));p.ClosePath();p.Stroke();
         }

@@ -8,7 +8,7 @@ namespace GCCD.Dts
     public sealed partial class ExperimentPlatform
     {
         public void StartMission(){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.Physical=connectionReady;enabled=false;}
-        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MotorComposer.Compose(p.Kept,config.Mapping,.08,.20);config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,200,config,!physical,true);}
+        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MotorComposer.Compose(p.Kept,config.Mapping,MissionDemo.MissionLow,MissionDemo.MissionHigh);config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,200,config,!physical,true);}
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}
@@ -19,6 +19,7 @@ namespace GCCD.Dts
     }
     public sealed partial class MissionDemo:MonoBehaviour
     {
+        public const double MissionLow=.20,MissionHigh=.45;
         public ExperimentPlatform Owner;public bool Physical;public Func<double> Clock;
         GameObject world,weapon,muzzle;CharacterController body;Camera cam;Color oldBackground;bool oldFog;
         readonly Dictionary<Collider,GameObject> shootable=new Dictionary<Collider,GameObject>();readonly List<GameObject> supplies=new List<GameObject>();
@@ -71,8 +72,8 @@ namespace GCCD.Dts
             StepMovement(new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical")),Input.GetKeyDown(KeyCode.Space),Input.GetKey(KeyCode.LeftShift),Time.deltaTime);
             SetAiming(Input.GetMouseButton(1));if(Input.GetMouseButton(0))Fire(transform.forward);if(Input.GetKeyDown(KeyCode.R))Reload();if(Input.GetKeyDown(KeyCode.E))CollectNearby();
             StepWeapon(Time.deltaTime);
+            if(TryCompleteMission())return;
             if(Now>=nextThreat&&Now-lastThreat>3)ThreatEvent();
-            if(collected>=3&&hits>=5){complete=true;SetPaused(true);}
         }
         public void SetAiming(bool value){aiming=value&&!IsReloading&&!paused;}
         public void StepWeapon(float dt)
@@ -119,7 +120,7 @@ namespace GCCD.Dts
         }
         void OnApplicationFocus(bool focused){if(!focused)SetPaused(true);}
         public void Exit(){if(exited)return;exited=true;Cleanup();Owner.EndMission();Destroy(this);}
-        void Cleanup(){gameObject.layer=originalLayer;AbortThreatResponse();if(Owner)Owner.StopMissionHaptics();if(cam){cam.backgroundColor=oldBackground;RenderSettings.fog=oldFog;RestoreEnvironment();}if(gunAudio){gunAudio.Stop();Destroy(gunAudio);}if(muzzle)Destroy(muzzle);if(muzzleLight)Destroy(muzzleLight.gameObject);var effect=GetComponent<MissionImageEffect>();if(effect)Destroy(effect);if(world)Destroy(world);if(weapon)Destroy(weapon);if(body)Destroy(body);}
+        void Cleanup(){gameObject.layer=originalLayer;AbortThreatResponse();if(!string.IsNullOrEmpty(folder))ExportMissionData();if(Owner)Owner.StopMissionHaptics();if(cam){cam.backgroundColor=oldBackground;RenderSettings.fog=oldFog;RestoreEnvironment();}if(gunAudio){gunAudio.Stop();Destroy(gunAudio);}if(muzzle)Destroy(muzzle);if(muzzleLight)Destroy(muzzleLight.gameObject);var effect=GetComponent<MissionImageEffect>();if(effect)Destroy(effect);if(world)Destroy(world);if(weapon)Destroy(weapon);if(body)Destroy(body);}
         void OnDestroy(){if(!exited)Cleanup();}
     }
 }
