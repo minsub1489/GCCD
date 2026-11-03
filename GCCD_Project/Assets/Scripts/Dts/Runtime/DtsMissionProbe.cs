@@ -82,7 +82,13 @@ namespace GCCD.Dts
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
             if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.2||e.IntensityHigh!=.8))Fail("Recorded haptic encoding range");
             string beforeExport=File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"));m.ExportMissionData();if(File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"))!=beforeExport)Fail("Duplicate-free re-export");
+            var sectors = ui.Q<Toggle>("resultSuppressionToggle");
+            if(sectors==null||!sectors.enabledSelf||resultMap.ShowSuppressionSectors||resultMap.SuppressionTheta!=60)Fail("Suppression sector control initial state");
+            sectors.value=true;
+            if(!resultMap.ShowSuppressionSectors)Fail("Suppression sector toggle activates overlay");
             yield return CaptureInterface("mission-results-ui.png");
+            sectors.value=false;
+            if(resultMap.ShowSuppressionSectors)Fail("Suppression sector toggle hides overlay");
             File.WriteAllText("results-folder.txt",m.CsvFolder);Debug.Log("DTS_RESULT_FLOW_PASS");
             m.Exit();yield return null;if(!p.enabled||GetComponent<CharacterController>()||GetComponent<MissionImageEffect>())Fail("Mission cleanup");
             if(camera.farClipPlane!=originalFar||camera.allowHDR!=originalHdr||RenderSettings.ambientSkyColor!=originalSky||RenderSettings.fogColor!=originalFog)Fail("Research render settings restored");
