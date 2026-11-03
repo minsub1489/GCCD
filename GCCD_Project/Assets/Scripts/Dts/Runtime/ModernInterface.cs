@@ -8,7 +8,7 @@ namespace GCCD.Dts
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
         Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton,experimentButton;Font font;
         DropdownField missionAngle;
-        string rangeError = "";
+        string rangeError = "억제각을 선택하고 최소·최대 위협 수를 입력하세요.";
         public bool Showing {get;private set;}
         public bool HasLobby {get{return lobby!=null;}}
         System.Collections.IEnumerator Start()
@@ -34,41 +34,55 @@ namespace GCCD.Dts
         {
             lobby=Element(root,"lobby");background=Element(lobby,"backdrop");var image=Resources.Load<Texture2D>("Realism/UI/lobby-background");if(image)background.style.backgroundImage=image;
             var scrim=Element(lobby,"scrim");scrimTexture=new Texture2D(256,1,TextureFormat.RGBA32,false);for(int x=0;x<256;x++){float f=x/255f;scrimTexture.SetPixel(x,0,new Color(.025f,.04f,.05f,Mathf.Lerp(.91f,.10f,Mathf.SmoothStep(0,1,f))));}scrimTexture.Apply();scrim.style.backgroundImage=scrimTexture;
-var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
-            var content=Element(lobby,"lobby-content");Label(content,"RECOVERY OPERATION","eyebrow accent");Label(content,"공업지대\n수색 작전","hero");Label(content,"보급품을 회수하고 경계 드론을 무력화하세요.\n시야 밖 위협은 조끼의 진동으로 전달됩니다.","description");
-            Button(content,"작전 시작    →",()=>platform.StartMission(missionAngle.index == 0 ? 45 : ThreatPolicy.Conditions[missionAngle.index - 1]),"button primary");
-            var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
+var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
+            var content=Element(lobby,"lobby-content");Label(content,"HAPTIC THREAT DETECTION","eyebrow accent");Label(content,"Finding\nThreat","hero");Label(content,"시야 밖 위협의 방향과 거리를 진동으로 감지하세요.","description");
+            Button(content,"작전 시작    →",()=>platform.StartMission(missionAngle.index <= 1 ? 45 : ThreatPolicy.Conditions[missionAngle.index - 2]),"button primary");
+            var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"억제각 선택","전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
             missionAngle=angles;
             angles.name="studyAngle";
             angles.AddToClassList("study-field");
             content.Add(angles);
             var rangeRow = Element(content, "row");
-            var minimumField = new TextField("최소 위협 수") { name = "studyThreatMinimum", value = "3" };
-            var maximumField = new TextField("최대 위협 수") { name = "studyThreatMaximum", value = "8" };
+            var minimumField = new TextField("최소 위협 수") { name = "studyThreatMinimum" };
+            var maximumField = new TextField("최대 위협 수") { name = "studyThreatMaximum" };
             foreach (var input in new[] { minimumField, maximumField })
             {
                 input.style.flexGrow = 1;
                 input.AddToClassList("study-field");
                 rangeRow.Add(input);
-                input.RegisterValueChangedCallback(_ => rangeError = "");
+
             }
+            string ValidateStudyInputs(out int minimum, out int maximum)
+            {
+                minimum = maximum = 0;
+                bool missingAngle = angles.index <= 0;
+                bool missingRange = string.IsNullOrWhiteSpace(minimumField.value) || string.IsNullOrWhiteSpace(maximumField.value);
+                if (missingAngle && missingRange) return "억제각을 선택하고 최소·최대 위협 수를 입력하세요.";
+                if (missingAngle) return "억제각을 선택하세요.";
+                if (missingRange) return "최소·최대 위협 수를 모두 입력하세요.";
+                if (!int.TryParse(minimumField.value, out minimum) || !int.TryParse(maximumField.value, out maximum) ||
+                    minimum < 2 || maximum < minimum)
+                    return "2 이상의 정수를 입력하고 최대 위협 수를 최소 이상으로 설정하세요.";
+                return "";
+            }
+
+            angles.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
+            minimumField.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
+            maximumField.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
+            lobbyError = Label(content, "", "small");
+            lobbyError.name = "studyInputError";
+            lobbyError.style.color = new Color(1f, .43f, .42f);
             var secondary = Element(content, "row");
-            Button(secondary, "응답 연습", () => { rangeError = ""; platform.StartLobbyExperiment(true); }, "button secondary");
+            Button(secondary, "응답 연습", () => platform.StartLobbyExperiment(true), "button secondary");
             experimentButton = Button(secondary, "실험 시작 · 화면 연습", () =>
             {
-                if (!int.TryParse(minimumField.value, out int minimum) ||
-                    !int.TryParse(maximumField.value, out int maximum) ||
-                    minimum < 2 || maximum < minimum)
-                {
-                    rangeError = "2 이상의 정수를 입력하고, 최대 위협 수를 최소 이상으로 설정하세요.";
-                    return;
-                }
-                rangeError = "";
-                int theta = angles.index == 0 ? -1 : ThreatPolicy.Conditions[angles.index - 1];
+                rangeError = ValidateStudyInputs(out int minimum, out int maximum);
+                if (!string.IsNullOrEmpty(rangeError)) return;
+                int theta = angles.index == 1 ? -1 : ThreatPolicy.Conditions[angles.index - 2];
                 platform.StartLobbyExperiment(false, theta, minimum, maximum);
             }, "button secondary");
             experimentButton.name = "startExperiment";
-            var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
+            var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
             testButton=Button(card,"진동 · 방향/거리 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";
@@ -93,7 +107,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var mission=GetComponent<MissionDemo>();bool game=mission&&mission.HasWorld;
             bool home=platform.enabled&&platform.Phase==TrialPhase.Setup&&!platform.AdvancedVisible;
             Showing=home||game;root.style.display=Showing?DisplayStyle.Flex:DisplayStyle.None;lobby.style.display=home?DisplayStyle.Flex:DisplayStyle.None;hud.style.display=game?DisplayStyle.Flex:DisplayStyle.None;
-            if(home){experimentButton.text=platform.LobbySimulation?"실험 시작 · 화면 연습":"실험 시작";device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=string.IsNullOrEmpty(rangeError)?platform.Error:rangeError;}
+            if(home){experimentButton.text=platform.LobbySimulation?"실험 시작 · 화면 연습":"실험 시작";device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=string.IsNullOrEmpty(rangeError)?platform.Error:rangeError;lobbyError.style.display=string.IsNullOrEmpty(lobbyError.text)?DisplayStyle.None:DisplayStyle.Flex;}
             if(game){
                 var points=mission.SupplyPositions;for(int i=0;i<3;i++){
                     bool visible=i<points.Length;Vector3 v=visible?GetComponent<Camera>().WorldToViewportPoint(points[i]):Vector3.zero;visible=visible&&v.z>0&&v.x>0&&v.x<1&&v.y>0&&v.y<1;

@@ -20,7 +20,17 @@ namespace GCCD.Dts
             var button = GetComponent<UnityEngine.UIElements.UIDocument>().rootVisualElement.Q<UnityEngine.UIElements.Button>("startExperiment");
             Require(button != null, "lobby start button");
             var ui = GetComponent<UIDocument>().rootVisualElement;
-            ui.Q<DropdownField>("studyAngle").index = 4;
+            button.Focus();
+            using (var missing = NavigationSubmitEvent.GetPooled()) button.SendEvent(missing);
+            yield return null;
+            Require(p.Phase == TrialPhase.Setup && string.IsNullOrEmpty(p.Folder), "empty settings block start");
+            Require(ui.Q<Label>("studyInputError").text.Contains("최소·최대"), "missing settings notice");
+            ui.Q<TextField>("studyThreatMinimum").value = "4";
+            ui.Q<TextField>("studyThreatMaximum").value = "10";
+            button.Focus();
+            using (var missingAngle = NavigationSubmitEvent.GetPooled()) button.SendEvent(missingAngle);
+            Require(p.Phase == TrialPhase.Setup && string.IsNullOrEmpty(p.Folder), "angle selection required");
+            ui.Q<DropdownField>("studyAngle").index = 5;
             ui.Q<TextField>("studyThreatMinimum").value = "10";
             ui.Q<TextField>("studyThreatMaximum").value = "4";
             button.Focus();
