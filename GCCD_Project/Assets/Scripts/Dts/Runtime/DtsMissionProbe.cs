@@ -48,7 +48,7 @@ namespace GCCD.Dts
             var supplies=FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Supply ")).ToArray();foreach(var supply in supplies){Place(supply.position+Vector3.up);if(!m.CollectNearby())Fail("E collection");}if(m.SuppliesCollected!=3)Fail("Three indoor supplies");
             var targets=FindObjectsByType<BoxCollider>(FindObjectsSortMode.None).Where(c=>c.gameObject.name=="Security drone").ToArray();foreach(var target in targets){Place(target.bounds.center+Vector3.up*.5f);time+=.2;if(!m.Fire(Vector3.down)){RaycastHit detail;Physics.Raycast(transform.position,Vector3.down,out detail,90);Fail("Enemy raycast paused="+m.IsPaused+" rounds="+m.Ammo+" hits="+m.ShotsHit+" collider="+(detail.collider?detail.collider.name:"none"));}int fired=m.ShotsFired,rounds=m.Ammo;m.Fire(Vector3.down);if(m.ShotsFired!=fired||m.Ammo!=rounds)Fail("Fire rate enforcement");}if(m.ShotsHit!=5)Fail("Five enemy hits");
             if(!m.Reload()||!m.IsReloading)Fail("Reload begin");int before=m.ShotsFired;m.Fire(Vector3.up);if(m.ShotsFired!=before)Fail("Fire blocked while reloading");time+=2;m.StepWeapon(.1f);if(m.Ammo!=30||m.IsReloading)Fail("Reload completion");
-            Place(new Vector3(-22,1.77f,-12));m.SuppressionTheta=60;
+            Place(new Vector3(-22,1.77f,-12));m.SuppressionTheta=0;
             var suppressedPosition = new Vector3(-19,1.9f,3);
             m.BeginMissionThreatEvent(new[]{new Threat("near",true,true,true,-22,1.9,-4,8,0),new Threat("far",true,true,true,suppressedPosition.x,suppressedPosition.y,suppressedPosition.z,15.3,11.31)});
             if(ui.Q<MissionMapView>("responseMap").SuppressedSources!=null)Fail("Suppression not visible in response");
@@ -65,14 +65,16 @@ namespace GCCD.Dts
             response.SelectAt(new Vector2(response.contentRect.width/2,response.contentRect.height/2));if(m.ResponseMarkers.Length!=1)Fail("Map click creates response");m.UndoResponseMarker();if(m.ResponseMarkers.Length!=0)Fail("Undo response marker");m.ToggleResponseMarker(-28,8);
             Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length<1||m.EnemyPositions.Length>3)Fail("Deferred random threats appear after answer");
             // An empty answer is valid and must not disclose a required marker count.
-            m.ThreatEvent();time+=1;if(!m.CompleteThreatResponse()||m.IsPaused)Fail("Empty response resumes");
+            m.SuppressionTheta=60;
+            m.BeginMissionThreatEvent(new[]{new Threat("near",true,true,true,-22,1.9,-4,8,0),new Threat("far",true,true,true,suppressedPosition.x,suppressedPosition.y,suppressedPosition.z,15.3,11.31)});
+            time+=1;if(!m.CompleteThreatResponse()||m.IsPaused)Fail("Empty response resumes");
             m.ToggleMap();yield return null;
             Submit(ui.Q<Button>("mapEndExperiment"));
             if(!m.IsComplete||!m.EndedEarly||!m.ExportsReady)Fail("Tab end experiment opens results");
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
-            var reviewed=m.ReviewEvents[0];if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
+            var reviewed=m.ReviewEvents[1];if(m.ReviewEvents[0].Suppressed.Any(value=>value))Fail("First event must have no suppression");if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
             if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
             if(resultMap.SuppressedSources==null||!resultMap.SuppressedSources.SequenceEqual(new[]{false,true})||
                 resultMap.ActualSources[1]!=suppressedPosition)Fail("Result renders saved suppressed world position");
