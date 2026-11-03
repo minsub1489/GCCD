@@ -9,7 +9,13 @@ namespace GCCD.Dts
         public bool IsGrounded {get{return body&&body.isGrounded;}}
         public bool MapVisible {get;private set;}
         double RealNow {get{return Clock!=null?Clock():Time.realtimeSinceStartupAsDouble;}}
-        public void ToggleMap(){if(!paused&&!complete&&!IsThreatResponse)MapVisible=!MapVisible;}
+        public void ToggleMap()
+        {
+            if (complete || IsThreatResponse || (paused && !MapVisible)) return;
+            bool opening = !MapVisible;
+            ApplyPause(opening, false);
+            MapVisible = opening;
+        }
         public bool SetCrouched(bool value)
         {
             if(paused||complete||!body)return false;if(value==crouched)return true;

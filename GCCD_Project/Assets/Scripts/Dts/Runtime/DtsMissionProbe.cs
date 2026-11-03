@@ -44,11 +44,15 @@ namespace GCCD.Dts
             if(!m.SetCrouched(true)||!m.IsCrouched)Fail("C crouch toggle");if(Mathf.Abs(GetComponent<CharacterController>().height-1)>0.01)Fail("Crouch collider height");
             Place(new Vector3(-29,1.00f,17));if(m.SetCrouched(false)||!m.IsCrouched)Fail("Headroom blocks standing");
             Place(new Vector3(-22,1.0f,-12));if(!m.SetCrouched(false))Fail("Standing after leaving hatch");
-            m.ToggleMap();yield return null;if(!m.MapVisible)Fail("Tab minimap show");var minimaps=ui.Query<MissionMapView>().ToList();if(minimaps.Count!=3)Fail("Map UI initialization");m.ToggleMap();if(m.MapVisible)Fail("Tab minimap hide");
+            m.ToggleMap();yield return null;if(!m.MapVisible||!m.IsPaused||!UnityEngine.Cursor.visible)Fail("Tab minimap show and unlock cursor");var minimaps=ui.Query<MissionMapView>().ToList();if(minimaps.Count!=3)Fail("Map UI initialization");m.ToggleMap();if(m.MapVisible)Fail("Tab minimap hide");
             var supplies=FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Supply ")).ToArray();foreach(var supply in supplies){Place(supply.position+Vector3.up);if(!m.CollectNearby())Fail("E collection");}if(m.SuppliesCollected!=3)Fail("Three indoor supplies");
             var targets=FindObjectsByType<BoxCollider>(FindObjectsSortMode.None).Where(c=>c.gameObject.name=="Security drone").ToArray();foreach(var target in targets){Place(target.bounds.center+Vector3.up*.5f);time+=.2;if(!m.Fire(Vector3.down)){RaycastHit detail;Physics.Raycast(transform.position,Vector3.down,out detail,90);Fail("Enemy raycast paused="+m.IsPaused+" rounds="+m.Ammo+" hits="+m.ShotsHit+" collider="+(detail.collider?detail.collider.name:"none"));}int fired=m.ShotsFired,rounds=m.Ammo;m.Fire(Vector3.down);if(m.ShotsFired!=fired||m.Ammo!=rounds)Fail("Fire rate enforcement");}if(m.ShotsHit!=5)Fail("Five enemy hits");
             if(!m.Reload()||!m.IsReloading)Fail("Reload begin");int before=m.ShotsFired;m.Fire(Vector3.up);if(m.ShotsFired!=before)Fail("Fire blocked while reloading");time+=2;m.StepWeapon(.1f);if(m.Ammo!=30||m.IsReloading)Fail("Reload completion");
-            Place(new Vector3(-22,1.77f,-12));m.ThreatEvent();if(m.ReviewEvents.Length!=0)Fail("No answer leak before completion");if(!m.IsThreatResponse||!m.IsPaused)Fail("Haptic freezes game for response");
+            Place(new Vector3(-22,1.77f,-12));m.SuppressionTheta=60;
+            var suppressedPosition = new Vector3(-19,1.9f,3);
+            m.BeginMissionThreatEvent(new[]{new Threat("near",true,true,true,-22,1.9,-4,8,0),new Threat("far",true,true,true,suppressedPosition.x,suppressedPosition.y,suppressedPosition.z,15.3,11.31)});
+            if(ui.Q<MissionMapView>("responseMap").SuppressedSources!=null)Fail("Suppression not visible in response");
+            if(m.ReviewEvents.Length!=0)Fail("No answer leak before completion");if(!m.IsThreatResponse||!m.IsPaused)Fail("Haptic freezes game for response");
             if(m.EnemyPositions.Length!=0)Fail("Sources hidden before submission");if(m.CompleteThreatResponse())Fail("Pulse completes before response is allowed");
             var frozen=transform.position;int oldAmmo=m.Ammo;double oldElapsed=m.Elapsed;time+=60;m.StepMovement(Vector2.one,true,true,.02f);m.Fire(Vector3.forward);m.Reload();m.SetPaused(false);m.ToggleMap();
             if(transform.position!=frozen||m.Ammo!=oldAmmo||m.Elapsed!=oldElapsed||!m.IsPaused||m.MapVisible)Fail("Response blocks gameplay and timers");
@@ -62,12 +66,16 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length<1||m.EnemyPositions.Length>3)Fail("Deferred random threats appear after answer");
             // An empty answer is valid and must not disclose a required marker count.
             m.ThreatEvent();time+=1;if(!m.CompleteThreatResponse()||m.IsPaused)Fail("Empty response resumes");
-            if(!m.TryCompleteMission()||!m.IsComplete||!m.ExportsReady)Fail("Mission result and CSV completion");
+            m.ToggleMap();yield return null;
+            Submit(ui.Q<Button>("mapEndExperiment"));
+            if(!m.IsComplete||!m.EndedEarly||!m.ExportsReady)Fail("Tab end experiment opens results");
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
             var reviewed=m.ReviewEvents[0];if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
             if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
+            if(resultMap.SuppressedSources==null||!resultMap.SuppressedSources.SequenceEqual(new[]{false,true})||
+                resultMap.ActualSources[1]!=suppressedPosition)Fail("Result renders saved suppressed world position");
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
             if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.2||e.IntensityHigh!=.8))Fail("Recorded haptic encoding range");
@@ -76,6 +84,10 @@ namespace GCCD.Dts
             File.WriteAllText("results-folder.txt",m.CsvFolder);Debug.Log("DTS_RESULT_FLOW_PASS");
             m.Exit();yield return null;if(!p.enabled||GetComponent<CharacterController>()||GetComponent<MissionImageEffect>())Fail("Mission cleanup");
             if(camera.farClipPlane!=originalFar||camera.allowHDR!=originalHdr||RenderSettings.ambientSkyColor!=originalSky||RenderSettings.fogColor!=originalFog)Fail("Research render settings restored");
+            p.StartMission();yield return null;yield return null;
+            var returnMission=GetComponent<MissionDemo>();returnMission.ToggleMap();yield return null;
+            Submit(ui.Q<Button>("mapReturnLobby"));yield return null;yield return null;
+            if(!p.enabled||GetComponent<MissionDemo>()||ui.Q("missionResults").resolvedStyle.display!=DisplayStyle.None)Fail("Tab return skips results");
             File.WriteAllText("mission-result.txt","PASS meshes="+meshes+"; indoor door traversal; jump/landing; crouch/ceiling clearance; Tab map; ADS/audio; supplies/hits/reload; haptic response freezes gameplay/timers; sources hidden; map click/undo; UI submit resumes; empty answer; cleanup. Physical sound and haptics unverified.");Debug.Log("DTS_MISSION_PROBE_PASS");EditorApplication.Exit(0);
         }
         IEnumerator CaptureInterface(string filename)

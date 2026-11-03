@@ -7,6 +7,7 @@ namespace GCCD.Dts
     {
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
         Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton,experimentButton;Font font;
+        DropdownField missionAngle;
         string rangeError = "";
         public bool Showing {get;private set;}
         public bool HasLobby {get{return lobby!=null;}}
@@ -35,8 +36,9 @@ namespace GCCD.Dts
             var scrim=Element(lobby,"scrim");scrimTexture=new Texture2D(256,1,TextureFormat.RGBA32,false);for(int x=0;x<256;x++){float f=x/255f;scrimTexture.SetPixel(x,0,new Color(.025f,.04f,.05f,Mathf.Lerp(.91f,.10f,Mathf.SmoothStep(0,1,f))));}scrimTexture.Apply();scrim.style.backgroundImage=scrimTexture;
 var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
             var content=Element(lobby,"lobby-content");Label(content,"RECOVERY OPERATION","eyebrow accent");Label(content,"공업지대\n수색 작전","hero");Label(content,"보급품을 회수하고 경계 드론을 무력화하세요.\n시야 밖 위협은 조끼의 진동으로 전달됩니다.","description");
-            Button(content,"작전 시작    →",()=>platform.StartMission(),"button primary");
+            Button(content,"작전 시작    →",()=>platform.StartMission(missionAngle.index == 0 ? 45 : ThreatPolicy.Conditions[missionAngle.index - 1]),"button primary");
             var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
+            missionAngle=angles;
             angles.name="studyAngle";
             angles.AddToClassList("study-field");
             content.Add(angles);
@@ -99,7 +101,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
                     if(visible){supplyMarkers[i].style.left=Length.Percent(v.x*100);supplyMarkers[i].style.top=Length.Percent((1-v.y)*100);float distance=Vector3.Distance(transform.position,points[i]);supplyMarkers[i].text=distance<3?"[E] 회수":"◇  "+Mathf.RoundToInt(distance)+" m";}
                 }
                 threatNotice.text=mission.OutputText;threatNotice.style.display=string.IsNullOrEmpty(threatNotice.text)?DisplayStyle.None:DisplayStyle.Flex;
-                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
+                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused&&!mission.MapVisible?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
         }
         void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);RefreshResults(m,m&&m.HasWorld);RefreshDirectionTest();}
         void OnDestroy(){if(document)Destroy(document);if(panel)Destroy(panel);if(font)Destroy(font);if(scrimTexture)Destroy(scrimTexture);}

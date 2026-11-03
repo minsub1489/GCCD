@@ -8,7 +8,7 @@ namespace GCCD.Dts
         public Vector3 PlayerPosition;public float PlayerYaw;public Vector3[] Supplies=new Vector3[0];
         public MissionSpawnPoint[] Markers=new MissionSpawnPoint[0];public Action<double,double> Picked;
         public bool Interactive,Detailed;
-        public Vector3[] ActualSources=new Vector3[0];public int[] MatchedSourceIndices=new int[0];
+        public Vector3[] ActualSources=new Vector3[0];public bool[] SuppressedSources;public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
         Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect(contentRect.x+(contentRect.width-72*scale)/2,contentRect.y+(contentRect.height-78*scale)/2,72*scale,78*scale);}}
         public MissionMapView()
@@ -46,10 +46,21 @@ namespace GCCD.Dts
             p.fillColor=new Color(.55f,.85f,.89f);p.BeginPath();p.MoveTo(at+forward*10);p.LineTo(at-forward*6+right*6);p.LineTo(at-forward*3);p.LineTo(at-forward*6-right*6);p.ClosePath();p.Fill();
             p.lineWidth=1.5f;p.strokeColor=new Color(.65f,.72f,.70f,.7f);
             for(int i=0;i<Markers.Length&&i<MatchedSourceIndices.Length;i++){int j=MatchedSourceIndices[i];if(j>=0&&j<ActualSources.Length)Line(p,Point(Markers[i].X,Markers[i].Z),Point(ActualSources[j].x,ActualSources[j].z));}
-            foreach(var source in ActualSources){Vector2 pos=Point(source.x,source.z);Circle(p,pos,9,new Color(.3f,.83f,.66f));Circle(p,pos,5,new Color(.08f,.12f,.14f));}
+            for(int i=0;i<ActualSources.Length;i++){if(IsSuppressed(i))continue;var source=ActualSources[i];Vector2 pos=Point(source.x,source.z);Circle(p,pos,9,new Color(.3f,.83f,.66f));Circle(p,pos,5,new Color(.08f,.12f,.14f));}
             foreach(var marker in Markers){Vector2 pos=Point(marker.X,marker.Z);Circle(p,pos,7,new Color(.91f,.68f,.29f));Circle(p,pos,2,new Color(.12f,.13f,.12f));}
+            for(int i=0;i<ActualSources.Length;i++)
+            {
+                if(!IsSuppressed(i))continue;
+                Vector2 pos=Point(ActualSources[i].x,ActualSources[i].z);
+                Circle(p,pos,13,Color.white);
+                Circle(p,pos,11,new Color(1f,.46f,.16f));
+                p.strokeColor=new Color(.12f,.06f,.02f);p.lineWidth=3;
+                Line(p,pos+new Vector2(-5,-5),pos+new Vector2(5,5));
+                Line(p,pos+new Vector2(-5,5),pos+new Vector2(5,-5));
+            }
             p.strokeColor=new Color(.45f,.62f,.65f);p.lineWidth=1;p.BeginPath();p.MoveTo(r.min);p.LineTo(new Vector2(r.xMax,r.yMin));p.LineTo(r.max);p.LineTo(new Vector2(r.xMin,r.yMax));p.ClosePath();p.Stroke();
         }
+        bool IsSuppressed(int index) => SuppressedSources != null && index < SuppressedSources.Length && SuppressedSources[index];
         void WorldRect(Painter2D p,double x,double z,double width,double depth,Color color){Vector2 a=Point(x,z+depth),b=Point(x+width,z);RectShape(p,new Rect(a.x,a.y,Mathf.Max(1,b.x-a.x),Mathf.Max(1,b.y-a.y)),color);}
         static void RectShape(Painter2D p,Rect r,Color color){p.fillColor=color;p.BeginPath();p.MoveTo(r.min);p.LineTo(new Vector2(r.xMax,r.yMin));p.LineTo(r.max);p.LineTo(new Vector2(r.xMin,r.yMax));p.ClosePath();p.Fill();}
         static void Circle(Painter2D p,Vector2 at,float radius,Color color){p.fillColor=color;p.BeginPath();p.Arc(at,radius,Angle.Degrees(0),Angle.Degrees(360));p.ClosePath();p.Fill();}

@@ -8,6 +8,9 @@ namespace GCCD.Dts
         void BuildMaps()
         {
             mapPanel=Element(hud,"mini-map-panel");Label(mapPanel,"시설 지도  /  N ↑","eyebrow");miniMap=new MissionMapView();mapPanel.Add(miniMap);Label(mapPanel,"▲ 현재 위치   ◆ 보급품   TAB 닫기","small muted");
+            mapPanel.style.height=480;
+            Button(mapPanel,"실험 종료",()=>GetComponent<MissionDemo>().EndExperiment(),"button primary").name="mapEndExperiment";
+            Button(mapPanel,"로비로 돌아가기",()=>GetComponent<MissionDemo>().Exit(),"button secondary").name="mapReturnLobby";
             responseOverlay=Element(root,"response-overlay");responseOverlay.name="threatResponse";
             var shell=Element(responseOverlay,"response-shell");
             var heading=Element(shell,"response-heading");Label(heading,"HAPTIC RECALL  /  N ↑","eyebrow accent");Label(heading,"위협이 어디에 있었나요?","response-title");
@@ -27,7 +30,7 @@ namespace GCCD.Dts
         void RefreshMaps(MissionDemo mission,bool game)
         {
             bool answering=game&&mission.IsThreatResponse;responseOverlay.style.display=answering?DisplayStyle.Flex:DisplayStyle.None;
-            mapPanel.style.display=game&&mission.MapVisible&&!mission.IsPaused?DisplayStyle.Flex:DisplayStyle.None;
+            mapPanel.style.display=game&&mission.MapVisible&&!mission.IsComplete?DisplayStyle.Flex:DisplayStyle.None;
             if(game&&mission.MapVisible){miniMap.PlayerPosition=mission.transform.position;miniMap.PlayerYaw=mission.transform.eulerAngles.y;miniMap.Supplies=mission.SupplyPositions;miniMap.Refresh();}
             if(!answering)return;
             hud.style.display=DisplayStyle.None;responseMap.PlayerPosition=mission.ResponseObserver;responseMap.PlayerYaw=mission.ResponseYaw;responseMap.Markers=mission.ResponseMarkers;responseMap.Interactive=mission.ResponseReady;responseMap.Refresh();

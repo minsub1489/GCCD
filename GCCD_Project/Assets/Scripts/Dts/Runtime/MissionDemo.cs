@@ -7,8 +7,8 @@ namespace GCCD.Dts
 {
     public sealed partial class ExperimentPlatform
     {
-        public void StartMission(){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.Physical=connectionReady;enabled=false;}
-        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var p=ThreatPolicy.Apply(threats,0);var motors=MissionHapticEncoding.Compose(p.Kept,MissionX40Profile());config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,MissionHapticEncoding.DurationMilliseconds,config,!physical,true);}
+        public void StartMission(int suppressionTheta = 45){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.SuppressionTheta=suppressionTheta;m.Physical=connectionReady;enabled=false;}
+        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var motors=MissionHapticEncoding.Compose(threats,MissionX40Profile());config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,MissionHapticEncoding.DurationMilliseconds,config,!physical,true);}
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}
@@ -68,11 +68,15 @@ namespace GCCD.Dts
         {var p=GameObject.CreatePrimitive(shape);p.transform.SetParent(parent.transform,false);p.transform.localPosition=at;p.transform.localScale=scale;p.transform.localRotation=rotation==default(Quaternion)?Quaternion.identity:rotation;p.GetComponent<Renderer>().sharedMaterial=material;Destroy(p.GetComponent<Collider>());}
         void Update()
         {
+            if (Input.GetKeyDown(KeyCode.Tab) || (MapVisible && Input.GetKeyDown(KeyCode.Escape)))
+            {
+                ToggleMap();
+                return;
+            }
             if(Input.GetKeyDown(KeyCode.Escape)&&!IsThreatResponse)SetPaused(!paused);
             if(paused||complete)return;
             float sensitivity=aiming?1.0f:1.8f;yaw+=Input.GetAxis("Mouse X")*sensitivity;pitch=Mathf.Clamp(pitch-Input.GetAxis("Mouse Y")*sensitivity,-75,75);transform.rotation=Quaternion.Euler(pitch-recoil*.35f,yaw,0);
             if(Input.GetKeyDown(KeyCode.C))SetCrouched(!crouched);
-            if(Input.GetKeyDown(KeyCode.Tab))ToggleMap();
             StepMovement(new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical")),Input.GetKeyDown(KeyCode.Space),Input.GetKey(KeyCode.LeftShift),Time.deltaTime);
             SetAiming(Input.GetMouseButton(1));if(Input.GetMouseButton(0))Fire(transform.forward);if(Input.GetKeyDown(KeyCode.R))Reload();if(Input.GetKeyDown(KeyCode.E))CollectNearby();
             StepWeapon(Time.deltaTime);
@@ -111,10 +115,17 @@ namespace GCCD.Dts
                 int count=rng.Next(1,4);
                 var locations=MissionSpawnPlanner.Plan(rng.Next(),count,transform.position.x,transform.position.z,yaw,true,Occupied,true);
                 var threats=locations.Select((p,i)=>{var at=new Vector3((float)p.X,1.9f,(float)p.Z);var delta=at-transform.position;return new Threat("M"+i,true,true,true,at.x,at.y,at.z,delta.magnitude,Angles.Bearing(delta.x,delta.z,yaw));}).ToArray();
-                var receipt=Owner.MissionPulse(threats,Physical);
-                output=receipt.simulated?"화면 체험 · 위치를 표시해 주세요":receipt.submitted?"위치 응답 대기":"조끼 출력 실패 · 체험 응답";
-                BeginThreatResponse(threats,receipt);
+                BeginMissionThreatEvent(threats);
             }catch(ArgumentException){output="생성할 공간이 부족합니다. 개방된 구역으로 이동하세요.";}
+        }
+        public int SuppressionTheta { get; internal set; } = 45;
+        internal void BeginMissionThreatEvent(Threat[] threats)
+        {
+            var policy = ThreatPolicy.Apply(threats, SuppressionTheta);
+            var retained = new HashSet<string>(policy.Kept.Select(t => t.Id), StringComparer.Ordinal);
+            var receipt = Owner.MissionPulse(policy.Kept, Physical);
+            output = receipt.simulated ? "화면 체험 · 위치를 표시해 주세요" : receipt.submitted ? "위치 응답 대기" : "조끼 출력 실패 · 체험 응답";
+            BeginThreatResponse(threats, receipt, threats.Select(t => !retained.Contains(t.Id)).ToArray());
         }
         public void SetPaused(bool value)
         {

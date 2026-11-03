@@ -6,15 +6,15 @@ namespace GCCD.Dts
 {
     public sealed partial class ModernInterface
     {
-        VisualElement resultsOverlay;MissionMapView resultMap;Label resultTotals,resultDetails,resultComparison,resultPath,resultSaveStatus;
+        VisualElement resultsOverlay;MissionMapView resultMap;Label resultTitle,resultTotals,resultDetails,resultComparison,resultPath,resultSaveStatus;
         ScrollView resultEventList;MissionDemo resultOwner;int selectedEvent=-1;bool resultsBuilt;
         void BuildResults()
         {
             resultsOverlay=Element(root,"results-overlay");resultsOverlay.name="missionResults";
-            var shell=Element(resultsOverlay,"results-shell");Label(shell,"OPERATION COMPLETE  /  RECALL REVIEW","eyebrow accent");Label(shell,"작전 완료 · 위치 정확도 비교","results-title");
+            var shell=Element(resultsOverlay,"results-shell");Label(shell,"OPERATION COMPLETE  /  RECALL REVIEW","eyebrow accent");resultTitle=Label(shell,"작전 완료 · 위치 정확도 비교","results-title");
             resultTotals=Label(shell,"","results-totals");
             var body=Element(shell,"results-body");
-            var left=Element(body,"results-map-column");Label(left,"초록 고리  실제 위협    ·    주황 점  내가 표시한 위치    ·    선  비교 연결","small muted");resultMap=new MissionMapView{Detailed=true};resultMap.name="resultMap";left.Add(resultMap);
+            var left=Element(body,"results-map-column");Label(left,"초록 고리  유지 위협    ·    주황 ×  억제 위협    ·    노란 점  내가 표시한 위치    ·    선  비교 연결","small muted");resultMap=new MissionMapView{Detailed=true};resultMap.name="resultMap";left.Add(resultMap);
             var side=Element(body,"results-side");resultComparison=Label(side,"","small muted");resultEventList=new ScrollView();resultEventList.AddToClassList("results-event-list");side.Add(resultEventList);resultDetails=Label(side,"","results-details");
             Label(shell,"일치 기준: 실제 위치에서 수평거리 3m 이내 · 1대1 비교 · 평균 오차는 연결된 쌍 기준","results-note");
             var save=Element(shell,"results-save-row");resultPath=Label(save,"","results-path");resultPath.name="csvPath";resultPath.selection.isSelectable=true;
@@ -28,6 +28,7 @@ namespace GCCD.Dts
             if(!show){resultsBuilt=false;resultOwner=null;return;}
             hud.style.display=DisplayStyle.None;responseOverlay.style.display=DisplayStyle.None;
             if(resultOwner!=mission){resultOwner=mission;resultsBuilt=false;selectedEvent=-1;}
+            resultTitle.text=mission.EndedEarly?"실험 종료 · 위치 정확도 비교":"작전 완료 · 위치 정확도 비교";
             var events=mission.ReviewEvents;
             if(!resultsBuilt){
                 resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ResponseCount);
@@ -35,15 +36,15 @@ namespace GCCD.Dts
                 resultComparison.text=GroupText(events,"SIMULATED","화면 체험")+"\n"+GroupText(events,"REQUESTED_UNCONFIRMED","조끼 요청 · 착용 미확인")+"\n집계 제외  "+events.Count(e=>!e.Eligible)+"회";
                 for(int i=0;i<events.Length;i++){int index=i;var e=events[i];string text="이벤트 "+(i+1).ToString("D2")+"   "+(e.Eligible?e.Score.Correct+" / "+e.Score.SourceCount+" 일치":"집계 제외");Button(resultEventList,text,()=>{selectedEvent=index;SelectResult(events[index]);},"button result-event");}
                 if(events.Length>0){selectedEvent=Mathf.Clamp(selectedEvent,0,events.Length-1);SelectResult(events[selectedEvent]);}
-                else {resultMap.ActualSources=new Vector3[0];resultMap.Markers=new MissionSpawnPoint[0];resultMap.MatchedSourceIndices=new int[0];resultMap.PlayerPosition=mission.transform.position;resultDetails.text="완료된 위협 응답이 없습니다.\n정확도와 평균 오차는 —로 표시합니다.";}
+                else {resultMap.ActualSources=new Vector3[0];resultMap.SuppressedSources=null;resultMap.Markers=new MissionSpawnPoint[0];resultMap.MatchedSourceIndices=new int[0];resultMap.PlayerPosition=mission.transform.position;resultDetails.text="완료된 위협 응답이 없습니다.\n정확도와 평균 오차는 —로 표시합니다.";}
                 resultPath.text=mission.CsvFolder;resultsBuilt=true;
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
         }
         void SelectResult(MissionEventResult e)
         {
-            resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource;
-            resultDetails.text=GroupName(e.Group)+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
+            resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.SuppressedSources=e.Suppressed;resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource;
+            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 억제 {e.Suppressed.Count(value=>value)}개")+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
         }
         static string GroupName(string group){return group=="SIMULATED"?"화면 체험":group=="REQUESTED_UNCONFIRMED"?"조끼 요청 · 착용 미확인":group=="INTERRUPTED"?"출력 중단":"출력 실패";}
         static string GroupText(MissionEventResult[] events,string group,string label){var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();int sources=valid.Sum(e=>e.Score.SourceCount),correct=valid.Sum(e=>e.Score.Correct);return label+"  "+Percent(sources==0?(double?)null:correct/(double)sources)+"  ("+valid.Length+"회)";}
