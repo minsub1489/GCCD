@@ -38,7 +38,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             Button(content,"작전 시작    →",()=>platform.StartMission(),"button primary");
             var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
             angles.name="studyAngle";
-            angles.AddToClassList("small");
+            angles.AddToClassList("study-field");
             content.Add(angles);
             var rangeRow = Element(content, "row");
             var minimumField = new TextField("최소 위협 수") { name = "studyThreatMinimum", value = "3" };
@@ -46,7 +46,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             foreach (var input in new[] { minimumField, maximumField })
             {
                 input.style.flexGrow = 1;
-                input.AddToClassList("small");
+                input.AddToClassList("study-field");
                 rangeRow.Add(input);
                 input.RegisterValueChangedCallback(_ => rangeError = "");
             }

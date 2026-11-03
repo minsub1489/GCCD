@@ -99,3 +99,24 @@
 .check-tabs { margin-bottom:20px; }
 .check-tabs > .selected-check { border-color:rgb(214,178,105); background-color:rgb(51,54,43); color:rgb(244,219,163); }
 .distance-button { height:76px; white-space:normal; font-size:20px; }
+
+.study-field { flex-direction:column; margin-bottom:10px; margin-right:6px; font-size:16px; }
+.study-field > .unity-base-field__label { color:rgb(199,215,213); margin-bottom:4px; }
+.study-field > .unity-base-field__input {
+    background-color:rgb(17,27,33);
+    color:rgb(244,248,245);
+    border-width:1px;
+    border-color:rgb(92,116,121);
+    border-radius:4px;
+    min-height:36px;
+    padding-left:10px;
+    padding-right:10px;
+}
+.study-field > .unity-base-field__input:hover { border-color:rgb(176,204,199); }
+.study-field > .unity-base-field__input:focus { border-color:rgb(225,186,112); }
+.study-field .unity-base-popup-field__text,
+.study-field .unity-text-element { color:rgb(244,248,245); }
+.study-field .unity-base-popup-field__arrow { -unity-background-image-tint-color:rgb(244,248,245); }
+.unity-base-dropdown__container { background-color:rgb(17,27,33); border-color:rgb(92,116,121); }
+.unity-base-dropdown__item { color:rgb(244,248,245); }
+.unity-base-dropdown__item:hover { background-color:rgb(55,76,80); }
