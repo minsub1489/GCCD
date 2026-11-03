@@ -21,7 +21,13 @@ namespace GCCD.Dts
             Require(button != null, "lobby start button");
             var ui = GetComponent<UIDocument>().rootVisualElement;
             ui.Q<DropdownField>("studyAngle").index = 4;
-            ui.Q<DropdownField>("studyThreatRange").index = 1;
+            ui.Q<TextField>("studyThreatMinimum").value = "10";
+            ui.Q<TextField>("studyThreatMaximum").value = "4";
+            button.Focus();
+            using (var invalid = NavigationSubmitEvent.GetPooled()) button.SendEvent(invalid);
+            Require(p.Phase == TrialPhase.Setup && string.IsNullOrEmpty(p.Folder), "inverted range rejected");
+            ui.Q<TextField>("studyThreatMinimum").value = "4";
+            ui.Q<TextField>("studyThreatMaximum").value = "10";
             button.Focus();
             using (var submit = UnityEngine.UIElements.NavigationSubmitEvent.GetPooled()) button.SendEvent(submit);
             Require(p.Phase == TrialPhase.Prepare, "direct lobby start: " + p.Error);
@@ -45,8 +51,8 @@ namespace GCCD.Dts
             }
             var trials = DataExporter.Records(folder);
             Require(p.Phase == TrialPhase.Finished && trials.Length == 7, "selected condition finishes");
-            Require(trials.All(t => t.condition_theta == 45 && t.total_threat_count >= 4 && t.total_threat_count <= 9 &&
-                t.minimum_threat_count == 4 && t.maximum_threat_count == 9), "selected angle and range logged");
+            Require(trials.All(t => t.condition_theta == 45 && t.total_threat_count >= 4 && t.total_threat_count <= 10 &&
+                t.minimum_threat_count == 4 && t.maximum_threat_count == 10), "selected angle and range logged");
             Require(trials.Select(t=>t.total_threat_count).Distinct().Count() > 1, "range varies between trials");
             for(int i=0;i<trials.Length;i++)
             {

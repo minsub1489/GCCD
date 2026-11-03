@@ -7,6 +7,7 @@ namespace GCCD.Dts
     {
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
         Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton,experimentButton;Font font;
+        string rangeError = "";
         public bool Showing {get;private set;}
         public bool HasLobby {get{return lobby!=null;}}
         System.Collections.IEnumerator Start()
@@ -39,12 +40,32 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             angles.name="studyAngle";
             angles.AddToClassList("small");
             content.Add(angles);
-            var range = new DropdownField("전체 위협 수", new System.Collections.Generic.List<string>{"3–8개","4–9개","5–7개","6개 고정"}, 0);
-            range.name="studyThreatRange";
-            range.AddToClassList("small");
-            content.Add(range);
-            int[] minimums = {3,4,5,6}, maximums = {8,9,7,6};
-            var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.StartLobbyExperiment(true),"button secondary");experimentButton=Button(secondary,"실험 시작 · 화면 연습",()=>platform.StartLobbyExperiment(false, angles.index == 0 ? -1 : ThreatPolicy.Conditions[angles.index-1], minimums[range.index], maximums[range.index]),"button secondary");experimentButton.name="startExperiment";
+            var rangeRow = Element(content, "row");
+            var minimumField = new TextField("최소 위협 수") { name = "studyThreatMinimum", value = "3" };
+            var maximumField = new TextField("최대 위협 수") { name = "studyThreatMaximum", value = "8" };
+            foreach (var input in new[] { minimumField, maximumField })
+            {
+                input.style.flexGrow = 1;
+                input.AddToClassList("small");
+                rangeRow.Add(input);
+                input.RegisterValueChangedCallback(_ => rangeError = "");
+            }
+            var secondary = Element(content, "row");
+            Button(secondary, "응답 연습", () => { rangeError = ""; platform.StartLobbyExperiment(true); }, "button secondary");
+            experimentButton = Button(secondary, "실험 시작 · 화면 연습", () =>
+            {
+                if (!int.TryParse(minimumField.value, out int minimum) ||
+                    !int.TryParse(maximumField.value, out int maximum) ||
+                    minimum < 2 || maximum < minimum)
+                {
+                    rangeError = "2 이상의 정수를 입력하고, 최대 위협 수를 최소 이상으로 설정하세요.";
+                    return;
+                }
+                rangeError = "";
+                int theta = angles.index == 0 ? -1 : ThreatPolicy.Conditions[angles.index - 1];
+                platform.StartLobbyExperiment(false, theta, minimum, maximum);
+            }, "button secondary");
+            experimentButton.name = "startExperiment";
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
@@ -70,7 +91,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var mission=GetComponent<MissionDemo>();bool game=mission&&mission.HasWorld;
             bool home=platform.enabled&&platform.Phase==TrialPhase.Setup&&!platform.AdvancedVisible;
             Showing=home||game;root.style.display=Showing?DisplayStyle.Flex:DisplayStyle.None;lobby.style.display=home?DisplayStyle.Flex:DisplayStyle.None;hud.style.display=game?DisplayStyle.Flex:DisplayStyle.None;
-            if(home){experimentButton.text=platform.LobbySimulation?"실험 시작 · 화면 연습":"실험 시작";device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=platform.Error;}
+            if(home){experimentButton.text=platform.LobbySimulation?"실험 시작 · 화면 연습":"실험 시작";device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=string.IsNullOrEmpty(rangeError)?platform.Error:rangeError;}
             if(game){
                 var points=mission.SupplyPositions;for(int i=0;i<3;i++){
                     bool visible=i<points.Length;Vector3 v=visible?GetComponent<Camera>().WorldToViewportPoint(points[i]):Vector3.zero;visible=visible&&v.z>0&&v.x>0&&v.x<1&&v.y>0&&v.y<1;
