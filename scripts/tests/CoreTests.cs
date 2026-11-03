@@ -155,6 +155,15 @@ class CoreTests
             Eq(score.FarFalseMark[2],true);
             Eq(string.Join(",",score.DuplicateMarks),"False,True,False");
         });
+        Test("FPS overlapping suppressed match keeps credit and displays duplicate",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
+            var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
+            Eq(score.Correct,2);Eq(score.AdjustedCorrect,2);
+            Eq(string.Join(",",score.DuplicateMarks),"False,True");
+            score=MissionLocationScorer.Score(sources,new[]{sources[0],new MissionSpawnPoint{Z=14}},0,0,0,3,15,new[]{false,true});
+            Eq(score.Correct,1);Eq(score.FarFalseMarks,0);
+            Eq(string.Join(",",score.DuplicateMarks),"False,True");
+        });
         Test("mission spawn seed reproducibility",()=>{var a=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);Eq(string.Join(";",a.Select(x=>x.X+","+x.Z)),string.Join(";",b.Select(x=>x.X+","+x.Z)));});
         Test("mission different seeds change enemies",()=>{var a=MissionSpawnPlanner.Plan(1,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(2,6,0,-14,0,false,(x,z)=>false);Eq(a[0].X==b[0].X&&a[0].Z==b[0].Z,false);});
         Test("mission rejects occupied spawn and keeps spacing",()=>{var a=MissionSpawnPlanner.Plan(18,6,0,-14,0,false,(x,z)=>x<0);Eq(a.All(p=>p.X>=0&&p.X<10&&p.Z>=-24&&p.Z<=48),true);for(int i=0;i<a.Length;i++)for(int j=i+1;j<a.Length;j++)Eq(Math.Pow(a[i].X-a[j].X,2)+Math.Pow(a[i].Z-a[j].Z,2)>=9,true);});

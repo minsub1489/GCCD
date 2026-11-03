@@ -15,7 +15,7 @@ namespace GCCD.Dts
             var shell=Element(resultsOverlay,"results-shell");Label(shell,"OPERATION COMPLETE  /  RECALL REVIEW","eyebrow accent");resultTitle=Label(shell,"작전 완료 · 위치 정확도 비교","results-title");
             resultTotals=Label(shell,"","results-totals");
             var body=Element(shell,"results-body");
-            var left=Element(body,"results-map-column");Label(left,"초록 고리  유지 위협    ·    주황 ×  억제 위협    ·    노란 점  내가 표시한 위치    ·    선  비교 연결","small muted");resultSectorToggle = new Toggle("억제각 보기") { name = "resultSuppressionToggle" };
+            var left=Element(body,"results-map-column");Label(left,"초록 고리  유지 위협    ·    주황 ×  억제 위협    ·    노란 점  내가 표시한 위치    ·    선  정답 연결","small muted");resultSectorToggle = new Toggle("억제각 보기") { name = "resultSuppressionToggle" };
             resultSectorToggle.AddToClassList("small");
             resultSectorToggle.RegisterValueChangedCallback(evt =>
             {
@@ -101,7 +101,7 @@ namespace GCCD.Dts
                 ? $"억제각 보기 · {e.SuppressionTheta}° (좌우 ±{e.SuppressionTheta / 2.0:0.#}°)"
                 : "억제각 보기 · 적용 범위 없음";
             SetResponseOverlays(e.Eligible ? e.Score : null);
-            resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource;
+            resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource.Select((source,index)=>e.Score.CorrectMarks[index]?source:-1).ToArray();
             resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 중복 "+e.Score.DuplicateMarks.Count(value=>value)+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
         }
         void SetResponseOverlays(MissionLocationScore score)

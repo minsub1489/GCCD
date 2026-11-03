@@ -26,7 +26,7 @@ namespace GCCD.Dts
     public static class MissionLocationScorer
     {
         sealed class Assignment {public int Correct;public double Error;public int[] Map;}
-        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null)
+        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null,bool[] suppressedSources=null)
         {
             if(sources==null||sources.Length<1||sources.Length>MissionSpawnPlanner.MaximumThreatCount||marks==null)throw new ArgumentException("Source and response positions required.");
             Angles.Finite(observerX);Angles.Finite(observerZ);Angles.Finite(yaw);Angles.Finite(tolerance);if(tolerance<0)throw new ArgumentException("Nonnegative tolerance required.");
@@ -78,15 +78,28 @@ namespace GCCD.Dts
                 score.PositionErrors[i]=position[i,best.Map[i]];score.CorrectMarks[i]=correct[i,best.Map[i]];score.RangeErrors[i]=Math.Abs(Math.Sqrt(ax*ax+az*az)-Math.Sqrt(bx*bx+bz*bz));
                 score.DirectionErrors[i]=direction[i,best.Map[i]];
             }
+            // Matching a suppressed source can be correct and still overlap a separately matched retained source.
+            bool hasSuppression = suppressedSources != null && suppressedSources.Length == sources.Length;
             var matchedCorrectly = new bool[sources.Length];
             for (int i = 0; i < marks.Length; i++)
                 if (score.CorrectMarks[i]) matchedCorrectly[best.Map[i]] = true;
             for (int i = 0; i < marks.Length; i++)
             {
-                if (score.CorrectMarks[i]) continue;
+                int matched = best.Map[i];
+                bool correctSuppressed = score.CorrectMarks[i] && hasSuppression && suppressedSources[matched];
+                if (score.CorrectMarks[i] && !correctSuppressed) continue;
                 for (int j = 0; j < sources.Length; j++)
                 {
-                    if (!matchedCorrectly[j] || !correct[i,j]) continue;
+                    if (!matchedCorrectly[j]) continue;
+                    if (correctSuppressed)
+                    {
+                        if (suppressedSources[j] || !correct[i,j]) continue;
+                    }
+                    else if (directionTolerance.HasValue)
+                    {
+                        if (!direction[i,j].HasValue || direction[i,j].Value >= directionTolerance.Value) continue;
+                    }
+                    else if (!correct[i,j]) continue;
                     score.DuplicateMarks[i] = true;
                     break;
                 }

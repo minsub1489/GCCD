@@ -88,6 +88,7 @@ namespace GCCD.Dts
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
             var reviewed=m.ReviewEvents[1];if(m.ReviewEvents[0].Suppressed.Any(value=>value))Fail("First event must have no suppression");if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
+            if(resultMap.MatchedSourceIndices.Where((j,i)=>j>=0&&!reviewed.Score.CorrectMarks[i]).Any())Fail("Only correct responses have map lines");
             if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
             if(m.ReviewEvents.Any(e=>e.Sources.Length!=10||e.MinimumThreatCount!=10||e.MaximumThreatCount!=10))Fail("Generated count stays within lobby range");
             if(resultMap.SuppressedSources==null||!resultMap.SuppressedSources.SequenceEqual(reviewed.Suppressed)||
@@ -108,6 +109,7 @@ namespace GCCD.Dts
             var firstEvent=ui.Query<Button>(className:"result-event").First();
             Submit(firstEvent);yield return null;
             if(!penalty.enabledSelf||!duplicate.enabledSelf||resultMap.ResponseScore==null||resultMap.ResponseScore.ResponseCount!=m.ReviewEvents[0].Score.ResponseCount)Fail("Response flags follow selected event");
+            if(resultMap.MatchedSourceIndices.Where((j,i)=>j>=0&&!resultMap.ResponseScore.CorrectMarks[i]).Any())Fail("Incorrect comparison pairs hidden");
             penalty.value=true;duplicate.value=true;
             if(!resultMap.ShowPenaltyMarks||!resultMap.ShowDuplicateMarks)Fail("Response flags enable independently");
             penalty.value=false;

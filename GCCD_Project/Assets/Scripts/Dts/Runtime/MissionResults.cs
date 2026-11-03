@@ -52,7 +52,7 @@ namespace GCCD.Dts
                     var item=new MissionEventResult{MappingVersion=record.mapping_version??"unknown-legacy-map",HapticEncoding=record.haptic_encoding??"unknown-legacy-encoding",IntensityLow=record.intensity_low,IntensityHigh=record.intensity_high,Utc=record.utc,Id=record.event_id,State=record.state,Group=group,OutputStatus=record.receipt.status,Observer=record.observer_position,Yaw=record.observer_yaw,Sources=record.source_positions,Suppressed=record.source_suppressed,SuppressionTheta=record.suppression_theta,MinimumThreatCount=record.minimum_threat_count,MaximumThreatCount=record.maximum_threat_count,Marks=record.response_positions,Eligible=record.state=="completed"&&(group=="SIMULATED"||group=="REQUESTED_UNCONFIRMED")};
                     item.DirectionTolerance = record.direction_tolerance_deg > 0 ? record.direction_tolerance_deg : ResultDirectionTolerance;
                     item.PositionTolerance = record.position_tolerance_m > 0 ? record.position_tolerance_m : ResultTolerance;
-                    item.Score=MissionLocationScorer.Score(Points(item.Sources),Points(item.Marks),item.Observer.x,item.Observer.z,item.Yaw,item.PositionTolerance,item.DirectionTolerance);loaded.Add(item);
+                    item.Score=MissionLocationScorer.Score(Points(item.Sources),Points(item.Marks),item.Observer.x,item.Observer.z,item.Yaw,item.PositionTolerance,item.DirectionTolerance,item.Suppressed);loaded.Add(item);
                 }
                 // Filenames are random identifiers; replay order uses the original UTC event times.
                 loaded=loaded.OrderBy(x=>x.Utc,StringComparer.Ordinal).ThenBy(x=>x.Id,StringComparer.Ordinal).ToList();
