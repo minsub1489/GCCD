@@ -293,6 +293,8 @@ namespace GCCD.Dts
         {
             haptics.Stop();SetCursor(false);Phase=TrialPhase.Finished;
             resultExportStatus = "";
+            reviewedTrialIndex = 0;
+            reviewedThreatScroll = Vector2.zero;
             if(!training) finishedScores = DataExporter.Records(Folder).Where(t => !t.technical_failure && t.adjusted_joint_accuracy >= 0).ToArray();
             if(training){trainingPassed=frozen.TrainingMinimumJointAccuracy>=0&&trainingScored>=frozen.TrainingMinimumTrials&&trainingScored>0&&trainingSum/trainingScored>=frozen.TrainingMinimumJointAccuracy&&TechnicalFailures==0;if(trainingPassed){trainedParticipant=Participant;trainedHash=metadata.config_hash;}SessionStore.AtomicWrite(Path.Combine(Folder,"training_result.json"),"{\"passed\":"+trainingPassed.ToString().ToLowerInvariant()+",\"scored_full_layout_trials\":"+trainingScored+",\"mean_joint_accuracy\":"+(trainingScored==0?"null":(trainingSum/trainingScored).ToString("R",System.Globalization.CultureInfo.InvariantCulture))+"}");}
         }
