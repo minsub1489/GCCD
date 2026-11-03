@@ -53,6 +53,24 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(result['game_success_rate'], .5)
         self.assertEqual(result['successful_game_response_seconds'], 1.5)
 
+    def test_full_circle_development_summarizes_geometry_only(self):
+        self.meta['software_version'] = 'dts-full-circle-v3'
+        self.write_meta()
+        self.trial(1, protocol_version='dts-full-circle-v3', total_threat_count=12,
+                   retained_count=9, joint_accuracy=1, direction_error=4)
+        row = analysis.summarize(self.folder)['by_theta'][0]
+        self.assertEqual(row['retained_count'], 9)
+        self.assertEqual(row['suppression_rate'], .25)
+        self.assertIsNone(row['joint_accuracy'])
+        self.assertIsNone(row['direction_error'])
+
+    def test_protocol_mismatch_refused(self):
+        self.meta['software_version'] = 'dts-full-circle-v3'
+        self.write_meta()
+        self.trial(1, protocol_version='dts-fixed-count-v2')
+        with self.assertRaisesRegex(ValueError, 'Protocol mismatch'):
+            analysis.summarize(self.folder)
+
     def test_corruption_refused(self):
         self.trial(1)
         path = self.folder / 'journal' / '1.committed.json'

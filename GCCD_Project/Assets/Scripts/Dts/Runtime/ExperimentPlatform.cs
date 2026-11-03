@@ -46,7 +46,7 @@ namespace GCCD.Dts
         }
         void RefreshTrainingHistory()
         {
-            string parent=Path.Combine(Root,"TRAINING_"+Mode,"A",Participant);trainingAttempts=0;trainingPassed=false;
+            string parent=Path.Combine(Root,"TRAINING_"+Mode,SessionMetadata.ProtocolFolder,Participant);trainingAttempts=0;trainingPassed=false;
             if(!Directory.Exists(parent))return;string hash=FrozenHash(frozen);
             foreach(string folder in Directory.GetDirectories(parent))
             {
@@ -69,7 +69,7 @@ namespace GCCD.Dts
                 if(!new[]{"DEVELOPMENT","PILOT","MAIN"}.Contains(Mode))throw new ArgumentException("Invalid mode.");
                 if(development&&frozen.DirectionTolerance<0)frozen.DirectionTolerance=15; // explicitly development-only provisional tolerance
                 RefreshTrainingHistory();
-                if(training){if(trainingAttempts>=frozen.TrainingMaximumRetries+1&&frozen.TrainingMaximumRetries>=0)throw new InvalidOperationException("Training retry limit reached. Apply the configured exit rule.");if(frozen.TrainingTripleTrials<1||frozen.TrainingTripleTrials>108)throw new ArgumentException("Training triple trials must be 1..108.");}
+                if(training){if(trainingAttempts>=frozen.TrainingMaximumRetries+1&&frozen.TrainingMaximumRetries>=0)throw new InvalidOperationException("Training retry limit reached. Apply the configured exit rule.");if(frozen.TrainingTripleTrials<1||frozen.TrainingTripleTrials>108)throw new ArgumentException("Full-layout training trials must be 1..108.");}
                 var problems=frozen.Problems(main,!development);
                 if(problems.Length>0)throw new InvalidOperationException(string.Join("\n",problems));
                 if(!development){string reason;if(!haptics.Ready(frozen,out reason))throw new InvalidOperationException(reason);}
@@ -77,14 +77,14 @@ namespace GCCD.Dts
                 {
                     if(frozen.LockedHash!=FrozenHash(frozen))throw new InvalidOperationException("Locked configuration changed.");
                     if(!File.Exists(frozen.PilotEvidencePath)||SessionStore.Hash(File.ReadAllText(frozen.PilotEvidencePath))!=frozen.PilotEvidenceSha256)throw new InvalidOperationException("Pilot evidence changed/missing.");
-                    if(StimulusValidator.MaximumPairIdentity(ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT")),frozen.Mapping,frozen.Low,frozen.High,frozen.PulseMilliseconds)>frozen.PilotMaximumIdenticalPairRate)throw new InvalidOperationException("Stimulus identity exceeds the preregistered maximum pair rate.");
+                    if(StimulusValidator.MaximumPairIdentity(ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT")),frozen.Mapping,frozen.Low,frozen.High,frozen.PulseMilliseconds)>frozen.PilotMaximumIdenticalPairRate)throw new InvalidOperationException("Stimulus identity exceeds the preregistered maximum pair rate.");
                     if(!trainingPassed||trainedParticipant!=Participant||trainedHash!=FrozenHash(frozen))throw new InvalidOperationException("This participant must pass training with the locked configuration.");
                 }
                 if(store!=null)store.Dispose();
                 string session=DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8);
                 plan=CreatePlan();
                 string dataMode=training?"TRAINING_"+Mode:Mode;
-                Folder=Path.Combine(Root,dataMode,"A",Participant,session);
+                Folder=Path.Combine(Root,dataMode,SessionMetadata.ProtocolFolder,Participant,session);
                 metadata=new SessionMetadata{participant_id=Participant,session_id=session,experiment_type="A",mode=dataMode,created_utc=DateTime.UtcNow.ToString("O"),unity_version=Application.unityVersion,sdk_version=frozen.SdkPackageVersion,config_hash=FrozenHash(frozen),mapping_version=frozen.Mapping.Version,config=frozen,block_order=ConditionScheduler.Order(frozen.CounterbalanceRow),training_passed=trainingPassed};
                 store=new SessionStore(Folder,Participant,training?"TRAINING":Mode,metadata.experiment_type,JsonUtility.ToJson(metadata,true));
                 if(training){trainingAttempts++;trainingPassed=false;}
@@ -94,7 +94,7 @@ namespace GCCD.Dts
         }
         TrialSpec[] CreatePlan()
         {
-            var a=ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT"));
+            var a=ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT"));
             if(training)
             {
                 var t=new TrialSpec[3+frozen.TrainingTripleTrials];for(int i=0;i<t.Length;i++){var source=a[i%a.Length];t[i]=new TrialSpec{Id="TR"+(i+1).ToString("D3"),Theta=0,Block=0,Family=source.Family,Seed=source.Seed,Preparation=source.Preparation,Threats=i<3?source.Threats.Take(1).ToArray():source.Threats};}return t;
@@ -177,20 +177,17 @@ namespace GCCD.Dts
             snapshot=spec.Threats.Select(t=>
             {
                 Vector3 p=transform.position+Quaternion.Euler(0,(float)yaw,0)*new Vector3((float)t.X,0,(float)t.Z);
-                Vector3 local=Quaternion.Inverse(Quaternion.Euler(0,(float)yaw,0))*(p-transform.position);
-                double bearing=Angles.Bearing(local.x,local.z,0),distance=Vector3.Distance(p,transform.position);
-                bool offscreen=Angles.IsOffscreen(bearing,frozen.HorizontalFov+2); // extra conservative target-radius margin
-                if(!offscreen)throw new InvalidOperationException("Actual camera viewport offscreen validation failed.");
-                return new Threat(t.Id,true,offscreen,true,p.x,p.y,p.z,distance,bearing);
+                return new Threat(t.Id, true, Angles.IsOffscreen(t.Bearing, frozen.HorizontalFov), true,
+                    p.x, p.y, p.z, t.Distance, t.Bearing);
             }).ToArray();
             var policy=ThreatPolicy.Apply(snapshot,spec.Theta);int[] motors=MotorComposer.Compose(policy.Kept,frozen.Mapping,frozen.Low,frozen.High);
             double eventAt=Now;
-            record=new TrialRecord{participant_id=Participant,session_id=metadata.session_id,experiment_type=metadata.experiment_type,mode=metadata.mode,trial_id=spec.Id,utc=DateTime.UtcNow.ToString("O"),event_utc=DateTime.UtcNow.ToString("O"),condition_theta=spec.Theta,block_index=spec.Block,condition_order=string.Join(";",metadata.block_order),scene_family=spec.Family,random_seed=spec.Seed,event_time=eventAt,camera_heading=yaw,total_threat_count=snapshot.Length,selected_count=policy.Selected.Length,retained_count=policy.Kept.Length,requested_motor_array=motors,output_duration=frozen.PulseMilliseconds,config_hash=metadata.config_hash,is_training=training};
+            record=new TrialRecord{protocol_version=SessionMetadata.CurrentSoftwareVersion,participant_id=Participant,session_id=metadata.session_id,experiment_type=metadata.experiment_type,mode=metadata.mode,trial_id=spec.Id,utc=DateTime.UtcNow.ToString("O"),event_utc=DateTime.UtcNow.ToString("O"),condition_theta=spec.Theta,block_index=spec.Block,condition_order=string.Join(";",metadata.block_order),scene_family=spec.Family,random_seed=spec.Seed,event_time=eventAt,camera_heading=yaw,total_threat_count=snapshot.Length,selected_count=policy.Selected.Length,retained_count=policy.Kept.Length,suppressed_count=snapshot.Length-policy.Kept.Length,requested_motor_array=motors,output_duration=frozen.PulseMilliseconds,config_hash=metadata.config_hash,is_training=training};
             var ranked=snapshot.OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).ToArray();
             record.threats=snapshot.Select(t=>
             {
                 var d=policy.Decisions.FirstOrDefault(x=>x.Threat.Id==t.Id);
-                return new ThreatRecord{threat_id=t.Id,is_active=t.Active,is_firing=t.Firing,is_offscreen=t.Offscreen,world_x=t.X,world_y=t.Y,world_z=t.Z,distance_m=t.Distance,bearing_deg=t.Bearing,distance_rank=Array.IndexOf(ranked,t)+1,selected=d!=null,top3_selected=d!=null&&d.Rank<=3,retained=d!=null&&d.Retained,suppression_parent_id=d==null?"":d.ParentId,reason=d==null?"ineligible":d.Reason,comparisons=d==null?"":string.Join(";",d.Comparisons.Select(c=>c.ComparedId+":"+c.Difference.ToString("R",System.Globalization.CultureInfo.InvariantCulture))),individual_motor_array=MotorComposer.Compose(new[]{t},frozen.Mapping,frozen.Low,frozen.High)};
+                return new ThreatRecord{threat_id=t.Id,is_active=t.Active,is_firing=t.Firing,is_offscreen=t.Offscreen,world_x=t.X,world_y=t.Y,world_z=t.Z,distance_m=t.Distance,bearing_deg=t.Bearing,distance_rank=Array.IndexOf(ranked,t)+1,selected=d!=null,retained=d!=null&&d.Retained,suppressed=d!=null&&!d.Retained,suppression_parent_id=d==null?"":d.ParentId,reason=d==null?"ineligible":d.Reason,comparisons=d==null?"":string.Join(";",d.Comparisons.Select(c=>c.ComparedId+":"+c.Difference.ToString("R",System.Globalization.CultureInfo.InvariantCulture))),individual_motor_array=MotorComposer.Compose(new[]{t},frozen.Mapping,frozen.Low,frozen.High)};
             }).ToArray();
             store.Begin(record.trial_id,JsonUtility.ToJson(record,true));
             store.AppendEvent(record.trial_id,"THREAT_EVENT",JsonUtility.ToJson(record));
@@ -226,6 +223,17 @@ namespace GCCD.Dts
             record.ambiguous_matching = score.Ambiguous;
             record.matched_threat_indices = score.MatchedThreatIndices;
             record.matched_threat_ids = score.MatchedThreatIndices.Select(i => original[i].Id).ToArray();
+            var threatsById = record.threats.ToDictionary(t => t.threat_id, StringComparer.Ordinal);
+            int retainedCorrect = 0;
+            for (int i = 0; i < score.JointCorrect.Length; i++)
+            {
+                bool correct = score.JointCorrect[i];
+                record.responses[i].joint_correct = correct;
+                var threat = threatsById[record.matched_threat_ids[i]];
+                threat.joint_correct = correct;
+                if (correct && threat.retained) retainedCorrect++;
+            }
+            record.retained_recognition_rate = retainedCorrect / (double)record.retained_count;
             record.distance_confusion = new int[9];
             for (int i = 0; i < 9; i++) record.distance_confusion[i] = score.Confusion[i / 3, i % 3];
         }

@@ -32,7 +32,7 @@ Unity와 Developer Window 없이 전체 실행 폴더와 해당 노트북의 bHa
 
 ## 연구자용
 
-메인에서 참가자 ID를 입력하고 **실험 시작**을 누릅니다. 기본은 **화면 연습**이며, 미확정 위협 수는 연습에서만 6개를 사용합니다. F9의 **설정 저장**으로 설정 파일을 만들 수 있습니다. 실제 측정은 파일의 `TotalThreatCount`(2~8)와 `LobbyMode`(`PILOT` 또는 `MAIN`)를 지정하고 장비·파일럿 검증을 완료해야 합니다. F9에서 교정·자극 검증·데이터 검토를 엽니다. 미션은 **MISSION_DEMO**로 별도 저장합니다.
+메인에서 참가자 ID를 입력하고 **실험 시작**을 누릅니다. 기본은 **화면 연습**이며, 미확정 위협 수는 연습에서만 6개를 사용합니다. F9의 **설정 저장**으로 설정 파일을 만들 수 있습니다. 실제 측정은 파일의 `TotalThreatCount`(2 이상), `TrialsPerCondition` 및 `LobbyMode`(`PILOT` 또는 `MAIN`)를 지정하고 장비·파일럿 검증을 완료해야 합니다. 연구 모드는 정면을 포함한 360°를 사용하며, 각도 θ의 절반을 좌우에 적용합니다. F9에서 교정·자극 검증·데이터 검토를 엽니다. 미션은 **MISSION_DEMO**로 별도 저장합니다.
 
 기본 출력은 공식 구형 [PlayerRequest 프로토콜](https://github.com/bhaptics/haptic-library/wiki/Documentation)의 `ws://127.0.0.1:15881/v2/feedbacks` 경로입니다. 40채널 합성 배열을 전면 20/후면 20 프레임으로 나누어 **같은 메시지**에 제출합니다. 중지는 이 앱이 만든 키만 대상으로 합니다. Player 요청 전송은 피부 진동 확인과 구분합니다. `PLAYER_REQUEST_SENT_PHYSICAL_UNCONFIRMED`는 물리 확인 완료가 아닙니다.
 

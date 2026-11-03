@@ -24,25 +24,26 @@ namespace GCCD.Dts
     }
     public static class ScenarioGenerator
     {
-        public static TrialSpec[] PlanA(int seed, int row, double hfov, int threatCount)
+        public static TrialSpec[] PlanA(int seed, int row, double hfov, int threatCount, int trialsPerCondition = ExperimentConfig.DevelopmentTrialsPerCondition)
         {
             Angles.IsOffscreen(180, hfov);
-            if (threatCount < 2 || threatCount > ExperimentConfig.MaximumThreatCount)
+            if (threatCount < 2)
                 throw new ArgumentOutOfRangeException(nameof(threatCount));
+
+            if (trialsPerCondition < 1) throw new ArgumentOutOfRangeException(nameof(trialsPerCondition));
 
             var order = ConditionScheduler.Order(row);
             var layoutRng = new StableRandom(seed);
-            var layouts = new Threat[18][];
-            double start = hfov / 2 + 6;
+            var layouts = new Threat[trialsPerCondition][];
             for (int family = 0; family < layouts.Length; family++)
             {
                 var threats = new Threat[threatCount];
                 for (int i = 0; i < threats.Length; i++)
                 {
-                    double bearing = start + (360 - 2 * start) * layoutRng.Unit();
+                    double bearing = 360 * layoutRng.Unit();
                     double distance = 6.4 + 28 * layoutRng.Unit();
                     double radians = bearing * Math.PI / 180;
-                    threats[i] = new Threat("E" + (i + 1), true, true, true,
+                    threats[i] = new Threat("E" + (i + 1), true, Angles.IsOffscreen(bearing, hfov), true,
                         Math.Sin(radians) * distance, 1.7, Math.Cos(radians) * distance,
                         distance, bearing);
                 }

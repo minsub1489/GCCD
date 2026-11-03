@@ -5,19 +5,27 @@ namespace GCCD.Dts
 {
     [Serializable] public sealed class ExperimentConfig
     {
-        public const int MaximumThreatCount = 8;
+        public const int DevelopmentTrialsPerCondition = 18;
         public const int DevelopmentThreatCount = 6;
-        public string Version="dts-fixed-count-v2";
-        public int TotalThreatCount;
+        public string Version="dts-full-circle-v3";
+        public int TotalThreatCount, TrialsPerCondition;
         public string LobbyMode = "DEVELOPMENT";
 
         public int ThreatCountFor(bool development)
         {
             if (development && TotalThreatCount == 0) return DevelopmentThreatCount;
-            if (TotalThreatCount < 2 || TotalThreatCount > MaximumThreatCount)
-                throw new ArgumentException("시행당 전체 위협 수를 2~8개로 설정하세요. 0은 미확정입니다.");
+            if (TotalThreatCount < 2)
+                throw new ArgumentException("시행당 전체 위협 수를 2개 이상으로 설정하세요. 0은 미확정입니다.");
             return TotalThreatCount;
         }
+        public int TrialsPerConditionFor(bool development)
+        {
+            if (development && TrialsPerCondition == 0) return DevelopmentTrialsPerCondition;
+            if (TrialsPerCondition < 1)
+                throw new ArgumentException("파일럿에서 검토한 조건당 시행 수를 설정하세요.");
+            return TrialsPerCondition;
+        }
+
         public int Seed=1102,CounterbalanceRow=0,PulseMilliseconds=500;
         public double HorizontalFov=90,Low=.15,High=.75;
         public double DirectionTolerance=-1;
@@ -35,7 +43,7 @@ namespace GCCD.Dts
         public string[] Problems(bool main,bool physical)
         {
             var errors=new List<string>();
-            try{ThreatCountFor(!main&&!physical);ConditionScheduler.Order(CounterbalanceRow);Angles.IsOffscreen(180,HorizontalFov);DistanceEncoding.Intensity(6,Low,High);Mapping.Validate(physical);}catch(ArgumentException e){errors.Add(e.Message);}
+            try{ThreatCountFor(!main&&!physical);TrialsPerConditionFor(!main&&!physical);ConditionScheduler.Order(CounterbalanceRow);Angles.IsOffscreen(180,HorizontalFov);DistanceEncoding.Intensity(6,Low,High);Mapping.Validate(physical);}catch(ArgumentException e){errors.Add(e.Message);}
             if(PulseMilliseconds<100||PulseMilliseconds>5000)errors.Add("Pulse must be 100..5000 ms.");
             if(DirectionTolerance<0||DirectionTolerance>180||double.IsNaN(DirectionTolerance)||double.IsInfinity(DirectionTolerance))errors.Add("Set and freeze direction tolerance from pilot results.");
             if(physical&&(!Raw40TransportConfirmed||!PhysicalConcurrencyConfirmed||string.IsNullOrWhiteSpace(TransportEvidence)||string.IsNullOrWhiteSpace(VerifiedDeviceName)||!DurationConfirmed||!IntensityConfirmed||!BodyCameraAlignmentConfirmed))errors.Add("Physical X40 transport, mapping, concurrency, alignment and comfortable intensity/duration must be verified.");

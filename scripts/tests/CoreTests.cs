@@ -16,8 +16,8 @@ class CoreTests
     static void Main()
     {
         Test("0 retains coincident sources",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",0,9),T("C",0,11)},0).Kept.Length,3));
-        foreach(int angle in new[]{15,30,45,60,90}) { int theta=angle; Test(theta+" inclusive boundary",()=>Eq(ThreatPolicy.Apply(new[]{T("A",350,6),T("B",350+theta,7)},theta).Kept.Length,1)); }
-        Test("suppressed source never suppresses",()=>Eq(string.Join(",",ThreatPolicy.Apply(ABC(),45).Kept.Select(t=>t.Id)),"A,C"));
+        foreach(int angle in new[]{15,30,45,60,90}) { int theta=angle; Test(theta+" inclusive boundary",()=>Eq(ThreatPolicy.Apply(new[]{T("A",350,6),T("B",350+theta/2.0,7)},theta).Kept.Length,1)); }
+        Test("suppressed source never suppresses",()=>Eq(string.Join(",",ThreatPolicy.Apply(ABC(),90).Kept.Select(t=>t.Id)),"A,C"));
         Test("circular wrap",()=>Near(Angles.Difference(350,10),20));
         Test("opposite",()=>Near(Angles.Difference(0,180),180));
         Test("normalized bearing",()=>Near(T("A",-10,6).Bearing,350));
@@ -27,12 +27,32 @@ class CoreTests
         Test("distance input",()=>Throws(()=>T("A",0,-1)));
         Test("unknown theta rejected",()=>Throws(()=>ThreatPolicy.Apply(ABC(),22)));
         Test("tie ordinal ID",()=>Eq(ThreatPolicy.Apply(new[]{T("B",0,6),T("A",40,6)},90).Kept[0].Id,"A"));
-        Test("input order independent",()=>Eq(string.Join(",",ThreatPolicy.Apply(ABC().Reverse(),45).Kept.Select(t=>t.Id)),"A,C"));
-        Test("threats beyond the third participate in suppression",()=>{
-            var result=ThreatPolicy.Apply(ABC().Concat(new[]{T("D",200,30),T("E",270,36)}),90);
-            Eq(result.Selected.Length,5);
-            Eq(string.Join(",",result.Kept.Select(t=>t.Id)),"A,D");
-            Eq(result.Decisions[4].ParentId,"A");
+        Test("input order independent",()=>Eq(string.Join(",",ThreatPolicy.Apply(ABC().Reverse(),90).Kept.Select(t=>t.Id)),"A,C"));
+        Test("60-degree example retains five and composes all five",()=>{
+            double[] bearings={20,40,100,125,175,200,265,315};
+            double[] distances={7,9,12,15,18,21,25,29};
+            var input=bearings.Select((bearing,i)=>T(((char)('A'+i)).ToString(),bearing,distances[i])).Reverse().ToArray();
+            var result=ThreatPolicy.Apply(input,60);
+            Eq(result.Selected.Length,8);
+            Eq(string.Join(",",result.Kept.Select(t=>t.Id)),"A,C,E,G,H");
+            Eq(string.Join(",",result.Decisions.Where(d=>!d.Retained).Select(d=>d.ParentId)),"A,C,E");
+            Eq(result.Decisions.Count(d=>!d.Retained)+result.Kept.Length,input.Length);
+            var profile=Profile();
+            var frame=MotorComposer.Compose(result.Kept,profile,.15,.75);
+            var separate=result.Kept.Select(t=>MotorComposer.Compose(new[]{t},profile,.15,.75)).ToArray();
+            for(int channel=0;channel<40;channel++) Eq(frame[channel],separate.Max(f=>f[channel]));
+            for(int i=0;i<separate.Length;i++) Eq(Enumerable.Range(0,40).Any(c=>separate[i][c]>0&&separate.Where((_,j)=>j!=i).All(f=>f[c]<separate[i][c])),true);
+            var comparison=StimulusValidator.Compare(input,profile,.15,.75,500).Conditions.Single(c=>c.Theta==60);
+            Eq(comparison.RetainedIds.SequenceEqual(result.Kept.Select(t=>t.Id)),true);
+            Eq(comparison.Motors.SequenceEqual(frame),true);
+        });
+        Test("60 and 90 are full sector widths on either side of center",()=>{
+            foreach(int theta in new[]{60,90})
+            foreach(int side in new[]{-1,1})
+            {
+                var input=new[]{T("near",100,7),T("boundary",100+side*theta/2.0,10),T("outside",100+side*(theta/2.0+.01),12)};
+                Eq(string.Join(",",ThreatPolicy.Apply(input,theta).Kept.Select(t=>t.Id)),"near,outside");
+            }
         });
         Test("random layouts are paired and suppression varies",()=>{
             var plan=ScenarioGenerator.PlanA(17,0,90,5);
@@ -45,18 +65,19 @@ class CoreTests
             var config=new ExperimentConfig();
             Eq(config.ThreatCountFor(true),6);
             Throws(()=>config.ThreatCountFor(false));
-            config.TotalThreatCount=5;
-            Eq(config.ThreatCountFor(false),5);
+            Throws(()=>config.TrialsPerConditionFor(false));
+            config.TotalThreatCount=12;
+            Eq(config.ThreatCountFor(false),12);
         });
-        Test("eight threats can be scored with eight markers",()=>{
-            var threats=Enumerable.Range(0,8).Select(i=>T("E"+i,i*45,7)).ToArray();
+        Test("twelve threats can be scored with twelve markers",()=>{
+            var threats=Enumerable.Range(0,12).Select(i=>T("E"+i,i*30,7)).ToArray();
             var responses=threats.Reverse().Select(t=>new Response(t.Bearing,DistanceBin.Near)).ToArray();
             Near(ResponseScorer.Score(threats,responses,5).JointAccuracy,1);
-            Near(ResponseScorer.Score(threats,responses.Take(5).ToArray(),5).JointAccuracy,5.0/8);
+            Near(ResponseScorer.Score(threats,responses.Take(5).ToArray(),5).JointAccuracy,5.0/12);
         });
-        Test("parent nearest retained",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",80,8),T("C",40,9)},45).Decisions[2].ParentId,"A"));
+        Test("parent nearest retained",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",80,8),T("C",40,9)},90).Decisions[2].ParentId,"A"));
         Test("all retained",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",120,12),T("C",240,24)},90).Kept.Length,3));
-        Test("filter eligibility",()=>Eq(ThreatPolicy.Apply(new[]{new Threat("A",false,true,true,0,0,0,6,0),new Threat("B",true,false,true,0,0,0,7,0),new Threat("C",true,true,false,0,0,0,8,0)},0).Selected.Length,0));
+        Test("supplied roster participates independently of visibility flags",()=>Eq(ThreatPolicy.Apply(new[]{new Threat("A",false,true,true,0,0,0,6,0),new Threat("B",true,false,true,0,0,0,7,0),new Threat("C",true,true,false,0,0,0,8,0)},0).Selected.Length,3));
         Test("duplicate IDs rejected",()=>Throws(()=>ThreatPolicy.Apply(new[]{T("A",0,6),T("A",90,9)},0)));
         Test("distance endpoints",()=>{Near(DistanceEncoding.Intensity(6,.1,.9),.9);Near(DistanceEncoding.Intensity(36,.1,.9),.1);});
         Test("distance clamp",()=>{Near(DistanceEncoding.Intensity(0,.1,.9),.9);Near(DistanceEncoding.Intensity(60,.1,.9),.1);});
@@ -69,6 +90,19 @@ class CoreTests
         Test("zero response denominator three",()=>{var s=ResponseScorer.Score(ABC(),new Response[0],10);Near(s.JointAccuracy,0);Eq(s.Precision.HasValue,false);});
         Test("matching permutes responses",()=>{var s=ResponseScorer.Score(ABC(),new[]{new Response(80,DistanceBin.Far),new Response(0,DistanceBin.Near),new Response(40,DistanceBin.Middle)},5);Near(s.JointAccuracy,1);});
         Test("suppressed remains denominator",()=>Near(ResponseScorer.Score(ABC(),new[]{new Response(0,DistanceBin.Near),new Response(80,DistanceBin.Far)},5).JointAccuracy,2.0/3));
+        Test("assignment maximizes correct pairs before minimizing angular error",()=>{
+            var original=new[]{T("A",0,7),T("B",12,8)};
+            var responses=new[]{new Response(4,DistanceBin.Near),new Response(356,DistanceBin.Near)};
+            var score=ResponseScorer.Score(original,responses,8);
+            Eq(string.Join(",",score.MatchedThreatIndices),"1,0");
+            Near(score.JointAccuracy,1);
+        });
+        Test("assignment breaks correct-count ties by total angle error",()=>{
+            var original=new[]{T("A",359,7),T("B",12,8)};
+            var score=ResponseScorer.Score(original,new[]{new Response(0,DistanceBin.Near)},15);
+            Eq(score.MatchedThreatIndices[0],0);
+            Near(score.DirectionError.Value,1);
+        });
         Test("one response cannot match twice",()=>Near(ResponseScorer.Score(new[]{T("A",0,6),T("B",1,7),T("C",180,30)},new[]{new Response(0,DistanceBin.Near)},5).JointAccuracy,1.0/3));
         Test("direction and distance joint required",()=>Near(ResponseScorer.Score(ABC(),new[]{new Response(0,DistanceBin.Far)},5).JointAccuracy,0));
         Test("ambiguous overlap flagged",()=>Eq(ResponseScorer.Score(new[]{T("A",0,6),T("B",1,7),T("C",180,30)},new[]{new Response(.5,DistanceBin.Near)},5).Ambiguous,true));
@@ -78,7 +112,18 @@ class CoreTests
         Test("exact provided counterbalance rows",()=>Eq(string.Join(",",ConditionScheduler.Order(0)),"0,15,90,30,60,45"));
         Test("position balance",()=>{for(int pos=0;pos<6;pos++) Eq(Enumerable.Range(0,6).Select(i=>ConditionScheduler.Order(i)[pos]).Distinct().Count(),6);});
         Test("reproducible all snapshots",()=>{var a=ScenarioGenerator.PlanA(73,2,90,5);var b=ScenarioGenerator.PlanA(73,2,90,5);Eq(string.Join(";",a.Select(x=>x.Signature)),string.Join(";",b.Select(x=>x.Signature)));});
-        Test("all generated threats offscreen and unique distance",()=>{foreach(var t in ScenarioGenerator.PlanA(10,3,100,5)){Eq(t.Threats.Length,5);Eq(t.Threats.Select(x=>x.Distance).Distinct().Count(),5);foreach(var x in t.Threats) Eq(Angles.IsOffscreen(x.Bearing,100),true);}});
+        Test("360-degree layouts include front and all quadrants",()=>{
+            var plan=ScenarioGenerator.PlanA(10,3,100,12,7);
+            Eq(plan.Length,42);
+            foreach(var t in plan)
+            {
+                Eq(t.Threats.Length,12);
+                Eq(ThreatPolicy.Apply(t.Threats,0).Kept.Length,12);
+            }
+            var threats=plan.SelectMany(t=>t.Threats).ToArray();
+            Eq(threats.Select(t=>(int)(t.Bearing/90)).Distinct().Count(),4);
+            Eq(threats.Any(t=>!t.Offscreen),true);
+        });
         Test("distance distributions matched across theta",()=>{var plan=ScenarioGenerator.PlanA(1,0,90,5);var expected=string.Join(",",plan.Where(t=>t.Theta==0).SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x));foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(string.Join(",",g.SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x)),expected);});
         Test("invalid FOV rejects",()=>Throws(()=>ScenarioGenerator.PlanA(1,0,360,5)));
         Test("config rejects non-finite FOV",()=>{var c=new ExperimentConfig{HorizontalFov=double.NaN};Eq(c.Problems(false,false).Length>0,true);});

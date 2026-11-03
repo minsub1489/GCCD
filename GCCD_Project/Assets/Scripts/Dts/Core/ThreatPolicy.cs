@@ -33,13 +33,13 @@ namespace GCCD.Dts
         {
             if(input==null||!Conditions.Contains(theta)) throw new ArgumentException("Expected six-condition theta and a snapshot.");
             var all=input.ToArray();if(all.Any(t=>t==null)||all.Select(t=>t.Id).Distinct(StringComparer.Ordinal).Count()!=all.Length)throw new ArgumentException("Null/duplicate threat ID.");
-            var selected=all.Where(t=>t.Active&&t.Offscreen&&t.Firing).OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).ToArray();
+            var selected=all.OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).ToArray();
             var kept=new List<Threat>();var decisions=new List<Decision>();
             foreach(var threat in selected)
             {
                 var d=new Decision{Threat=threat,Rank=decisions.Count+1,Retained=true,Reason=theta==0?"baseline_all_retained":"outside_retained_angles"};
                 var comparisons=new List<Comparison>();
-                if(theta>0) foreach(var k in kept) { double delta=Angles.Difference(threat.Bearing,k.Bearing);comparisons.Add(new Comparison{ComparedId=k.Id,Difference=delta});if(delta<=theta){d.Retained=false;d.ParentId=k.Id;d.Reason="inclusive_angular_suppression";break;} }
+                if(theta>0) foreach(var k in kept) { double delta=Angles.Difference(threat.Bearing,k.Bearing);comparisons.Add(new Comparison{ComparedId=k.Id,Difference=delta});if(delta<=theta/2.0){d.Retained=false;d.ParentId=k.Id;d.Reason="inclusive_angular_suppression";break;} }
                 d.Comparisons=comparisons.ToArray();decisions.Add(d);if(d.Retained)kept.Add(threat);
             }
             return new PolicyResult{Selected=selected,Kept=kept.ToArray(),Decisions=decisions.ToArray()};

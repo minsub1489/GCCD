@@ -107,7 +107,7 @@ namespace GCCD.Dts
         }
         public string ValidateStimuli()
         {
-            var p=ScenarioGenerator.PlanA(config.Seed,config.CounterbalanceRow,config.HorizontalFov,config.ThreatCountFor(LobbySimulation));string folder=Path.Combine(Root,"STIMULUS_VALIDATION",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
+            var p=ScenarioGenerator.PlanA(config.Seed,config.CounterbalanceRow,config.HorizontalFov,config.ThreatCountFor(LobbySimulation),config.TrialsPerConditionFor(LobbySimulation));string folder=Path.Combine(Root,"STIMULUS_VALIDATION",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
             var rows=new List<string>{"scene_family,source_block,source_theta,theta,selected_ids,retained_ids,suppressed_ids,retained_count,requested_motor_array,output_duration"};var pairs=new int[6,6];
             foreach(var t in p.Where(t=>t.Block==0))
             {
@@ -118,7 +118,7 @@ namespace GCCD.Dts
             SessionStore.AtomicWrite(Path.Combine(folder,"outputs.csv"),string.Join("\n",rows)+"\n");
             var pairRows=new List<string>{"theta_a,theta_b,identical_trials,total_layouts,identical_ratio"};for(int i=0;i<6;i++)for(int j=i+1;j<6;j++)pairRows.Add(CsvTable.Line(ThreatPolicy.Conditions[i],ThreatPolicy.Conditions[j],pairs[i,j],p.Length/6,pairs[i,j]/(p.Length/6.0)));
             SessionStore.AtomicWrite(Path.Combine(folder,"pair_equivalence.csv"),string.Join("\n",pairRows)+"\n");SessionStore.AtomicWrite(Path.Combine(folder,"config_snapshot.json"),JsonUtility.ToJson(config,true));
-            comparisonSummary="18개 배치 × 6조건 비교 저장.\n"+folder+"\n각 조건 쌍의 동일 배열 비율은 pair_equivalence.csv에 있습니다.\n명령 배열 차이는 피부 자극 차이를 증명하지 않습니다. 매핑: "+config.Mapping.Version;
+            comparisonSummary=(p.Length/6)+"개 배치 × 6조건 비교 저장.\n"+folder+"\n각 조건 쌍의 동일 배열 비율은 pair_equivalence.csv에 있습니다.\n명령 배열 차이는 피부 자극 차이를 증명하지 않습니다. 매핑: "+config.Mapping.Version;
             return folder;
         }
         void DrawValidation(){GUILayout.Label("전체 배치에 여섯 억제각을 적용해 양자화된 제출 배열을 비교합니다.",bodyStyle);if(GUILayout.Button("출력 동일성 분석"))Guard(()=>ValidateStimuli());GUILayout.Label(comparisonSummary,bodyStyle);if(GUILayout.Button("검증된 본 실험 설정 잠금"))Guard(FreezeConfig);}
