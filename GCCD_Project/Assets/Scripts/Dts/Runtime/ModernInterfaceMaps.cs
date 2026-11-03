@@ -4,7 +4,7 @@ namespace GCCD.Dts
 {
     public sealed partial class ModernInterface
     {
-        VisualElement mapPanel,responseOverlay;MissionMapView miniMap,responseMap;Label responseHelp,responseStatus;Button responseSubmit,responseUndo,responseClear;
+        VisualElement mapPanel,responseOverlay;MissionMapView miniMap,responseMap;Label responseHelp,responseStatus,responseMarkCount;Button responseSubmit,responseUndo,responseClear;
         void BuildMaps()
         {
             mapPanel=Element(hud,"mini-map-panel");Label(mapPanel,"시설 지도  /  N ↑","eyebrow");miniMap=new MissionMapView();mapPanel.Add(miniMap);Label(mapPanel,"▲ 현재 위치   ◆ 보급품   TAB 닫기","small muted");
@@ -22,6 +22,8 @@ namespace GCCD.Dts
             Label(tools,"기억나지 않으면 비워 두고 완료할 수 있습니다.","small muted");
             responseUndo=Button(tools,"마지막 표시 취소",()=>GetComponent<MissionDemo>().UndoResponseMarker(),"button outline");
             responseClear=Button(tools,"모두 지우기",()=>GetComponent<MissionDemo>().ClearResponseMarkers(),"button outline");
+            responseMarkCount=Label(tools,"","small accent");
+            responseMarkCount.name="responseMarkCount";
             responseStatus=Label(tools,"","small accent");
             responseSubmit=Button(tools,"표시 완료 · 게임 계속  →",()=>GetComponent<MissionDemo>().CompleteThreatResponse(),"button primary");responseSubmit.name="responseSubmit";
             Button(tools,"로비로 돌아가기",()=>GetComponent<MissionDemo>().Exit(),"text-button muted");
@@ -36,6 +38,10 @@ namespace GCCD.Dts
             hud.style.display=DisplayStyle.None;responseMap.PlayerPosition=mission.ResponseObserver;responseMap.PlayerYaw=mission.ResponseYaw;responseMap.Markers=mission.ResponseMarkers;responseMap.Interactive=mission.ResponseReady;responseMap.Refresh();
             responseHelp.text=mission.ResponseReady?"당시 내 위치와 방향을 기준으로, 느껴진 위협의 위치를 지도에 찍어 주세요.":"진동이 끝나면 위치를 표시할 수 있습니다.";
             responseSubmit.SetEnabled(mission.ResponseReady);responseUndo.SetEnabled(mission.ResponseReady);responseClear.SetEnabled(mission.ResponseReady);
+            int markCount = responseMap.Markers.Length;
+            responseMarkCount.text = $"표시 {markCount} / {mission.MaximumThreatCount}개";
+            if (markCount >= mission.MaximumThreatCount)
+                responseMarkCount.text += "\n한도에 도달했습니다. 기존 표시를 지우면 다시 찍을 수 있습니다.";
             responseStatus.text=string.IsNullOrEmpty(mission.ResponseError)?mission.ResponseNotice:mission.ResponseError;
         }
     }

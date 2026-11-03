@@ -1,6 +1,6 @@
 # 현재 실행 방법
 
-**[Windows 실행 파일 다운로드](https://github.com/minsub1489/GCCD/releases/tag/v0.9.11-fps-direction-scoring)** · **[빠른 시작 안내](docs/QUICK_START.md)** 시작 화면에서 Player의 조끼를 자동으로 찾습니다. **진동 · 방향/거리 확인**에서 X40의 네 방향과 거리별 세기(36m 약함 / 21m 중간 / 6m 강함)를 시작 전에 비교합니다. [X40 매핑 안내](docs/X40_MAPPING.md). 로그인/App ID/API Key 없이 Player 로컬 연결을 사용합니다. **작전 시작**으로 공업지대 보급품 회수 미션을 플레이합니다.
+**[Windows 실행 파일 다운로드](https://github.com/minsub1489/GCCD/releases/tag/v0.9.12-fps-mark-limit)** · **[빠른 시작 안내](docs/QUICK_START.md)** 시작 화면에서 Player의 조끼를 자동으로 찾습니다. **진동 · 방향/거리 확인**에서 X40의 네 방향과 거리별 세기(36m 약함 / 21m 중간 / 6m 강함)를 시작 전에 비교합니다. [X40 매핑 안내](docs/X40_MAPPING.md). 로그인/App ID/API Key 없이 Player 로컬 연결을 사용합니다. **작전 시작**으로 공업지대 보급품 회수 미션을 플레이합니다.
 
 실사 기반 PBR 벽돌·아스팔트, 스캔한 드럼통·방호벽·군용 상자, HDR 하늘과 AKM 모델을 포함합니다. 실내 작업실·창고 16개와 복도를 연결했습니다. 우클릭 조준, 좌클릭 연사, Space 점프, C 앉기, Tab 미니맵을 지원합니다. 위협 진동 요청 때 게임을 멈추고, 실제 개수를 숨긴 위치 응답 지도에서 표시를 완료하면 재개합니다. 실행 중 에셋 다운로드가 필요하지 않습니다. 연구 실험은 메인의 **실험 시작**에서 바로 진행합니다.
 

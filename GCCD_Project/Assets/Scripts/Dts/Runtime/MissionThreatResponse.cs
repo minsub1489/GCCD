@@ -34,7 +34,7 @@ namespace GCCD.Dts
             responseError="";pendingSources=threats.Select(t=>new Vector3((float)t.X,(float)t.Y,(float)t.Z)).ToArray();
             string id=Guid.NewGuid().ToString("N");responsePath=Path.Combine(folder,"event-"+id+".json");
             responseRecord=new MissionThreatRecord{haptic_encoding=MissionHapticEncoding.Version,mapping_version=Owner.X40MappingVersion,event_id=id,state="awaiting_response",utc=DateTime.UtcNow.ToString("O"),seed=spawnSeed,observer_position=ResponseObserver,observer_yaw=yaw,source_positions=pendingSources,source_suppressed=suppressed,suppression_theta=SuppressionTheta,minimum_threat_count=MinimumThreatCount,maximum_threat_count=MaximumThreatCount,receipt=receipt,response_positions=new Vector3[0]};
-            locationResponse.Begin();ApplyPause(true,false);WriteResponse();
+            locationResponse.Begin(MaximumThreatCount);ApplyPause(true,false);WriteResponse();
         }
         bool WriteResponse()
         {

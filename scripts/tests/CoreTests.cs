@@ -165,9 +165,15 @@ class CoreTests
         Test("terminal service hatch requires crouch",()=>{Eq(MissionFloorPlan.Walkable(29,17,1.8,.3),false);Eq(MissionFloorPlan.Walkable(29,17,1,.3),true);});
         Test("expanded enemies include safe indoor positions",()=>{var p=MissionSpawnPlanner.Plan(124,10,0,-14,0,false,(x,z)=>!MissionFloorPlan.Walkable(x,z,2.2,.7),true);Eq(p.Any(x=>Math.Abs(x.X)>12),true);Eq(p.All(x=>MissionFloorPlan.Walkable(x.X,x.Z,2.2,.7)),true);});
         Test("mission clock freezes and resumes without deadline drift",()=>{var c=new MissionPlayClock();Near(c.Read(10),10);c.SetPaused(true,10);Near(c.Read(80),10);c.SetPaused(true,90);c.SetPaused(false,100);Near(c.Read(102),12);});
-        Test("response accepts optional marks and explicit empty completion",()=>{var r=new MissionLocationResponse();r.Begin();Eq(r.Active,true);Eq(r.Markers.Length,0);r.Complete();Eq(r.Active,false);Eq(r.Markers.Length,0);});
-        Test("response markers toggle without exposing source count",()=>{var r=new MissionLocationResponse();r.Begin();r.Toggle(-20,8);r.Toggle(21,18);Eq(r.Markers.Length,2);r.Toggle(-20,8);Eq(r.Markers.Length,1);r.Complete();Eq(r.Toggle(0,0),false);r.Begin();Eq(r.Markers.Length,0);});
-        Test("response rejects invalid map positions and supports undo",()=>{var r=new MissionLocationResponse();r.Begin();Throws(()=>r.Toggle(double.NaN,0));Throws(()=>r.Toggle(100,0));r.Toggle(0,0);r.Undo();Eq(r.Markers.Length,0);r.Undo();r.Toggle(0,1);r.Clear();Eq(r.Markers.Length,0);});
+        Test("response accepts optional marks and explicit empty completion",()=>{var r=new MissionLocationResponse();r.Begin(3);Eq(r.Active,true);Eq(r.Markers.Length,0);r.Complete();Eq(r.Active,false);Eq(r.Markers.Length,0);});
+        Test("response markers toggle without exposing source count",()=>{var r=new MissionLocationResponse();r.Begin(3);r.Toggle(-20,8);r.Toggle(21,18);Eq(r.Markers.Length,2);r.Toggle(-20,8);Eq(r.Markers.Length,1);r.Complete();Eq(r.Toggle(0,0),false);r.Begin(3);Eq(r.Markers.Length,0);});
+        Test("FPS mark limit blocks additions but allows replacement",()=>{
+            var r=new MissionLocationResponse();r.Begin(2);
+            Eq(r.Toggle(-20,8),true);Eq(r.Toggle(21,18),true);
+            Eq(r.Toggle(0,0),false);Eq(r.Markers.Length,2);
+            Eq(r.Toggle(-20,8),true);Eq(r.Toggle(0,0),true);Eq(r.Markers.Length,2);
+        });
+        Test("response rejects invalid map positions and supports undo",()=>{var r=new MissionLocationResponse();r.Begin(3);Throws(()=>r.Toggle(double.NaN,0));Throws(()=>r.Toggle(100,0));r.Toggle(0,0);r.Undo();Eq(r.Markers.Length,0);r.Undo();r.Toggle(0,1);r.Clear();Eq(r.Markers.Length,0);});
         Test("mission scoring ignores response order and uses unique sources",()=>{var s=MissionLocationScorer.Score(new[]{new MissionSpawnPoint{X=0,Z=10},new MissionSpawnPoint{X=10,Z=0}},new[]{new MissionSpawnPoint{X=10,Z=0},new MissionSpawnPoint{X=0,Z=10}},0,0,0,3);Eq(s.Correct,2);Near(s.Recall.Value,1);Near(s.MeanPositionError.Value,0);});
         Test("mission duplicate guesses cannot claim two hits",()=>{var s=MissionLocationScorer.Score(new[]{new MissionSpawnPoint{X=0,Z=10},new MissionSpawnPoint{X=10,Z=0}},new[]{new MissionSpawnPoint{X=0,Z=10},new MissionSpawnPoint{X=0,Z=10}},0,0,0,3);Eq(s.Correct,1);Eq(s.Missed,1);Eq(s.FalseMarks,1);});
         Test("mission empty response counts every missed source",()=>{var s=MissionLocationScorer.Score(new[]{new MissionSpawnPoint{X=0,Z=10}},new MissionSpawnPoint[0],0,0,0,3);Near(s.Recall.Value,0);Eq(s.Precision.HasValue,false);Eq(s.MeanPositionError.HasValue,false);Eq(s.Missed,1);});

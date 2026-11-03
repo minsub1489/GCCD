@@ -61,6 +61,12 @@ namespace GCCD.Dts
             var frozen=transform.position;int oldAmmo=m.Ammo;double oldElapsed=m.Elapsed;time+=60;m.StepMovement(Vector2.one,true,true,.02f);m.Fire(Vector3.forward);m.Reload();m.SetPaused(false);m.ToggleMap();
             if(transform.position!=frozen||m.Ammo!=oldAmmo||m.Elapsed!=oldElapsed||!m.IsPaused||m.MapVisible)Fail("Response blocks gameplay and timers");
             yield return null;var response=ui.Q<MissionMapView>("responseMap");if(!response.Interactive||ui.Q("threatResponse").resolvedStyle.display==DisplayStyle.None)Fail("Response map visible");
+            for(int i=0;i<10;i++)if(!m.ToggleResponseMarker(-30+3*i,48))Fail("Configured response capacity");
+            if(m.ToggleResponseMarker(20,48)||m.ResponseMarkers.Length!=10)Fail("Eleventh response blocked");
+            yield return null;
+            if(!ui.Q<Label>("responseMarkCount").text.Contains("10 / 10"))Fail("Response cap counter");
+            if(!m.ToggleResponseMarker(-30,48)||!m.ToggleResponseMarker(20,48))Fail("Delete and replace at capacity");
+            m.ClearResponseMarkers();
             ClickMap(response,.25f,.75f);if(m.ResponseMarkers.Length!=1||Math.Abs(m.ResponseMarkers[0].X+18)>.001||Math.Abs(m.ResponseMarkers[0].Z+5.5)>.001)Fail("Pointer click world coordinate mismatch "+string.Join(";",m.ResponseMarkers.Select(v=>v.X+","+v.Z)));
             m.ClearResponseMarkers();
             response.transform.scale=new Vector3(.8f,.8f,1);ClickMap(response,.75f,.25f);
