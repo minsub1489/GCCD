@@ -68,6 +68,8 @@ namespace GCCD.Dts
             GUILayout.EndArea();
         }
         int reviewedTrialIndex;
+        bool showRetainedThreats = true;
+        GUIStyle suppressedMarkerStyle, retainedMarkerStyle;
         Vector2 reviewedThreatScroll;
 
         void DrawThreatReview(TrialRecord[] trials)
@@ -82,29 +84,46 @@ namespace GCCD.Dts
 
             var trial = trials[reviewedTrialIndex];
             GUILayout.Label($"{trial.trial_id} ({reviewedTrialIndex + 1}/{trials.Length}) · 억제각 {trial.condition_theta}° · 유지 {trial.retained_count}개 · 억제 {trial.suppressed_count}개", bodyStyle);
+            showRetainedThreats = GUILayout.Toggle(showRetainedThreats, "유지 위협도 표시");
+            if (trial.suppressed_count == 0)
+                GUILayout.Label("이 시행에는 억제된 위협이 없습니다.", bodyStyle);
             GUILayout.BeginHorizontal();
-            float size = Mathf.Clamp(Screen.height * .30f, 140, 280);
+            float size = Mathf.Clamp(Screen.height * .34f, 140, 320);
             Rect map = GUILayoutUtility.GetRect(size, size, GUILayout.ExpandWidth(false));
             GUI.DrawTexture(map, ringTexture);
             GUI.Label(new Rect(map.center.x - 23, map.y, 62, 22), "0° 정면");
-            foreach (var threat in trial.threats)
+            suppressedMarkerStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 19, fontStyle = FontStyle.Bold, normal = { textColor = new Color(.12f,.06f,.02f) } };
+            retainedMarkerStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = new Color(.53f,1f,.72f) } };
+            foreach (var threat in trial.threats.OrderBy(t => t.suppressed))
             {
+                if (!threat.suppressed && !showRetainedThreats) continue;
                 float angle = (float)threat.bearing_deg * Mathf.Deg2Rad;
                 float radius = size * .39f * Mathf.Clamp01((float)threat.distance_m / 36);
                 Vector2 point = map.center + radius * new Vector2(Mathf.Sin(angle), -Mathf.Cos(angle));
                 Color previous = GUI.color;
-                GUI.color = threat.suppressed ? new Color(1f, .53f, .40f) : new Color(.53f, 1f, .72f);
-                GUI.Label(new Rect(point.x - 13, point.y - 11, 46, 24),
-                    (threat.suppressed ? "× " : "● ") + threat.threat_id);
-                GUI.color = previous;
+                if (threat.suppressed)
+                {
+                    Rect badge = new Rect(point.x - 14, point.y - 14, 28, 28);
+                    GUI.color = new Color(1f,.98f,.88f);
+                    GUI.DrawTexture(new Rect(badge.x - 2, badge.y - 2, 32, 32), Texture2D.whiteTexture);
+                    GUI.color = new Color(1f,.58f,.20f);
+                    GUI.DrawTexture(badge, Texture2D.whiteTexture);
+                    GUI.color = previous;
+                    GUI.Label(badge, "×", suppressedMarkerStyle);
+                }
+                else GUI.Label(new Rect(point.x - 12, point.y - 12, 24, 24), "●", retainedMarkerStyle);
             }
 
             reviewedThreatScroll = GUILayout.BeginScrollView(reviewedThreatScroll, GUILayout.Height(size));
             GUILayout.Label("● 유지   × 억제", bodyStyle);
-            foreach (var threat in trial.threats)
+            foreach (var threat in trial.threats.OrderByDescending(t => t.suppressed))
             {
+                if (!threat.suppressed && !showRetainedThreats) continue;
+                Color previous = GUI.color;
+                if (threat.suppressed) GUI.color = new Color(1f,.72f,.38f);
                 string state = threat.suppressed ? $"× 억제 · 기준 {threat.suppression_parent_id}" : "● 유지";
                 GUILayout.Label($"{threat.threat_id}   {threat.bearing_deg:F1}°   {threat.distance_m:F1}m   {state}", bodyStyle);
+                GUI.color = previous;
             }
             GUILayout.EndScrollView();
             GUILayout.EndHorizontal();

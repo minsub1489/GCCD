@@ -43,7 +43,7 @@ namespace GCCD.Dts
         void SelectResult(MissionEventResult e)
         {
             resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource;
-            resultDetails.text=GroupName(e.Group)+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m")+"\n응답 시간 "+e.ResponseSeconds.ToString("F2")+"초";
+            resultDetails.text=GroupName(e.Group)+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
         }
         static string GroupName(string group){return group=="SIMULATED"?"화면 체험":group=="REQUESTED_UNCONFIRMED"?"조끼 요청 · 착용 미확인":group=="INTERRUPTED"?"출력 중단":"출력 실패";}
         static string GroupText(MissionEventResult[] events,string group,string label){var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();int sources=valid.Sum(e=>e.Score.SourceCount),correct=valid.Sum(e=>e.Score.Correct);return label+"  "+Percent(sources==0?(double?)null:correct/(double)sources)+"  ("+valid.Length+"회)";}

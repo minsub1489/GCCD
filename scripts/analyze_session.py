@@ -54,7 +54,6 @@ def summarize(folder):
             'direction_error': mean('direction_error', performance),
             'direction_accuracy': mean('direction_accuracy', performance),
             'distance_accuracy': mean('distance_accuracy', performance),
-            'response_time': mean('response_time', performance),
             'confusion_rating': mean('confusion_rating', performance),
             'response_precision': mean('response_precision', performance),
             'timeout_rate': sum(t['timeout'] for t in performance) / len(performance) if performance else None,
