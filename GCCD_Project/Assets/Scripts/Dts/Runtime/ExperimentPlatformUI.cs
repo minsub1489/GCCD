@@ -34,6 +34,16 @@ namespace GCCD.Dts
             if(Phase==TrialPhase.Setup){DrawSetup();return;}
             if(operatorVisible){DrawOperator();return;}
             float w=Math.Min(880,Screen.width-40);GUILayout.BeginArea(new Rect((Screen.width-w)/2,30,w,Screen.height-60),GUI.skin.box);
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            bool returnToLobby = GUILayout.Button("로비로 돌아가기", GUILayout.Width(190), GUILayout.Height(38));
+            GUILayout.EndHorizontal();
+            if (returnToLobby)
+            {
+                GUILayout.EndArea();
+                BackToSetup();
+                return;
+            }
             if(Mode=="DEVELOPMENT")GUILayout.Label("개발용 시뮬레이션 · 실제 진동 없음 · 연구 측정 자료 아님",bodyStyle);
             if(training)GUILayout.Label("훈련 · 정답 피드백 제공",bodyStyle);
             if(Phase==TrialPhase.Prepare||Phase==TrialPhase.Pulse)
@@ -62,9 +72,9 @@ namespace GCCD.Dts
                     if(GUILayout.Button("CSV 저장",GUILayout.Height(48)))SaveFinishedCsv();
                     if(!string.IsNullOrEmpty(resultExportStatus))GUILayout.Label(resultExportStatus,bodyStyle);
                 }
-                if(GUILayout.Button(training||resultExportStatus.StartsWith("CSV 저장 완료")?"메인으로":"저장 없이 메인으로",GUILayout.Height(48)))BackToSetup();}
+            }
             else if(Phase==TrialPhase.Fault)
-            {GUILayout.Label("진행 중단 · 연구자 확인 필요",titleStyle);GUILayout.Label(Error,bodyStyle);GUILayout.Label("확인된 원본 기록은 저장 폴더에 보존됩니다.",bodyStyle);if(GUILayout.Button("연구자 메뉴"))BackToSetup();}
+            {GUILayout.Label("진행 중단 · 연구자 확인 필요",titleStyle);GUILayout.Label(Error,bodyStyle);GUILayout.Label("확인된 원본 기록은 저장 폴더에 보존됩니다.",bodyStyle);}
             GUILayout.EndArea();
         }
         int reviewedTrialIndex;
@@ -216,7 +226,7 @@ namespace GCCD.Dts
             if(Mode=="DEVELOPMENT")GUILayout.Label("조건 순서 "+string.Join(" → ",metadata.block_order),bodyStyle);else GUILayout.Label("조건 수치는 진행 화면에 표시하지 않습니다. 연구자는 세션 메타데이터에서 확인하세요.",bodyStyle);GUILayout.Label("저장 폴더 "+Folder,bodyStyle);GUILayout.Label(Error,bodyStyle);
             string reason;GUILayout.Label("장비: "+(Mode=="DEVELOPMENT"?"가상 출력":haptics.Ready(frozen,out reason)?"연결됨":reason),bodyStyle);
             if(GUILayout.Button("긴급 진동 중지 / 시행 중단")){haptics.Stop();Pause("Emergency stop.");}
-            if(GUILayout.Button("진행 재개"))Advance();if(GUILayout.Button("세션 종료 / 메뉴"))BackToSetup();GUILayout.EndArea();
+            if(GUILayout.Button("진행 재개"))Advance();if(GUILayout.Button("로비로 돌아가기"))BackToSetup();GUILayout.EndArea();
         }
         Vector2 markerScroll;
         void DrawResponse()

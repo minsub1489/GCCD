@@ -20,6 +20,10 @@ namespace GCCD.Dts
             var button = GetComponent<UnityEngine.UIElements.UIDocument>().rootVisualElement.Q<UnityEngine.UIElements.Button>("startExperiment");
             Require(button != null, "lobby start button");
             var ui = GetComponent<UIDocument>().rootVisualElement;
+            var nameField = ui.Q<TextField>("participantName");
+            Require(nameField != null && !nameField.isReadOnly, "editable player name");
+            nameField.value = "팀원_01";
+            Require(p.Participant == "팀원_01", "player name reaches session settings");
             button.Focus();
             using (var missing = NavigationSubmitEvent.GetPooled()) button.SendEvent(missing);
             yield return null;
@@ -42,6 +46,7 @@ namespace GCCD.Dts
             using (var submit = UnityEngine.UIElements.NavigationSubmitEvent.GetPooled()) button.SendEvent(submit);
             Require(p.Phase == TrialPhase.Prepare, "direct lobby start: " + p.Error);
             string folder=p.Folder;
+            Require(Path.GetFileName(Path.GetDirectoryName(folder)) == "팀원_01", "Korean player name accepted in session path");
             for (int i = 0; i < 7; i++)
             {
                 clock += 5; p.Tick(); Require(p.Phase == TrialPhase.Pulse, p.Error);
@@ -76,7 +81,15 @@ namespace GCCD.Dts
             Require(!Directory.GetFiles(folder,"*.csv").Any(), "skip leaves CSV absent");
             p.ResumeSession(folder);
             Require(p.SaveFinishedCsv() && File.Exists(csv), "explicit export after resume");
-            p.BackToSetup();Debug.Log("DTS_PLAYMODE_VALIDATION_PASS");EditorApplication.Exit(0);
+            p.BackToSetup();
+            p.StartLobbyExperiment(false,45,4,10);
+            Require(p.Phase==TrialPhase.Prepare,"second session starts");
+            clock+=5;p.Tick();Require(p.Phase==TrialPhase.Pulse,"pulse before early exit");
+            string interruptedFolder=p.Folder;
+            p.BackToSetup();
+            Require(p.Phase==TrialPhase.Setup && p.Total>0 && DataExporter.Records(interruptedFolder).Single().technical_failure,
+                "early return preserves interrupted trial");
+            Debug.Log("DTS_PLAYMODE_VALIDATION_PASS");EditorApplication.Exit(0);
         }
         static void Require(bool ok,string message){if(ok)return;Debug.LogError("DTS_PLAYMODE_FAILED "+message);EditorApplication.Exit(2);throw new Exception(message);}
     }

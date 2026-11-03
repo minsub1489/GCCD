@@ -7,8 +7,8 @@
 .brand { font-size:20px; -unity-font-style:bold; letter-spacing:5px; }
 .eyebrow { font-size:13px; letter-spacing:3px; color:rgb(174,184,183); margin-bottom:14px; }
 .accent { color:rgb(218,177,93); }
-.lobby-content { position:absolute; left:64px; top:180px; width:480px; }
-.hero { font-size:66px; -unity-font-style:bold; white-space:normal; margin-bottom:24px; }
+.lobby-content { position:absolute; left:64px; top:114px; bottom:64px; width:480px; }
+.hero { font-size:60px; -unity-font-style:bold; white-space:normal; margin-bottom:24px; }
 .description { font-size:19px; color:rgb(179,189,188); white-space:normal; margin-bottom:36px; }
 .button { height:62px; border-width:1px; border-color:rgba(221,224,215,.2); border-radius:3px; color:rgb(229,233,228); font-size:19px; -unity-text-align:middle-center; background-color:rgba(18,26,30,.7); margin-bottom:12px; padding-left:20px; padding-right:20px; transition-property:background-color,color,border-color; transition-duration:.15s; }
 .button:hover { background-color:rgba(71,83,85,.9); border-color:rgb(182,191,184); }

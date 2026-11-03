@@ -34,7 +34,15 @@ namespace GCCD.Dts
             lobby=Element(root,"lobby");background=Element(lobby,"backdrop");var image=Resources.Load<Texture2D>("Realism/UI/lobby-background");if(image)background.style.backgroundImage=image;
             var scrim=Element(lobby,"scrim");scrimTexture=new Texture2D(256,1,TextureFormat.RGBA32,false);for(int x=0;x<256;x++){float f=x/255f;scrimTexture.SetPixel(x,0,new Color(.025f,.04f,.05f,Mathf.Lerp(.91f,.10f,Mathf.SmoothStep(0,1,f))));}scrimTexture.Apply();scrim.style.backgroundImage=scrimTexture;
 var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
-            var content=Element(lobby,"lobby-content");Label(content,"HAPTIC THREAT DETECTION","eyebrow accent");Label(content,"Finding\nThreat","hero");Label(content,"시야 밖 위협의 방향과 거리를 진동으로 감지하세요.","description");
+            var content = new ScrollView();
+            content.AddToClassList("lobby-content");
+            lobby.Add(content);
+            Label(content,"HAPTIC THREAT DETECTION","eyebrow accent");Label(content,"Finding\nThreat","hero");Label(content,"시야 밖 위협의 방향과 거리를 진동으로 감지하세요.","description");
+
+            var participantField = new TextField("플레이어 이름") { name = "participantName", value = platform.Participant, maxLength = 32 };
+            participantField.AddToClassList("study-field");
+            participantField.RegisterValueChangedCallback(evt => platform.Participant = evt.newValue);
+            content.Add(participantField);
 
             var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"억제각 선택","전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
             angles.name="studyAngle";
@@ -92,7 +100,7 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
                 platform.StartLobbyExperiment(false, theta, minimum, maximum);
             }, "button secondary");
             experimentButton.name = "startExperiment";
-            var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);
+
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
             testButton=Button(card,"진동 · 방향/거리 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";

@@ -18,7 +18,7 @@ namespace GCCD.Dts
         readonly FileStream sessionLock;public string Folder{get;private set;}
         public HashSet<string> Completed{get;private set;}=new HashSet<string>(StringComparer.Ordinal);
         public string[] Pending{get{return Directory.GetFiles(Path.Combine(Folder,"journal"),"*.started.json").Select(Path.GetFileName).Select(n=>n.Replace(".started.json","")).Where(id=>!Completed.Contains(id)).ToArray();}}
-        public static void ValidateId(string id){if(id==null||!Regex.IsMatch(id,@"\A[A-Za-z0-9_-]{1,32}\z"))throw new ArgumentException("Use anonymous IDs containing 1-32 letters, numbers, _ or -.");}
+        public static void ValidateId(string id){if(id==null||!Regex.IsMatch(id,@"\A[\p{L}\p{M}\p{Nd}_-]{1,32}\z"))throw new ArgumentException("플레이어 이름은 공백 없이 한글·영문·숫자·밑줄·하이픈을 사용해 1~32자로 입력하세요.");}
         public static string Hash(string value){using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(value))).Replace("-","").ToLowerInvariant();}
         readonly bool deferEventCsv;
         public SessionStore(string folder,string participant,string mode,string experiment,string metadata,bool resume=false, bool deferEventCsv=false)
