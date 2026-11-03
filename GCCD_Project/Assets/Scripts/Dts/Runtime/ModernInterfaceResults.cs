@@ -6,7 +6,7 @@ namespace GCCD.Dts
 {
     public sealed partial class ModernInterface
     {
-        VisualElement resultsOverlay;MissionMapView resultMap;Label resultTitle,resultTotals,resultDetails,resultComparison,resultPath,resultSaveStatus;
+        VisualElement resultsOverlay;MissionMapView resultMap;Label resultNote,resultTitle,resultTotals,resultDetails,resultComparison,resultPath,resultSaveStatus;
         Toggle resultSectorToggle;
         ScrollView resultEventList;MissionDemo resultOwner;int selectedEvent=-1;bool resultsBuilt;
         void BuildResults()
@@ -25,7 +25,7 @@ namespace GCCD.Dts
             left.Add(resultSectorToggle);
             resultMap=new MissionMapView{Detailed=true};resultMap.name="resultMap";left.Add(resultMap);
             var side=Element(body,"results-side");resultComparison=Label(side,"","small muted");resultEventList=new ScrollView();resultEventList.AddToClassList("results-event-list");side.Add(resultEventList);resultDetails=Label(side,"","results-details");
-            Label(shell,"일치 기준: 수평거리 3m 이내 + 방향 오차 15° 미만 · 1대1 비교 · 평균 오차는 연결된 쌍 기준","results-note");
+            resultNote=Label(shell,"","results-note");
             var save=Element(shell,"results-save-row");resultPath=Label(save,"","results-path");resultPath.name="csvPath";resultPath.selection.isSelectable=true;
             Button(save,"저장 폴더 열기",()=>GetComponent<MissionDemo>().OpenCsvFolder(),"button outline").name="openCsvFolder";
             Button(save,"CSV 다시 저장",()=>{var m=GetComponent<MissionDemo>();m.ExportMissionData();resultsBuilt=false;},"button outline");
@@ -39,6 +39,7 @@ namespace GCCD.Dts
             if(resultOwner!=mission){resultOwner=mission;resultsBuilt=false;selectedEvent=-1;resultSectorToggle.value=false;}
             resultTitle.text=mission.EndedEarly?"실험 종료 · 위치 정확도 비교":"작전 완료 · 위치 정확도 비교";
             var events=mission.ReviewEvents;
+            if(selectedEvent<0) SetResultCriteria(mission.PositionTolerance, mission.DirectionTolerance);
             if(!resultsBuilt){
                 resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ResponseCount);
                 int adjusted=eligible.Sum(e=>e.Score.AdjustedCorrect);
@@ -75,8 +76,13 @@ namespace GCCD.Dts
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
         }
+        void SetResultCriteria(double position, double direction)
+        {
+            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 위협당 하나씩";
+        }
         void SelectResult(MissionEventResult e)
         {
+            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance);
             resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.SuppressedSources=e.Suppressed;
             resultMap.SuppressionTheta=e.SuppressionTheta;
             resultSectorToggle.SetEnabled(e.Suppressed != null && e.SuppressionTheta > 0);

@@ -58,6 +58,23 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
                 rangeRow.Add(input);
 
             }
+            var scoringRow = Element(content, "row");
+            var penaltyAngle = new TextField("FPS 방향 허용각 (°)") { name = "fpsDirectionTolerance", value = "15" };
+            var positionTolerance = new TextField("FPS 위치 허용거리 (m)") { name = "fpsPositionTolerance", value = "3" };
+            foreach (var input in new[] { penaltyAngle, positionTolerance })
+            {
+                input.style.flexGrow = 1;
+                input.AddToClassList("study-field");
+                scoringRow.Add(input);
+            }
+            Label(content, "각도는 일치와 방향 감점에, 거리는 일치 판정에 적용됩니다.", "small muted");
+            bool TryParseTolerance(string value, out double number)
+            {
+                const System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Float;
+                return double.TryParse(value, style, System.Globalization.CultureInfo.CurrentCulture, out number) ||
+                    double.TryParse(value, style, System.Globalization.CultureInfo.InvariantCulture, out number);
+            }
+
             string ValidateStudyInputs(out int minimum, out int maximum)
             {
                 minimum = maximum = 0;
@@ -75,6 +92,8 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
             angles.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
             minimumField.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
             maximumField.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
+            penaltyAngle.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
+            positionTolerance.RegisterValueChangedCallback(evt => rangeError = ValidateStudyInputs(out _, out _));
             lobbyError = Label(content, "", "small");
             lobbyError.name = "studyInputError";
             lobbyError.style.color = new Color(1f, .43f, .42f);
@@ -88,7 +107,17 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
                     return;
                 }
                 int theta = angles.index == 1 ? 45 : ThreatPolicy.Conditions[angles.index - 2];
-                platform.StartMission(theta, minimum, maximum);
+                if (!TryParseTolerance(penaltyAngle.value, out double direction) || !(direction > 0 && direction <= 180))
+                {
+                    rangeError = "FPS 방향 허용각을 0° 초과 180° 이하로 입력하세요.";
+                    return;
+                }
+                if (!TryParseTolerance(positionTolerance.value, out double distance) || !(distance > 0 && !double.IsInfinity(distance)))
+                {
+                    rangeError = "FPS 위치 허용거리를 0m보다 큰 숫자로 입력하세요.";
+                    return;
+                }
+                platform.StartMission(theta, minimum, maximum, direction, distance);
             }, "button primary").name = "startMission";
             var secondary = Element(content, "row");
             Button(secondary, "응답 연습", () => platform.StartLobbyExperiment(true), "button secondary");

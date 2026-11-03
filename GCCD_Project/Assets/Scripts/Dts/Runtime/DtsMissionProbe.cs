@@ -33,6 +33,8 @@ namespace GCCD.Dts
             ui.Q<DropdownField>("studyAngle").index=2;
             ui.Q<TextField>("studyThreatMinimum").value="10";
             ui.Q<TextField>("studyThreatMaximum").value="10";
+            ui.Q<TextField>("fpsDirectionTolerance").value="22.5";
+            ui.Q<TextField>("fpsPositionTolerance").value="4.5";
             Submit(ui.Q<Button>("startMission"));yield return null;yield return null;
             var m=GetComponent<MissionDemo>();if(!m||!m.HasWorld||m.MinimumThreatCount!=10||m.MaximumThreatCount!=10)Fail("World initialization with lobby threat range");m.Physical=false;m.SetPaused(false);
             double time=Time.realtimeSinceStartupAsDouble;m.Clock=()=>time;
@@ -82,6 +84,7 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("mapEndExperiment"));
             if(!m.IsComplete||!m.EndedEarly||!m.ExportsReady)Fail("Tab end experiment opens results");
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
+            if(m.ReviewEvents.Any(e=>e.DirectionTolerance!=22.5||e.PositionTolerance!=4.5))Fail("Lobby tolerances saved on events");
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
             var reviewed=m.ReviewEvents[1];if(m.ReviewEvents[0].Suppressed.Any(value=>value))Fail("First event must have no suppression");if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");

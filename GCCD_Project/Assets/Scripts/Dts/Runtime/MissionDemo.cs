@@ -7,17 +7,23 @@ namespace GCCD.Dts
 {
     public sealed partial class ExperimentPlatform
     {
-        public void StartMission(int suppressionTheta = 45, int minimumThreatCount = 3, int maximumThreatCount = 8)
+        public void StartMission(int suppressionTheta = 45, int minimumThreatCount = 3, int maximumThreatCount = 8,
+            double directionTolerance = MissionDemo.ResultDirectionTolerance, double positionTolerance = MissionDemo.ResultTolerance)
         {
             if (Phase != TrialPhase.Setup || GetComponent<MissionDemo>()) return;
             if (minimumThreatCount < 2 || maximumThreatCount < minimumThreatCount ||
                 maximumThreatCount > MissionSpawnPlanner.MaximumThreatCount)
                 throw new ArgumentException("Invalid FPS threat-count range.");
+            if (!(directionTolerance > 0 && directionTolerance <= 180) ||
+                !(positionTolerance > 0 && !double.IsInfinity(positionTolerance)))
+                throw new ArgumentException("Invalid FPS scoring tolerances.");
             var mission = gameObject.AddComponent<MissionDemo>();
             mission.Owner = this;
             mission.SuppressionTheta = suppressionTheta;
             mission.MinimumThreatCount = minimumThreatCount;
             mission.MaximumThreatCount = maximumThreatCount;
+            mission.DirectionTolerance = directionTolerance;
+            mission.PositionTolerance = positionTolerance;
             mission.Physical = connectionReady;
             enabled = false;
         }

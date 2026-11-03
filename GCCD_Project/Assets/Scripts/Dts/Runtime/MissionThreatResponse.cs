@@ -26,6 +26,7 @@ namespace GCCD.Dts
             public string mode="MISSION_DEMO",event_id,state,utc,mapping_version,haptic_encoding;public bool not_research_data=true;public int seed;
             public Vector3 observer_position;public float observer_yaw;public Vector3[] source_positions,response_positions;
             public OutputReceipt receipt;public double response_seconds;public double intensity_low=MissionLow,intensity_high=MissionHigh;public bool pulse_interrupted;
+            public double direction_tolerance_deg,position_tolerance_m;
             public int suppression_theta,minimum_threat_count,maximum_threat_count;public bool[] source_suppressed;
         }
         void BeginThreatResponse(Threat[] threats,OutputReceipt receipt,bool[] suppressed)
@@ -33,7 +34,7 @@ namespace GCCD.Dts
             ResponseObserver=transform.position;ResponseYaw=yaw;responseStarted=RealNow;responseReadyAt=RealNow+.2;
             responseError="";pendingSources=threats.Select(t=>new Vector3((float)t.X,(float)t.Y,(float)t.Z)).ToArray();
             string id=Guid.NewGuid().ToString("N");responsePath=Path.Combine(folder,"event-"+id+".json");
-            responseRecord=new MissionThreatRecord{haptic_encoding=MissionHapticEncoding.Version,mapping_version=Owner.X40MappingVersion,event_id=id,state="awaiting_response",utc=DateTime.UtcNow.ToString("O"),seed=spawnSeed,observer_position=ResponseObserver,observer_yaw=yaw,source_positions=pendingSources,source_suppressed=suppressed,suppression_theta=SuppressionTheta,minimum_threat_count=MinimumThreatCount,maximum_threat_count=MaximumThreatCount,receipt=receipt,response_positions=new Vector3[0]};
+            responseRecord=new MissionThreatRecord{haptic_encoding=MissionHapticEncoding.Version,mapping_version=Owner.X40MappingVersion,event_id=id,state="awaiting_response",utc=DateTime.UtcNow.ToString("O"),seed=spawnSeed,observer_position=ResponseObserver,observer_yaw=yaw,source_positions=pendingSources,source_suppressed=suppressed,suppression_theta=SuppressionTheta,minimum_threat_count=MinimumThreatCount,direction_tolerance_deg=DirectionTolerance,position_tolerance_m=PositionTolerance,maximum_threat_count=MaximumThreatCount,receipt=receipt,response_positions=new Vector3[0]};
             locationResponse.Begin(MaximumThreatCount);ApplyPause(true,false);WriteResponse();
         }
         bool WriteResponse()
