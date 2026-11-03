@@ -155,10 +155,13 @@ class CoreTests
             Eq(score.FarFalseMark[2],true);
             Eq(string.Join(",",score.DuplicateMarks),"False,True,False");
         });
-        Test("FPS overlapping suppressed match keeps credit and displays duplicate",()=>{
+        Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
-            Eq(score.Correct,2);Eq(score.AdjustedCorrect,2);
+            Eq(score.Correct,1);Eq(score.AdjustedCorrect,1);
+            Eq(score.SourceCount,2);Eq(score.CorrectMarks[1],false);
+            var suppressedOnly=MissionLocationScorer.Score(sources,new[]{sources[1]},0,0,0,1,15,new[]{false,true});
+            Eq(suppressedOnly.Correct,0);Eq(suppressedOnly.DuplicateMarks[0],false);
             Eq(string.Join(",",score.DuplicateMarks),"False,True");
             score=MissionLocationScorer.Score(sources,new[]{sources[0],new MissionSpawnPoint{Z=14}},0,0,0,3,15,new[]{false,true});
             Eq(score.Correct,1);Eq(score.FarFalseMarks,0);

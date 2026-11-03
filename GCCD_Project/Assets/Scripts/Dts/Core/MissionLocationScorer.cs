@@ -37,6 +37,8 @@ namespace GCCD.Dts
                 if(directionTolerance.Value<=0||directionTolerance.Value>180)
                     throw new ArgumentException("Direction tolerance must be greater than 0 and at most 180 degrees.");
             }
+            if (suppressedSources != null && suppressedSources.Length != sources.Length)
+                throw new ArgumentException("Suppression flags must match the source count.", nameof(suppressedSources));
             var bearings=sources.Select(point=>Bearing(point,observerX,observerZ,yaw)).ToArray();
             var position=new double[marks.Length,sources.Length];
             var direction=new double?[marks.Length,sources.Length];
@@ -55,7 +57,7 @@ namespace GCCD.Dts
                         direction[i,j]=error;
                         if(!nearest[i].HasValue||error<nearest[i].Value)nearest[i]=error;
                     }
-                    correct[i,j]=position[i,j]<=tolerance &&
+                    correct[i,j]=(suppressedSources == null || !suppressedSources[j]) && position[i,j]<=tolerance &&
                         (!directionTolerance.HasValue || (direction[i,j].HasValue && direction[i,j].Value<directionTolerance.Value));
                 }
                 far[i]=directionTolerance.HasValue && (!nearest[i].HasValue || nearest[i].Value>=directionTolerance.Value);
@@ -78,24 +80,16 @@ namespace GCCD.Dts
                 score.PositionErrors[i]=position[i,best.Map[i]];score.CorrectMarks[i]=correct[i,best.Map[i]];score.RangeErrors[i]=Math.Abs(Math.Sqrt(ax*ax+az*az)-Math.Sqrt(bx*bx+bz*bz));
                 score.DirectionErrors[i]=direction[i,best.Map[i]];
             }
-            // Matching a suppressed source can be correct and still overlap a separately matched retained source.
-            bool hasSuppression = suppressedSources != null && suppressedSources.Length == sources.Length;
             var matchedCorrectly = new bool[sources.Length];
             for (int i = 0; i < marks.Length; i++)
                 if (score.CorrectMarks[i]) matchedCorrectly[best.Map[i]] = true;
             for (int i = 0; i < marks.Length; i++)
             {
-                int matched = best.Map[i];
-                bool correctSuppressed = score.CorrectMarks[i] && hasSuppression && suppressedSources[matched];
-                if (score.CorrectMarks[i] && !correctSuppressed) continue;
+                if (score.CorrectMarks[i]) continue;
                 for (int j = 0; j < sources.Length; j++)
                 {
                     if (!matchedCorrectly[j]) continue;
-                    if (correctSuppressed)
-                    {
-                        if (suppressedSources[j] || !correct[i,j]) continue;
-                    }
-                    else if (directionTolerance.HasValue)
+                    if (directionTolerance.HasValue)
                     {
                         if (!direction[i,j].HasValue || direction[i,j].Value >= directionTolerance.Value) continue;
                     }

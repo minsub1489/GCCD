@@ -89,7 +89,7 @@ namespace GCCD.Dts
         }
         void SetResultCriteria(double position, double direction)
         {
-            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 위협당 하나씩";
+            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답";
         }
         void SelectResult(MissionEventResult e)
         {
