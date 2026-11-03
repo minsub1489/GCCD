@@ -15,10 +15,10 @@ namespace GCCD.Dts
         public void ConfirmPulse(){if(pulseSubmitted){feltPulse=true;testText="연결 테스트 확인됨";}}
         public string PulseStatus {get{return testText;}}
         public bool LobbySimulation => string.IsNullOrEmpty(config.LobbyMode) || config.LobbyMode == "DEVELOPMENT";
-        public void StartLobbyExperiment(bool training = false)
+        public void StartLobbyExperiment(bool training = false, int? theta = null, int minimum = 0, int maximum = 0)
         {
             Mode = LobbySimulation ? "DEVELOPMENT" : config.LobbyMode;
-            StartSession(training);
+            StartSession(training, theta, minimum, maximum);
         }
     }
     public sealed partial class MissionDemo:MonoBehaviour

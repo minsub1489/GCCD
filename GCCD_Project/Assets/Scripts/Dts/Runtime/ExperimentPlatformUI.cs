@@ -44,7 +44,24 @@ namespace GCCD.Dts
             else if(Phase==TrialPhase.Rest||Phase==TrialPhase.Paused)
             {GUILayout.Label(Phase==TrialPhase.Rest?"잠시 쉬어 주세요":"일시정지",titleStyle);GUILayout.Label(training?feedback:"준비되면 계속 버튼을 눌러 주세요.",bodyStyle);if(Phase==TrialPhase.Paused)GUILayout.Label("진행 중이던 자극은 기술 실패로 기록되며 정상 시행으로 채점하지 않습니다.",bodyStyle);if(GUILayout.Button("계속",GUILayout.Height(48)))Advance();}
             else if(Phase==TrialPhase.Finished)
-            {GUILayout.Label(training?"훈련 종료":"참여가 끝났습니다",titleStyle);if(training)GUILayout.Label(feedback+"\n설정된 훈련 기준 통과: "+trainingPassed,bodyStyle);if(GUILayout.Button("연구자 메뉴",GUILayout.Height(48)))BackToSetup();}
+            {GUILayout.Label(training?"훈련 종료":"참여가 끝났습니다",titleStyle);if(!training)
+                {
+                    var scored = finishedScores;
+                    if(scored != null && scored.Length > 0)
+                    {
+                        GUILayout.Label("방향 허용오차: "+frozen.DirectionTolerance+"° 미만 (정확히 일치 포함)",bodyStyle);
+                        GUILayout.Label("방향·거리 공동 정답률 "+scored.Average(t=>t.joint_accuracy).ToString("P1")+
+                            "   ·   감점 반영 "+scored.Average(t=>t.adjusted_joint_accuracy).ToString("P1"),bodyStyle);
+                        GUILayout.Label("멀리 빗나간 표시 "+scored.Sum(t=>t.far_false_mark_count)+"개 · 시행마다 (공동 정답 수 − 빗나간 표시 수, 최소 0) ÷ 전체 위협 수",bodyStyle);
+
+                    }
+                }
+                if(training)GUILayout.Label(feedback+"\n설정된 훈련 기준 통과: "+trainingPassed,bodyStyle);if(!training)
+                {
+                    if(GUILayout.Button("CSV 저장",GUILayout.Height(48)))SaveFinishedCsv();
+                    if(!string.IsNullOrEmpty(resultExportStatus))GUILayout.Label(resultExportStatus,bodyStyle);
+                }
+                if(GUILayout.Button(training||resultExportStatus.StartsWith("CSV 저장 완료")?"메인으로":"저장 없이 메인으로",GUILayout.Height(48)))BackToSetup();}
             else if(Phase==TrialPhase.Fault)
             {GUILayout.Label("진행 중단 · 연구자 확인 필요",titleStyle);GUILayout.Label(Error,bodyStyle);GUILayout.Label("확인된 원본 기록은 저장 폴더에 보존됩니다.",bodyStyle);if(GUILayout.Button("연구자 메뉴"))BackToSetup();}
             GUILayout.EndArea();

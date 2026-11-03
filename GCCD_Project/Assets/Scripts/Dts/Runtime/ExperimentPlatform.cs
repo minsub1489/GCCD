@@ -53,18 +53,24 @@ namespace GCCD.Dts
                 string path=Path.Combine(folder,"session_metadata.json");if(!File.Exists(path))continue;
                 string json=File.ReadAllText(path);if(!File.Exists(path+".sha256")||SessionStore.Hash(json)!=File.ReadAllText(path+".sha256"))throw new InvalidDataException("Training metadata checksum mismatch.");
                 var m=JsonUtility.FromJson<SessionMetadata>(json);if(m.config_hash!=hash||m.participant_id!=Participant)continue;trainingAttempts++;
-                var trials=DataExporter.Records(folder);var triples=trials.Where(t=>t.total_threat_count==frozen.ThreatCountFor(Mode=="DEVELOPMENT")&&!t.technical_failure).ToArray();
+                var trials=DataExporter.Records(folder);var triples=trials.Where(t=>t.total_threat_count>1&&!t.technical_failure).ToArray();
                 if(trials.Length==3+frozen.TrainingTripleTrials&&trials.All(t=>!t.technical_failure)&&triples.Length>=frozen.TrainingMinimumTrials&&triples.Length>0&&frozen.TrainingMinimumJointAccuracy>=0&&triples.Average(t=>t.joint_accuracy)>=frozen.TrainingMinimumJointAccuracy)
                 {trainingPassed=true;trainedParticipant=Participant;trainedHash=hash;}
             }
         }
-        public void StartSession(bool asTraining=false)
+        public void StartSession(bool asTraining=false, int? theta=null, int minimum=0, int maximum=0)
         {
             if(Phase!=TrialPhase.Setup&&Phase!=TrialPhase.Finished){Error="Return to setup before starting.";return;}
             try
             {
                 SessionStore.ValidateId(Participant);training=asTraining;
                 frozen=JsonUtility.FromJson<ExperimentConfig>(JsonUtility.ToJson(config));
+                if (theta.HasValue)
+                {
+                    frozen.SelectedTheta = theta.Value;
+                    frozen.MinimumThreatCount = minimum;
+                    frozen.MaximumThreatCount = maximum;
+                }
                 bool development=Mode=="DEVELOPMENT",main=Mode=="MAIN"&&!training;
                 if(!new[]{"DEVELOPMENT","PILOT","MAIN"}.Contains(Mode))throw new ArgumentException("Invalid mode.");
                 if(development&&frozen.DirectionTolerance<0)frozen.DirectionTolerance=15; // explicitly development-only provisional tolerance
@@ -77,7 +83,7 @@ namespace GCCD.Dts
                 {
                     if(frozen.LockedHash!=FrozenHash(frozen))throw new InvalidOperationException("Locked configuration changed.");
                     if(!File.Exists(frozen.PilotEvidencePath)||SessionStore.Hash(File.ReadAllText(frozen.PilotEvidencePath))!=frozen.PilotEvidenceSha256)throw new InvalidOperationException("Pilot evidence changed/missing.");
-                    if(StimulusValidator.MaximumPairIdentity(ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT")),frozen.Mapping,frozen.Low,frozen.High,frozen.PulseMilliseconds)>frozen.PilotMaximumIdenticalPairRate)throw new InvalidOperationException("Stimulus identity exceeds the preregistered maximum pair rate.");
+                    if(StimulusValidator.MaximumPairIdentity(ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.MinimumFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT"),frozen.MaximumFor(Mode=="DEVELOPMENT")),frozen.Mapping,frozen.Low,frozen.High,frozen.PulseMilliseconds)>frozen.PilotMaximumIdenticalPairRate)throw new InvalidOperationException("Stimulus identity exceeds the preregistered maximum pair rate.");
                     if(!trainingPassed||trainedParticipant!=Participant||trainedHash!=FrozenHash(frozen))throw new InvalidOperationException("This participant must pass training with the locked configuration.");
                 }
                 if(store!=null)store.Dispose();
@@ -85,8 +91,8 @@ namespace GCCD.Dts
                 plan=CreatePlan();
                 string dataMode=training?"TRAINING_"+Mode:Mode;
                 Folder=Path.Combine(Root,dataMode,SessionMetadata.ProtocolFolder,Participant,session);
-                metadata=new SessionMetadata{participant_id=Participant,session_id=session,experiment_type="A",mode=dataMode,created_utc=DateTime.UtcNow.ToString("O"),unity_version=Application.unityVersion,sdk_version=frozen.SdkPackageVersion,config_hash=FrozenHash(frozen),mapping_version=frozen.Mapping.Version,config=frozen,block_order=ConditionScheduler.Order(frozen.CounterbalanceRow),training_passed=trainingPassed};
-                store=new SessionStore(Folder,Participant,training?"TRAINING":Mode,metadata.experiment_type,JsonUtility.ToJson(metadata,true));
+                metadata=new SessionMetadata{participant_id=Participant,session_id=session,experiment_type="A",mode=dataMode,created_utc=DateTime.UtcNow.ToString("O"),unity_version=Application.unityVersion,sdk_version=frozen.SdkPackageVersion,config_hash=FrozenHash(frozen),mapping_version=frozen.Mapping.Version,config=frozen,block_order=plan.Select(t=>t.Theta).Distinct().ToArray(),training_passed=trainingPassed};
+                store=new SessionStore(Folder,Participant,training?"TRAINING":Mode,metadata.experiment_type,JsonUtility.ToJson(metadata,true),deferEventCsv:true);
                 if(training){trainingAttempts++;trainingPassed=false;}
                 index=0;TechnicalFailures=0;trainingSum=0;trainingScored=0;Error="";operatorVisible=false;Prepare();
             }
@@ -94,12 +100,12 @@ namespace GCCD.Dts
         }
         TrialSpec[] CreatePlan()
         {
-            var a=ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.ThreatCountFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT"));
+            var a=ScenarioGenerator.PlanA(frozen.Seed,frozen.CounterbalanceRow,frozen.HorizontalFov,frozen.MinimumFor(Mode=="DEVELOPMENT"),frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT"),frozen.MaximumFor(Mode=="DEVELOPMENT"));
             if(training)
             {
                 var t=new TrialSpec[3+frozen.TrainingTripleTrials];for(int i=0;i<t.Length;i++){var source=a[i%a.Length];t[i]=new TrialSpec{Id="TR"+(i+1).ToString("D3"),Theta=0,Block=0,Family=source.Family,Seed=source.Seed,Preparation=source.Preparation,Threats=i<3?source.Threats.Take(1).ToArray():source.Threats};}return t;
             }
-            return a;
+            return frozen.SelectedTheta == -1 ? a : ScenarioGenerator.PlanA(frozen.Seed, frozen.CounterbalanceRow, frozen.HorizontalFov, frozen.MinimumFor(Mode=="DEVELOPMENT"), frozen.TrialsPerConditionFor(Mode=="DEVELOPMENT"), frozen.MaximumFor(Mode=="DEVELOPMENT"), frozen.SelectedTheta);
         }
         public void ResumeSession(string folder)
         {
@@ -114,15 +120,15 @@ namespace GCCD.Dts
                 if(Mode!="DEVELOPMENT"){var errors=m.config.Problems(Mode=="MAIN"&&!training,true);if(errors.Length>0)throw new InvalidOperationException(string.Join(";",errors));string reason;if(!haptics.Ready(m.config,out reason))throw new InvalidOperationException(reason);}
                 if(Mode=="MAIN"&&!training&&(m.config.LockedHash!=m.config_hash||!m.training_passed||!File.Exists(m.config.PilotEvidencePath)||SessionStore.Hash(File.ReadAllText(m.config.PilotEvidencePath))!=m.config.PilotEvidenceSha256))throw new InvalidOperationException("MAIN resume prerequisites changed.");
                 if(store!=null)store.Dispose();Folder=folder;metadata=m;frozen=m.config;
-                store=new SessionStore(folder,Participant,training?"TRAINING":Mode,"A",json,true);
+                store=new SessionStore(folder,Participant,training?"TRAINING":Mode,"A",json,true,true);
                 foreach(string id in store.Pending)
                 {
                     var pending=JsonUtility.FromJson<TrialRecord>(File.ReadAllText(Path.Combine(folder,"journal",id+".started.json")));
                     pending.technical_failure=true;pending.interrupted=true;pending.error="Interrupted before durable commit; response/output timing is unknown.";pending.output_status="INTERRUPTED_UNCONFIRMED";
                     store.Commit(id,JsonUtility.ToJson(pending,true));
                 }
-                DataExporter.Export(folder);var records=DataExporter.Records(folder);TechnicalFailures=records.Count(t=>t.technical_failure);
-                trainingSum=records.Where(t=>t.is_training&&!t.technical_failure&&t.total_threat_count==frozen.ThreatCountFor(Mode=="DEVELOPMENT")).Sum(t=>t.joint_accuracy);trainingScored=records.Count(t=>t.is_training&&!t.technical_failure&&t.total_threat_count==frozen.ThreatCountFor(Mode=="DEVELOPMENT"));
+                var records=DataExporter.Records(folder);TechnicalFailures=records.Count(t=>t.technical_failure);
+                trainingSum=records.Where(t=>t.is_training&&!t.technical_failure&&t.total_threat_count>1).Sum(t=>t.joint_accuracy);trainingScored=records.Count(t=>t.is_training&&!t.technical_failure&&t.total_threat_count>1);
                 plan=CreatePlan();index=0;while(index<plan.Length&&store.Completed.Contains(plan[index].Id))index++;operatorVisible=false;Error="";if(index>=plan.Length)Finish();else Phase=TrialPhase.Rest;
             }
             catch(Exception e){Error=e.GetBaseException().Message;Phase=TrialPhase.Setup;}
@@ -182,7 +188,7 @@ namespace GCCD.Dts
             }).ToArray();
             var policy=ThreatPolicy.Apply(snapshot,spec.Theta);int[] motors=MotorComposer.Compose(policy.Kept,frozen.Mapping,frozen.Low,frozen.High);
             double eventAt=Now;
-            record=new TrialRecord{protocol_version=SessionMetadata.CurrentSoftwareVersion,participant_id=Participant,session_id=metadata.session_id,experiment_type=metadata.experiment_type,mode=metadata.mode,trial_id=spec.Id,utc=DateTime.UtcNow.ToString("O"),event_utc=DateTime.UtcNow.ToString("O"),condition_theta=spec.Theta,block_index=spec.Block,condition_order=string.Join(";",metadata.block_order),scene_family=spec.Family,random_seed=spec.Seed,event_time=eventAt,camera_heading=yaw,total_threat_count=snapshot.Length,selected_count=policy.Selected.Length,retained_count=policy.Kept.Length,suppressed_count=snapshot.Length-policy.Kept.Length,requested_motor_array=motors,output_duration=frozen.PulseMilliseconds,config_hash=metadata.config_hash,is_training=training};
+            record=new TrialRecord{protocol_version=SessionMetadata.CurrentSoftwareVersion,participant_id=Participant,session_id=metadata.session_id,experiment_type=metadata.experiment_type,mode=metadata.mode,trial_id=spec.Id,utc=DateTime.UtcNow.ToString("O"),event_utc=DateTime.UtcNow.ToString("O"),condition_theta=spec.Theta,block_index=spec.Block,condition_order=string.Join(";",metadata.block_order),scene_family=spec.Family,random_seed=spec.Seed,event_time=eventAt,camera_heading=yaw,minimum_threat_count=frozen.MinimumFor(Mode=="DEVELOPMENT"),maximum_threat_count=frozen.MaximumFor(Mode=="DEVELOPMENT"),direction_tolerance_deg=frozen.DirectionTolerance,total_threat_count=snapshot.Length,selected_count=policy.Selected.Length,retained_count=policy.Kept.Length,suppressed_count=snapshot.Length-policy.Kept.Length,requested_motor_array=motors,output_duration=frozen.PulseMilliseconds,config_hash=metadata.config_hash,is_training=training};
             var ranked=snapshot.OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).ToArray();
             record.threats=snapshot.Select(t=>
             {
@@ -212,7 +218,7 @@ namespace GCCD.Dts
             var original = ThreatPolicy.Apply(snapshot, 0).Selected;
             var responses = record.responses.Select(r => new Response(r.response_bearing,
                 (DistanceBin)Enum.Parse(typeof(DistanceBin), r.response_distance_bin))).ToArray();
-            var score = ResponseScorer.Score(original, responses, frozen.DirectionTolerance);
+            var score = ResponseScorer.Score(original, responses, frozen.DirectionTolerance, true);
             record.joint_accuracy = score.JointAccuracy;
             record.direction_accuracy = score.DirectionAccuracy;
             record.distance_accuracy = score.DistanceAccuracy;
@@ -234,6 +240,17 @@ namespace GCCD.Dts
                 if (correct && threat.retained) retainedCorrect++;
             }
             record.retained_recognition_rate = retainedCorrect / (double)record.retained_count;
+            record.joint_correct_count = score.JointCorrect.Count(correct => correct);
+            for (int i = 0; i < responses.Length; i++)
+            {
+                var response = record.responses[i];
+                response.matched_angle_error_deg = Angles.Difference(responses[i].Bearing, original[score.MatchedThreatIndices[i]].Bearing);
+                response.nearest_angle_error_deg = original.Min(t => Angles.Difference(t.Bearing, responses[i].Bearing));
+                response.far_false_mark = response.nearest_angle_error_deg >= frozen.DirectionTolerance && response.nearest_angle_error_deg > 0;
+                if (response.far_false_mark) record.far_false_mark_count++;
+            }
+            record.adjusted_joint_correct_count = Math.Max(0, record.joint_correct_count - record.far_false_mark_count);
+            record.adjusted_joint_accuracy = record.adjusted_joint_correct_count / (double)snapshot.Length;
             record.distance_confusion = new int[9];
             for (int i = 0; i < 9; i++) record.distance_confusion[i] = score.Confusion[i / 3, i % 3];
         }
@@ -244,9 +261,9 @@ namespace GCCD.Dts
             {
                 if(record==null)throw new InvalidOperationException("No trial snapshot to commit.");
                 if(!record.technical_failure){var errors=DataExporter.Validate(record);if(errors.Length>0)throw new InvalidOperationException(string.Join(";",errors));}
-                store.Commit(record.trial_id,JsonUtility.ToJson(record,true));DataExporter.Export(Folder);LastRecord=record;
+                store.Commit(record.trial_id,JsonUtility.ToJson(record,true));LastRecord=record;
                 if(record.technical_failure)TechnicalFailures++;
-                if(training&&!record.technical_failure&&snapshot.Length==frozen.ThreatCountFor(Mode=="DEVELOPMENT")){trainingSum+=record.joint_accuracy;trainingScored++;}
+                if(training&&!record.technical_failure&&snapshot.Length>1){trainingSum+=record.joint_accuracy;trainingScored++;}
                 if(training)feedback=record.technical_failure?"기술 실패: 채점 제외":string.Join(" / ",snapshot.Select(t=>t.Bearing.ToString("F1")+"° "+DistanceEncoding.Bin(t.Distance)))+"\n공동 정답률: "+record.joint_accuracy.ToString("P0");
                 haptics.Stop();SetCursor(false);index++;record=null;
                 if(index>=plan.Length){Finish();return;}
@@ -255,9 +272,28 @@ namespace GCCD.Dts
             }
             catch(Exception e){haptics.Stop();Error="Data save/integrity failure: "+e.GetBaseException().Message;Phase=TrialPhase.Fault;SetCursor(false);}
         }
+        TrialRecord[] finishedScores;
+        string resultExportStatus;
+        public bool SaveFinishedCsv()
+        {
+            if (Phase != TrialPhase.Finished || training) return false;
+            try
+            {
+                DataExporter.Export(Folder);
+                resultExportStatus = "CSV 저장 완료 · " + Folder;
+                return true;
+            }
+            catch (Exception e)
+            {
+                resultExportStatus = "CSV 저장 실패 · " + e.GetBaseException().Message;
+                return false;
+            }
+        }
         void Finish()
         {
             haptics.Stop();SetCursor(false);Phase=TrialPhase.Finished;
+            resultExportStatus = "";
+            if(!training) finishedScores = DataExporter.Records(Folder).Where(t => !t.technical_failure && t.adjusted_joint_accuracy >= 0).ToArray();
             if(training){trainingPassed=frozen.TrainingMinimumJointAccuracy>=0&&trainingScored>=frozen.TrainingMinimumTrials&&trainingScored>0&&trainingSum/trainingScored>=frozen.TrainingMinimumJointAccuracy&&TechnicalFailures==0;if(trainingPassed){trainedParticipant=Participant;trainedHash=metadata.config_hash;}SessionStore.AtomicWrite(Path.Combine(Folder,"training_result.json"),"{\"passed\":"+trainingPassed.ToString().ToLowerInvariant()+",\"scored_full_layout_trials\":"+trainingScored+",\"mean_joint_accuracy\":"+(trainingScored==0?"null":(trainingSum/trainingScored).ToString("R",System.Globalization.CultureInfo.InvariantCulture))+"}");}
         }
         public void Advance(){if(Phase==TrialPhase.Rest||Phase==TrialPhase.Paused){operatorVisible=false;Prepare();}}
@@ -276,6 +312,6 @@ namespace GCCD.Dts
         static void SetCursor(bool locked){Cursor.lockState=locked?CursorLockMode.Locked:CursorLockMode.None;Cursor.visible=!locked;}
         void OnApplicationFocus(bool focus){if(!focus&&IsRunning())Pause("Application lost focus.");}
         void OnApplicationPause(bool paused){if(paused&&IsRunning())Pause("Application paused.");}
-        void OnDestroy(){haptics.Dispose();if(store!=null){if(record!=null&&!store.Completed.Contains(record.trial_id)){record.technical_failure=true;record.interrupted=true;record.error="Application terminated.";try{store.Commit(record.trial_id,JsonUtility.ToJson(record,true));DataExporter.Export(Folder);}catch(Exception){/* started journal remains recoverable */}}store.Dispose();}}
+        void OnDestroy(){haptics.Dispose();if(store!=null){if(record!=null&&!store.Completed.Contains(record.trial_id)){record.technical_failure=true;record.interrupted=true;record.error="Application terminated.";try{store.Commit(record.trial_id,JsonUtility.ToJson(record,true));}catch(Exception){/* started journal remains recoverable */}}store.Dispose();}}
     }
 }

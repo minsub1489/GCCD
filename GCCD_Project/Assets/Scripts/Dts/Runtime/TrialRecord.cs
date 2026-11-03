@@ -9,7 +9,7 @@ namespace GCCD.Dts
         public double world_x,world_y,world_z,distance_m,bearing_deg;
         public int distance_rank;public int[] individual_motor_array;
     }
-    [Serializable] public sealed class ResponseRecord {public bool joint_correct;public int marker_id;public double response_bearing,response_time;public string response_distance_bin;}
+    [Serializable] public sealed class ResponseRecord {public bool joint_correct,far_false_mark;public double nearest_angle_error_deg,matched_angle_error_deg;public int marker_id;public double response_bearing,response_time;public string response_distance_bin;}
     [Serializable] public sealed class ActionRecord {public double event_seconds,camera_heading;public string target_id;public bool hit,front_task,first_external;}
     [Serializable] public sealed class TrialRecord
     {
@@ -21,6 +21,8 @@ namespace GCCD.Dts
         public int total_threat_count,selected_count,retained_count,suppressed_count;public int[] requested_motor_array;
         public ThreatRecord[] threats;public ResponseRecord[] responses=new ResponseRecord[0];public OutputReceipt receipt;
         public double joint_accuracy=-1,direction_accuracy=-1,distance_accuracy=-1,direction_error=-1,response_precision=-1,false_response_rate=-1,no_response_rate=-1;
+        public int minimum_threat_count,maximum_threat_count,joint_correct_count,far_false_mark_count,adjusted_joint_correct_count;
+        public double direction_tolerance_deg,adjusted_joint_accuracy=-1;
         public double retained_recognition_rate=-1;
         public bool ambiguous_matching;public string[] matched_threat_ids;public int[] matched_threat_indices,distance_confusion;
         public bool game_success,game_timeout;public string game_first_action_target="";
@@ -30,8 +32,8 @@ namespace GCCD.Dts
     [Serializable] public sealed class SessionMetadata
     {
         public string participant_id,session_id,experiment_type,mode,created_utc,unity_version,sdk_version,config_hash,mapping_version;
-        public const string CurrentSoftwareVersion = "dts-full-circle-v3";
-        public const string ProtocolFolder = "A360";
+        public const string CurrentSoftwareVersion = "dts-range-score-v4";
+        public const string ProtocolFolder = "A360Range";
         public string software_version=CurrentSoftwareVersion,timing="Unity monotonic realtimeSinceStartupAsDouble; UTC timestamps stored separately";
         public string physical_verification="Software request acceptance is not skin-level confirmation.";
         public ExperimentConfig config;public int[] block_order;public bool training_passed;

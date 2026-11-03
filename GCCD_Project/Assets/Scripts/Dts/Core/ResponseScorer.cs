@@ -15,7 +15,7 @@ namespace GCCD.Dts
     }
     public static class ResponseScorer
     {
-        public static Score Score(Threat[] original, Response[] responses, double tolerance)
+        public static Score Score(Threat[] original, Response[] responses, double tolerance, bool exclusiveBoundary = false)
         {
             Angles.Finite(tolerance);
             if (original == null || original.Length == 0 || responses == null ||
@@ -37,7 +37,7 @@ namespace GCCD.Dts
             for (int j = 0; j < n; j++)
             {
                 errors[i, j] = Angles.Difference(original[j].Bearing, responses[i].Bearing);
-                direction[i, j] = errors[i, j] <= tolerance ? 0 : 1;
+                direction[i, j] = (errors[i, j] == 0 || (exclusiveBoundary ? errors[i, j] < tolerance : errors[i, j] <= tolerance)) ? 0 : 1;
                 distance[i, j] = bins[j] == responses[i].Bin ? 0 : 1;
                 joint[i, j] = errors[i, j] + (direction[i, j] + distance[i, j] == 0 ? 0 : penalty);
             }

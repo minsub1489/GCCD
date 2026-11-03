@@ -24,7 +24,7 @@ namespace GCCD.Dts
     }
     public static class ScenarioGenerator
     {
-        public static TrialSpec[] PlanA(int seed, int row, double hfov, int threatCount, int trialsPerCondition = ExperimentConfig.DevelopmentTrialsPerCondition)
+        public static TrialSpec[] PlanA(int seed, int row, double hfov, int threatCount, int trialsPerCondition = ExperimentConfig.DevelopmentTrialsPerCondition, int maximumThreatCount = 0, int selectedTheta = -1)
         {
             Angles.IsOffscreen(180, hfov);
             if (threatCount < 2)
@@ -32,12 +32,20 @@ namespace GCCD.Dts
 
             if (trialsPerCondition < 1) throw new ArgumentOutOfRangeException(nameof(trialsPerCondition));
 
+            if (maximumThreatCount == 0) maximumThreatCount = threatCount;
+            if (maximumThreatCount < threatCount) throw new ArgumentOutOfRangeException(nameof(maximumThreatCount));
             var order = ConditionScheduler.Order(row);
+            if (selectedTheta != -1)
+            {
+                if (!order.Contains(selectedTheta)) throw new ArgumentOutOfRangeException(nameof(selectedTheta));
+                order = new[] { selectedTheta };
+            }
             var layoutRng = new StableRandom(seed);
             var layouts = new Threat[trialsPerCondition][];
             for (int family = 0; family < layouts.Length; family++)
             {
-                var threats = new Threat[threatCount];
+                int count = threatCount == maximumThreatCount ? threatCount : threatCount + (int)(layoutRng.Unit() * (maximumThreatCount - (double)threatCount + 1));
+                var threats = new Threat[count];
                 for (int i = 0; i < threats.Length; i++)
                 {
                     double bearing = 360 * layoutRng.Unit();

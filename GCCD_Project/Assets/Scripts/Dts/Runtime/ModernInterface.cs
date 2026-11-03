@@ -35,7 +35,16 @@ namespace GCCD.Dts
 var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
             var content=Element(lobby,"lobby-content");Label(content,"RECOVERY OPERATION","eyebrow accent");Label(content,"공업지대\n수색 작전","hero");Label(content,"보급품을 회수하고 경계 드론을 무력화하세요.\n시야 밖 위협은 조끼의 진동으로 전달됩니다.","description");
             Button(content,"작전 시작    →",()=>platform.StartMission(),"button primary");
-            var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.StartLobbyExperiment(true),"button secondary");experimentButton=Button(secondary,"실험 시작 · 화면 연습",()=>platform.StartLobbyExperiment(),"button secondary");experimentButton.name="startExperiment";
+            var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
+            angles.name="studyAngle";
+            angles.AddToClassList("small");
+            content.Add(angles);
+            var range = new DropdownField("전체 위협 수", new System.Collections.Generic.List<string>{"3–8개","4–9개","5–7개","6개 고정"}, 0);
+            range.name="studyThreatRange";
+            range.AddToClassList("small");
+            content.Add(range);
+            int[] minimums = {3,4,5,6}, maximums = {8,9,7,6};
+            var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.StartLobbyExperiment(true),"button secondary");experimentButton=Button(secondary,"실험 시작 · 화면 연습",()=>platform.StartLobbyExperiment(false, angles.index == 0 ? -1 : ThreatPolicy.Conditions[angles.index-1], minimums[range.index], maximums[range.index]),"button secondary");experimentButton.name="startExperiment";
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");

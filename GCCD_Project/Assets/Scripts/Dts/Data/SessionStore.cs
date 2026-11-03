@@ -20,8 +20,10 @@ namespace GCCD.Dts
         public string[] Pending{get{return Directory.GetFiles(Path.Combine(Folder,"journal"),"*.started.json").Select(Path.GetFileName).Select(n=>n.Replace(".started.json","")).Where(id=>!Completed.Contains(id)).ToArray();}}
         public static void ValidateId(string id){if(id==null||!Regex.IsMatch(id,@"\A[A-Za-z0-9_-]{1,32}\z"))throw new ArgumentException("Use anonymous IDs containing 1-32 letters, numbers, _ or -.");}
         public static string Hash(string value){using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(value))).Replace("-","").ToLowerInvariant();}
-        public SessionStore(string folder,string participant,string mode,string experiment,string metadata,bool resume=false)
+        readonly bool deferEventCsv;
+        public SessionStore(string folder,string participant,string mode,string experiment,string metadata,bool resume=false, bool deferEventCsv=false)
         {
+            this.deferEventCsv = deferEventCsv;
             ValidateId(participant);if(!new[]{"DEVELOPMENT","PILOT","MAIN","TRAINING"}.Contains(mode)||!new[]{"A","B"}.Contains(experiment))throw new ArgumentException("Explicit data provenance required.");
             Folder=Path.GetFullPath(folder);string metaPath=Path.Combine(Folder,"session_metadata.json");
             if(resume){if(!File.Exists(metaPath)||File.ReadAllText(metaPath)!=metadata)throw new ArgumentException("Resume metadata/config mismatch.");}
@@ -51,7 +53,7 @@ namespace GCCD.Dts
         }
         public void AppendEvent(string id,string kind,string data)
         {
-            ValidateId(id);string path=Path.Combine(Folder,"runtime_events.csv");bool exists=File.Exists(path);
+            ValidateId(id);string path=Path.Combine(Folder,deferEventCsv ? "runtime_events.log" : "runtime_events.csv");bool exists=File.Exists(path);
             using(var file=new FileStream(path,FileMode.Append,FileAccess.Write,FileShare.Read))using(var w=new StreamWriter(file,new UTF8Encoding(false))){if(!exists)w.WriteLine("trial_id,utc,event_type,payload");w.WriteLine(CsvTable.Line(id,DateTime.UtcNow.ToString("O"),kind,data));w.Flush();file.Flush(true);}
         }
         public static void AtomicWrite(string path,string data)

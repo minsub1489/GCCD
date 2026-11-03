@@ -27,7 +27,7 @@ def summarize(folder):
         for key in ('participant_id', 'session_id', 'experiment_type', 'mode', 'config_hash'):
             if trial[key] != meta[key]:
                 raise ValueError(f'Provenance mismatch: {file.name}: {key}')
-        if meta.get('software_version') == 'dts-full-circle-v3' or trial.get('protocol_version') == 'dts-full-circle-v3':
+        if meta.get('software_version') in ('dts-full-circle-v3', 'dts-range-score-v4') or trial.get('protocol_version') in ('dts-full-circle-v3', 'dts-range-score-v4'):
             if trial.get('protocol_version') != meta.get('software_version'):
                 raise ValueError(f'Protocol mismatch: {file.name}')
         records.append(trial)
@@ -39,13 +39,15 @@ def summarize(folder):
             values = [t[key] for t in rows if t.get(key) is not None and t[key] >= 0]
             return sum(values) / len(values) if values else None
         # Full-circle development records validate plumbing and stimulus geometry only.
-        performance = valid if meta.get('software_version') != 'dts-full-circle-v3' or meta['mode'] in ('PILOT', 'MAIN') else []
+        performance = valid if meta.get('software_version') not in ('dts-full-circle-v3', 'dts-range-score-v4') or meta['mode'] in ('PILOT', 'MAIN') else []
         rates = [(t['total_threat_count'] - t['retained_count']) / t['total_threat_count']
                  for t in valid if t.get('total_threat_count', 0) > 0 and 'retained_count' in t]
         by_theta.append({
             'theta': theta, 'committed': len(trials), 'valid': len(valid),
             'technical_failure_rate': sum(t['technical_failure'] for t in trials) / len(trials),
             'joint_accuracy': mean('joint_accuracy', performance) if meta['experiment_type'] == 'A' else None,
+            'adjusted_joint_accuracy': mean('adjusted_joint_accuracy', performance),
+            'far_false_mark_count': mean('far_false_mark_count', performance),
             'retained_count': mean('retained_count'),
             'suppression_rate': sum(rates) / len(rates) if rates else None,
             'retained_recognition_rate': mean('retained_recognition_rate', performance),

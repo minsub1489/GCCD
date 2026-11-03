@@ -9,6 +9,10 @@ namespace GCCD.Dts
         public const int DevelopmentThreatCount = 6;
         public string Version="dts-full-circle-v3";
         public int TotalThreatCount, TrialsPerCondition;
+        public int MinimumThreatCount, MaximumThreatCount;
+        public int SelectedTheta = -1;
+        public int MinimumFor(bool development) => MinimumThreatCount == 0 ? ThreatCountFor(development) : MinimumThreatCount;
+        public int MaximumFor(bool development) => MaximumThreatCount == 0 ? ThreatCountFor(development) : MaximumThreatCount;
         public string LobbyMode = "DEVELOPMENT";
 
         public int ThreatCountFor(bool development)
@@ -43,7 +47,7 @@ namespace GCCD.Dts
         public string[] Problems(bool main,bool physical)
         {
             var errors=new List<string>();
-            try{ThreatCountFor(!main&&!physical);TrialsPerConditionFor(!main&&!physical);ConditionScheduler.Order(CounterbalanceRow);Angles.IsOffscreen(180,HorizontalFov);DistanceEncoding.Intensity(6,Low,High);Mapping.Validate(physical);}catch(ArgumentException e){errors.Add(e.Message);}
+            try{if(MinimumFor(!main&&!physical)<2||MaximumFor(!main&&!physical)<MinimumFor(!main&&!physical)|| (SelectedTheta!=-1&&!ThreatPolicy.Conditions.Contains(SelectedTheta)))throw new ArgumentException("위협 수 범위 또는 억제각을 확인하세요.");TrialsPerConditionFor(!main&&!physical);ConditionScheduler.Order(CounterbalanceRow);Angles.IsOffscreen(180,HorizontalFov);DistanceEncoding.Intensity(6,Low,High);Mapping.Validate(physical);}catch(ArgumentException e){errors.Add(e.Message);}
             if(PulseMilliseconds<100||PulseMilliseconds>5000)errors.Add("Pulse must be 100..5000 ms.");
             if(DirectionTolerance<0||DirectionTolerance>180||double.IsNaN(DirectionTolerance)||double.IsInfinity(DirectionTolerance))errors.Add("Set and freeze direction tolerance from pilot results.");
             if(physical&&(!Raw40TransportConfirmed||!PhysicalConcurrencyConfirmed||string.IsNullOrWhiteSpace(TransportEvidence)||string.IsNullOrWhiteSpace(VerifiedDeviceName)||!DurationConfirmed||!IntensityConfirmed||!BodyCameraAlignmentConfirmed))errors.Add("Physical X40 transport, mapping, concurrency, alignment and comfortable intensity/duration must be verified.");

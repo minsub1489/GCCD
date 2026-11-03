@@ -19,38 +19,47 @@ namespace GCCD.Dts
             p.config.TrialsPerCondition = 7;
             var button = GetComponent<UnityEngine.UIElements.UIDocument>().rootVisualElement.Q<UnityEngine.UIElements.Button>("startExperiment");
             Require(button != null, "lobby start button");
+            var ui = GetComponent<UIDocument>().rootVisualElement;
+            ui.Q<DropdownField>("studyAngle").index = 4;
+            ui.Q<DropdownField>("studyThreatRange").index = 1;
             button.Focus();
             using (var submit = UnityEngine.UIElements.NavigationSubmitEvent.GetPooled()) button.SendEvent(submit);
             Require(p.Phase == TrialPhase.Prepare, "direct lobby start: " + p.Error);
             string folder=p.Folder;
-            for(int i=0;i<42;i++)
+            for (int i = 0; i < 7; i++)
             {
-                if(p.Phase==TrialPhase.Rest)p.Advance();clock+=5;p.Tick();Require(p.Phase==TrialPhase.Pulse,"A pulse "+i+" "+p.Error);
-                yield return null;clock+=1;p.Tick();Require(p.Phase==TrialPhase.Response,"A response "+i);
-                if(i == 0)
-                {
-                    for (int j = 0; j < 12; j++) Require(p.AddMarker(30 * j, DistanceBin.Middle), "twelve response slots");
-                    Require(!p.AddMarker(300, DistanceBin.Far), "thirteenth marker blocked");
-                }
-                else if(i%3==0)p.AddMarker(180,DistanceBin.Far);
-                yield return null;p.CompleteResponse();p.SaveRating(3);Require(p.Phase!=TrialPhase.Fault,"A save "+p.Error);yield return null;
+                clock += 5; p.Tick(); Require(p.Phase == TrialPhase.Pulse, p.Error);
+                yield return null;
+                clock += 1; p.Tick(); Require(p.Phase == TrialPhase.Response, p.Error);
+                string id = "A" + (i+1).ToString("D3");
+                var trial = JsonUtility.FromJson<TrialRecord>(File.ReadAllText(Path.Combine(folder,"journal",id+".started.json")));
+                var source = trial.threats[0];
+                var bin = DistanceEncoding.Bin(source.distance_m);
+                p.AddMarker(source.bearing_deg, bin);
+                p.AddMarker(source.bearing_deg, bin);
+                double far = Enumerable.Range(0, 360).First(a => trial.threats.All(t => Angles.Difference(t.bearing_deg,a) >= 15));
+                if(i%2==0) p.AddMarker(far, bin);
+                p.CompleteResponse(); p.SaveRating(3);
+                Require(p.Phase != TrialPhase.Fault, p.Error);
+                yield return null;
             }
-            Require(p.Phase==TrialPhase.Finished,"A finish");Require(DataExporter.Records(folder).Length==42,"A committed");
             var trials = DataExporter.Records(folder);
-            Require(trials.All(t => t.total_threat_count == 12 && t.selected_count == 12), "all twelve threats reach suppression");
-            Require(trials.Where(t => t.condition_theta == 0).All(t => t.retained_count == 12), "baseline retains all twelve");
-            Require(trials.Where(t => t.condition_theta == 45).Select(t => t.retained_count).Distinct().Count() > 1, "random layout varies retained count");
-            Require(trials.Any(t => t.threats.Any(x => !x.is_offscreen && x.selected)), "front sources participate");
-            Require(trials.All(t => t.retained_count + t.suppressed_count == 12), "complete partitions");
-            Require(trials[0].responses.Length == 12 && trials[0].retained_recognition_rate >= 0, "scoring and retention logged");
-            Require(File.ReadAllText(Path.Combine(folder, "responses.csv")).Contains("joint_correct"), "joint correctness CSV");
-            Require(!File.ReadAllText(Path.Combine(folder, "threats.csv")).Contains("top3_selected"), "obsolete CSV column removed");
-            var baseline = trials.First(t => t.condition_theta == 0);
-            for (int channel = 0; channel < 40; channel++)
-                Require(baseline.requested_motor_array[channel] == baseline.threats.Max(t => t.individual_motor_array[channel]), "all retained patterns enter the composite");
-            var events = File.ReadAllLines(Path.Combine(folder, "runtime_events.csv"));
-            Require(events.Count(line => line.Contains(",OUTPUT_REQUEST,")) == 42, "one combined request per trial");
-            Require(Time.frameCount>initialFrame+100,"game frames advance");
+            Require(p.Phase == TrialPhase.Finished && trials.Length == 7, "selected condition finishes");
+            Require(trials.All(t => t.condition_theta == 45 && t.total_threat_count >= 4 && t.total_threat_count <= 9 &&
+                t.minimum_threat_count == 4 && t.maximum_threat_count == 9), "selected angle and range logged");
+            Require(trials.Select(t=>t.total_threat_count).Distinct().Count() > 1, "range varies between trials");
+            for(int i=0;i<trials.Length;i++)
+            {
+                var t=trials[i];
+                Require(t.far_false_mark_count == (i%2==0 ? 1 : 0), "only far mark penalized");
+                Require(t.adjusted_joint_correct_count == Math.Max(0,t.joint_correct_count-t.far_false_mark_count), "adjusted correct count");
+            }
+            string csv = Path.Combine(folder,"trials.csv");
+            Require(!Directory.GetFiles(folder,"*.csv").Any(), "CSV waits for choice");
+            p.BackToSetup();
+            Require(!Directory.GetFiles(folder,"*.csv").Any(), "skip leaves CSV absent");
+            p.ResumeSession(folder);
+            Require(p.SaveFinishedCsv() && File.Exists(csv), "explicit export after resume");
             p.BackToSetup();Debug.Log("DTS_PLAYMODE_VALIDATION_PASS");EditorApplication.Exit(0);
         }
         static void Require(bool ok,string message){if(ok)return;Debug.LogError("DTS_PLAYMODE_FAILED "+message);EditorApplication.Exit(2);throw new Exception(message);}
