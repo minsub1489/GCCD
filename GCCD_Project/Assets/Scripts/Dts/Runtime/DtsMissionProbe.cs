@@ -28,8 +28,13 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("showDirectionCheck"));yield return null;if(ui.Q("directionPane").resolvedStyle.display==DisplayStyle.None||ui.Q("distancePane").resolvedStyle.display!=DisplayStyle.None)Fail("Direction tab restoration");
             Debug.Log("DTS_DISTANCE_PREFLIGHT_PASS");
             Submit(ui.Q<Button>("closeDirectionCheck"));yield return null;
-            Submit(ui.Q<Button>(className:"primary"));yield return null;yield return null;
-            var m=GetComponent<MissionDemo>();if(!m||!m.HasWorld)Fail("World initialization");m.Physical=false;m.SetPaused(false);
+            Submit(ui.Q<Button>("startMission"));yield return null;
+            if(GetComponent<MissionDemo>())Fail("FPS start rejects missing settings");
+            ui.Q<DropdownField>("studyAngle").index=2;
+            ui.Q<TextField>("studyThreatMinimum").value="10";
+            ui.Q<TextField>("studyThreatMaximum").value="10";
+            Submit(ui.Q<Button>("startMission"));yield return null;yield return null;
+            var m=GetComponent<MissionDemo>();if(!m||!m.HasWorld||m.MinimumThreatCount!=10||m.MaximumThreatCount!=10)Fail("World initialization with lobby threat range");m.Physical=false;m.SetPaused(false);
             double time=Time.realtimeSinceStartupAsDouble;m.Clock=()=>time;
             int meshes=FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None).Length;if(meshes<100)Fail("Detailed environment not placed");
             if(!m.HasGunAudio)Fail("Recorded shot audio missing");Physics.SyncTransforms();if(m.EnemyPositions.Length!=5)Fail("Random indoor enemy count");
@@ -49,8 +54,7 @@ namespace GCCD.Dts
             var targets=FindObjectsByType<BoxCollider>(FindObjectsSortMode.None).Where(c=>c.gameObject.name=="Security drone").ToArray();foreach(var target in targets){Place(target.bounds.center+Vector3.up*.5f);time+=.2;if(!m.Fire(Vector3.down)){RaycastHit detail;Physics.Raycast(transform.position,Vector3.down,out detail,90);Fail("Enemy raycast paused="+m.IsPaused+" rounds="+m.Ammo+" hits="+m.ShotsHit+" collider="+(detail.collider?detail.collider.name:"none"));}int fired=m.ShotsFired,rounds=m.Ammo;m.Fire(Vector3.down);if(m.ShotsFired!=fired||m.Ammo!=rounds)Fail("Fire rate enforcement");}if(m.ShotsHit!=5)Fail("Five enemy hits");
             if(!m.Reload()||!m.IsReloading)Fail("Reload begin");int before=m.ShotsFired;m.Fire(Vector3.up);if(m.ShotsFired!=before)Fail("Fire blocked while reloading");time+=2;m.StepWeapon(.1f);if(m.Ammo!=30||m.IsReloading)Fail("Reload completion");
             Place(new Vector3(-22,1.77f,-12));m.SuppressionTheta=0;
-            var suppressedPosition = new Vector3(-19,1.9f,3);
-            m.BeginMissionThreatEvent(new[]{new Threat("near",true,true,true,-22,1.9,-4,8,0),new Threat("far",true,true,true,suppressedPosition.x,suppressedPosition.y,suppressedPosition.z,15.3,11.31)});
+            m.ThreatEvent();
             if(ui.Q<MissionMapView>("responseMap").SuppressedSources!=null)Fail("Suppression not visible in response");
             if(m.ReviewEvents.Length!=0)Fail("No answer leak before completion");if(!m.IsThreatResponse||!m.IsPaused)Fail("Haptic freezes game for response");
             if(m.EnemyPositions.Length!=0)Fail("Sources hidden before submission");if(m.CompleteThreatResponse())Fail("Pulse completes before response is allowed");
@@ -63,10 +67,10 @@ namespace GCCD.Dts
             if(m.ResponseMarkers.Length!=1||Math.Abs(m.ResponseMarkers[0].X-18)>.001||Math.Abs(m.ResponseMarkers[0].Z-33.5)>.001)Fail("Scaled map pointer mismatch");
             response.transform.scale=Vector3.one;m.ClearResponseMarkers();
             response.SelectAt(new Vector2(response.contentRect.width/2,response.contentRect.height/2));if(m.ResponseMarkers.Length!=1)Fail("Map click creates response");m.UndoResponseMarker();if(m.ResponseMarkers.Length!=0)Fail("Undo response marker");m.ToggleResponseMarker(-28,8);
-            Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length<1||m.EnemyPositions.Length>3)Fail("Deferred random threats appear after answer");
+            Submit(ui.Q<Button>("responseSubmit"));if(m.IsThreatResponse||m.IsPaused)Fail("Submit resumes game");if(m.EnemyPositions.Length!=10)Fail("Deferred random threats appear after answer");
             // An empty answer is valid and must not disclose a required marker count.
             m.SuppressionTheta=60;
-            m.BeginMissionThreatEvent(new[]{new Threat("near",true,true,true,-22,1.9,-4,8,0),new Threat("far",true,true,true,suppressedPosition.x,suppressedPosition.y,suppressedPosition.z,15.3,11.31)});
+            m.ThreatEvent();
             time+=1;if(!m.CompleteThreatResponse()||m.IsPaused)Fail("Empty response resumes");
             m.ToggleMap();yield return null;
             Submit(ui.Q<Button>("mapEndExperiment"));
@@ -76,8 +80,9 @@ namespace GCCD.Dts
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");
             var reviewed=m.ReviewEvents[1];if(m.ReviewEvents[0].Suppressed.Any(value=>value))Fail("First event must have no suppression");if(resultMap.Markers.Length!=reviewed.Marks.Length||resultMap.Markers.Where((mark,i)=>Math.Abs(mark.X-reviewed.Marks[i].x)>.0001||Math.Abs(mark.Z-reviewed.Marks[i].z)>.0001).Any())Fail("Result display changes reported coordinates");
             if(!resultMap.ActualSources.SequenceEqual(reviewed.Sources))Fail("Result actual and reported positions swapped");
-            if(resultMap.SuppressedSources==null||!resultMap.SuppressedSources.SequenceEqual(new[]{false,true})||
-                resultMap.ActualSources[1]!=suppressedPosition)Fail("Result renders saved suppressed world position");
+            if(m.ReviewEvents.Any(e=>e.Sources.Length!=10||e.MinimumThreatCount!=10||e.MaximumThreatCount!=10))Fail("Generated count stays within lobby range");
+            if(resultMap.SuppressedSources==null||!resultMap.SuppressedSources.SequenceEqual(reviewed.Suppressed)||
+                !resultMap.SuppressedSources.Any(value=>value))Fail("Result renders actual suppressed world positions");
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
             if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.2||e.IntensityHigh!=.8))Fail("Recorded haptic encoding range");

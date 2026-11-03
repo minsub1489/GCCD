@@ -23,7 +23,7 @@ namespace GCCD.Dts
         sealed class Assignment {public int Correct;public double Error;public int[] Map;}
         public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance)
         {
-            if(sources==null||sources.Length<1||sources.Length>8||marks==null)throw new ArgumentException("Source and response positions required.");
+            if(sources==null||sources.Length<1||sources.Length>MissionSpawnPlanner.MaximumThreatCount||marks==null)throw new ArgumentException("Source and response positions required.");
             Angles.Finite(observerX);Angles.Finite(observerZ);Angles.Finite(yaw);Angles.Finite(tolerance);if(tolerance<0)throw new ArgumentException("Nonnegative tolerance required.");
             foreach(var p in sources.Concat(marks)){Angles.Finite(p.X);Angles.Finite(p.Z);}
             var states=new Dictionary<int,Assignment>{{0,new Assignment{Map=Enumerable.Repeat(-1,marks.Length).ToArray()}}};

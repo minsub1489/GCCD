@@ -7,7 +7,6 @@ namespace GCCD.Dts
     {
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
         Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton,experimentButton;Font font;
-        DropdownField missionAngle;
         string rangeError = "억제각을 선택하고 최소·최대 위협 수를 입력하세요.";
         public bool Showing {get;private set;}
         public bool HasLobby {get{return lobby!=null;}}
@@ -36,9 +35,8 @@ namespace GCCD.Dts
             var scrim=Element(lobby,"scrim");scrimTexture=new Texture2D(256,1,TextureFormat.RGBA32,false);for(int x=0;x<256;x++){float f=x/255f;scrimTexture.SetPixel(x,0,new Color(.025f,.04f,.05f,Mathf.Lerp(.91f,.10f,Mathf.SmoothStep(0,1,f))));}scrimTexture.Apply();scrim.style.backgroundImage=scrimTexture;
 var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
             var content=Element(lobby,"lobby-content");Label(content,"HAPTIC THREAT DETECTION","eyebrow accent");Label(content,"Finding\nThreat","hero");Label(content,"시야 밖 위협의 방향과 거리를 진동으로 감지하세요.","description");
-            Button(content,"작전 시작    →",()=>platform.StartMission(missionAngle.index <= 1 ? 45 : ThreatPolicy.Conditions[missionAngle.index - 2]),"button primary");
+
             var angles = new DropdownField("억제각", new System.Collections.Generic.List<string>{"억제각 선택","전체 각도","0°","15°","30°","45°","60°","90°"}, 0);
-            missionAngle=angles;
             angles.name="studyAngle";
             angles.AddToClassList("study-field");
             content.Add(angles);
@@ -72,6 +70,18 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
             lobbyError = Label(content, "", "small");
             lobbyError.name = "studyInputError";
             lobbyError.style.color = new Color(1f, .43f, .42f);
+            Button(content, "작전 시작    →", () =>
+            {
+                rangeError = ValidateStudyInputs(out int minimum, out int maximum);
+                if (!string.IsNullOrEmpty(rangeError)) return;
+                if (maximum > MissionSpawnPlanner.MaximumThreatCount)
+                {
+                    rangeError = $"FPS 작전의 최대 위협 수는 {MissionSpawnPlanner.MaximumThreatCount}개까지 입력할 수 있습니다.";
+                    return;
+                }
+                int theta = angles.index == 1 ? 45 : ThreatPolicy.Conditions[angles.index - 2];
+                platform.StartMission(theta, minimum, maximum);
+            }, "button primary").name = "startMission";
             var secondary = Element(content, "row");
             Button(secondary, "응답 연습", () => platform.StartLobbyExperiment(true), "button secondary");
             experimentButton = Button(secondary, "실험 시작 · 화면 연습", () =>

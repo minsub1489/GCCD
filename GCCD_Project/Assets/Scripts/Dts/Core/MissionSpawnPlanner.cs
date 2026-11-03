@@ -5,9 +5,10 @@ namespace GCCD.Dts
     public struct MissionSpawnPoint {public double X,Z;}
     public static class MissionSpawnPlanner
     {
+        public const int MaximumThreatCount = 12;
         public static MissionSpawnPoint[] Plan(int seed,int count,double playerX,double playerZ,double yaw,bool offscreen,Func<double,double,bool> occupied,bool expanded=false)
         {
-            if(count<1||count>12||occupied==null)throw new ArgumentException("Invalid spawn request.");
+            if(count<1||count>MaximumThreatCount||occupied==null)throw new ArgumentException("Invalid spawn request.");
             Angles.Finite(playerX);Angles.Finite(playerZ);Angles.Finite(yaw);
             var random=new StableRandom(seed);var points=new List<MissionSpawnPoint>();
             for(int attempt=0;attempt<4096&&points.Count<count;attempt++)

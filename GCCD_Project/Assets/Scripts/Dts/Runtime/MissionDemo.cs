@@ -7,7 +7,20 @@ namespace GCCD.Dts
 {
     public sealed partial class ExperimentPlatform
     {
-        public void StartMission(int suppressionTheta = 45){if(Phase!=TrialPhase.Setup)return;var m=gameObject.AddComponent<MissionDemo>();m.Owner=this;m.SuppressionTheta=suppressionTheta;m.Physical=connectionReady;enabled=false;}
+        public void StartMission(int suppressionTheta = 45, int minimumThreatCount = 3, int maximumThreatCount = 8)
+        {
+            if (Phase != TrialPhase.Setup || GetComponent<MissionDemo>()) return;
+            if (minimumThreatCount < 2 || maximumThreatCount < minimumThreatCount ||
+                maximumThreatCount > MissionSpawnPlanner.MaximumThreatCount)
+                throw new ArgumentException("Invalid FPS threat-count range.");
+            var mission = gameObject.AddComponent<MissionDemo>();
+            mission.Owner = this;
+            mission.SuppressionTheta = suppressionTheta;
+            mission.MinimumThreatCount = minimumThreatCount;
+            mission.MaximumThreatCount = maximumThreatCount;
+            mission.Physical = connectionReady;
+            enabled = false;
+        }
         public OutputReceipt MissionPulse(Threat[] threats,bool physical){var motors=MissionHapticEncoding.Compose(threats,MissionX40Profile());config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,MissionHapticEncoding.DurationMilliseconds,config,!physical,true);}
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
@@ -112,12 +125,14 @@ namespace GCCD.Dts
             if(paused||complete||IsThreatResponse)return;
             lastThreat=Now;nextThreat=Now+9+rng.NextDouble()*5;
             try{
-                int count=rng.Next(1,4);
+                int count = rng.Next(MinimumThreatCount, MaximumThreatCount + 1);
                 var locations=MissionSpawnPlanner.Plan(rng.Next(),count,transform.position.x,transform.position.z,yaw,true,Occupied,true);
                 var threats=locations.Select((p,i)=>{var at=new Vector3((float)p.X,1.9f,(float)p.Z);var delta=at-transform.position;return new Threat("M"+i,true,true,true,at.x,at.y,at.z,delta.magnitude,Angles.Bearing(delta.x,delta.z,yaw));}).ToArray();
                 BeginMissionThreatEvent(threats);
             }catch(ArgumentException){output="생성할 공간이 부족합니다. 개방된 구역으로 이동하세요.";}
         }
+        public int MinimumThreatCount { get; internal set; }
+        public int MaximumThreatCount { get; internal set; }
         public int SuppressionTheta { get; internal set; } = 45;
         internal void BeginMissionThreatEvent(Threat[] threats)
         {
