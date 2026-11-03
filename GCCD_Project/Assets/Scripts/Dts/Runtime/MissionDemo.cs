@@ -12,10 +12,14 @@ namespace GCCD.Dts
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}
-        public void OpenAdvanced(){advanced=true;}
         public void ConfirmPulse(){if(pulseSubmitted){feltPulse=true;testText="연결 테스트 확인됨";}}
         public string PulseStatus {get{return testText;}}
-        public void Practice(){Mode="DEVELOPMENT";Experiment="A";StartSession(true);}
+        public bool LobbySimulation => string.IsNullOrEmpty(config.LobbyMode) || config.LobbyMode == "DEVELOPMENT";
+        public void StartLobbyExperiment(bool training = false)
+        {
+            Mode = LobbySimulation ? "DEVELOPMENT" : config.LobbyMode;
+            StartSession(training);
+        }
     }
     public sealed partial class MissionDemo:MonoBehaviour
     {

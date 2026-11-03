@@ -6,7 +6,7 @@ namespace GCCD.Dts
     public sealed partial class ModernInterface:MonoBehaviour
     {
         UIDocument document;PanelSettings panel;ExperimentPlatform platform;VisualElement root,lobby,hud,pause,background,reticle,marker,ammoProgress;
-        Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton;Font font;
+        Label device,connectionHelp,pulse,objectives,ammo,status,pauseTitle,hapticBadge,lobbyError,threatNotice;readonly Label[] supplyMarkers=new Label[3];string pulseError="";Texture2D scrimTexture;Button testButton,confirmButton,continueButton,experimentButton;Font font;
         public bool Showing {get;private set;}
         public bool HasLobby {get{return lobby!=null;}}
         System.Collections.IEnumerator Start()
@@ -35,7 +35,7 @@ namespace GCCD.Dts
 var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top,"GCCD  ·  HAPTIC FIELD LAB","eyebrow");
             var content=Element(lobby,"lobby-content");Label(content,"RECOVERY OPERATION","eyebrow accent");Label(content,"공업지대\n수색 작전","hero");Label(content,"보급품을 회수하고 경계 드론을 무력화하세요.\n시야 밖 위협은 조끼의 진동으로 전달됩니다.","description");
             Button(content,"작전 시작    →",()=>platform.StartMission(),"button primary");
-            var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.Practice(),"button secondary");Button(secondary,"연구자 설정",()=>platform.OpenAdvanced(),"button secondary");
+            var secondary=Element(content,"row");Button(secondary,"응답 연습",()=>platform.StartLobbyExperiment(true),"button secondary");experimentButton=Button(secondary,"실험 시작 · 화면 연습",()=>platform.StartLobbyExperiment(),"button secondary");experimentButton.name="startExperiment";
             var field=new TextField("참가자 ID"){value=platform.Participant};field.AddToClassList("participant");field.RegisterValueChangedCallback(e=>platform.Participant=e.newValue);content.Add(field);lobbyError=Label(content,"","small accent");
             var bottom=Element(lobby,"lobby-bottom");Label(bottom,"WASD 이동  ·  우클릭 조준  ·  좌클릭 발사  ·  SPACE 점프  ·  C 앉기  ·  TAB 지도","control-hint");
             var card=Element(lobby,"device-panel");Label(card,"HAPTIC CONNECTION","eyebrow");device=Label(card,"조끼를 찾고 있습니다…","device-status");connectionHelp=Label(card,"Player를 켜 두면 자동으로 연결합니다.","small muted");
@@ -61,7 +61,7 @@ var top=Element(lobby,"lobby-top");Label(top,"OUTPOST  /  07","brand");Label(top
             var mission=GetComponent<MissionDemo>();bool game=mission&&mission.HasWorld;
             bool home=platform.enabled&&platform.Phase==TrialPhase.Setup&&!platform.AdvancedVisible;
             Showing=home||game;root.style.display=Showing?DisplayStyle.Flex:DisplayStyle.None;lobby.style.display=home?DisplayStyle.Flex:DisplayStyle.None;hud.style.display=game?DisplayStyle.Flex:DisplayStyle.None;
-            if(home){device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=platform.Error;}
+            if(home){experimentButton.text=platform.LobbySimulation?"실험 시작 · 화면 연습":"실험 시작";device.text=platform.ConnectionReady?"●  조끼 연결됨":"○  조끼 연결 대기";device.EnableInClassList("connected",platform.ConnectionReady);connectionHelp.text=platform.ConnectionReady?"Player 자동 연결  ·  로그인 불필요":"Player에서 조끼를 연결하세요. 조끼 없이도 플레이할 수 있습니다.";testButton.SetEnabled(true);pulse.text=string.IsNullOrEmpty(pulseError)?platform.PulseStatus:pulseError;pulse.style.display=pulse.text.StartsWith("짧은 진동을 보내")?DisplayStyle.None:DisplayStyle.Flex;confirmButton.style.display=DisplayStyle.None;lobbyError.text=platform.Error;}
             if(game){
                 var points=mission.SupplyPositions;for(int i=0;i<3;i++){
                     bool visible=i<points.Length;Vector3 v=visible?GetComponent<Camera>().WorldToViewportPoint(points[i]):Vector3.zero;visible=visible&&v.z>0&&v.x>0&&v.x<1&&v.y>0&&v.y<1;

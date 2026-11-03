@@ -33,7 +33,7 @@ namespace GCCD.Dts
         {
             if(input==null||!Conditions.Contains(theta)) throw new ArgumentException("Expected six-condition theta and a snapshot.");
             var all=input.ToArray();if(all.Any(t=>t==null)||all.Select(t=>t.Id).Distinct(StringComparer.Ordinal).Count()!=all.Length)throw new ArgumentException("Null/duplicate threat ID.");
-            var selected=all.Where(t=>t.Active&&t.Offscreen&&t.Firing).OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).Take(3).ToArray();
+            var selected=all.Where(t=>t.Active&&t.Offscreen&&t.Firing).OrderBy(t=>t.Distance).ThenBy(t=>t.Id,StringComparer.Ordinal).ToArray();
             var kept=new List<Threat>();var decisions=new List<Decision>();
             foreach(var threat in selected)
             {

@@ -19,13 +19,13 @@ namespace GCCD.Dts
         private sealed class Candidate {public int[] Match;public int Joint,Direction,Distance;public double Error;}
         public static Score Score(Threat[] original,Response[] responses,double tolerance)
         {
-            Angles.Finite(tolerance);if(original==null||original.Length!=3||responses==null||responses.Length>3||tolerance<0||tolerance>180)throw new ArgumentException("Three original threats, <=3 responses and fixed tolerance required.");
-            var candidates=new List<Candidate>();Enumerate(original,responses,tolerance,0,new bool[3],new int[responses.Length],candidates);
+            Angles.Finite(tolerance);if(original==null||original.Length<1||original.Length>ExperimentConfig.MaximumThreatCount||responses==null||responses.Length>original.Length||tolerance<0||tolerance>180)throw new ArgumentException("Valid original threat count, responses up to that count and fixed tolerance required.");
+            var candidates=new List<Candidate>();Enumerate(original,responses,tolerance,0,new bool[original.Length],new int[responses.Length],candidates);
             // Joint objective, then total angular error over maximal-cardinality assignments.
             // Final lexicographic key resolves numerical ties deterministically.
             int bestJoint=candidates.Max(c=>c.Joint);
             var best=candidates.Where(c=>c.Joint==bestJoint).OrderBy(c=>c.Error).ThenBy(c=>string.Join(",",c.Match)).First();
-            var score=new Score{JointAccuracy=best.Joint/3.0,DirectionAccuracy=candidates.Max(c=>c.Direction)/3.0,DistanceAccuracy=candidates.Max(c=>c.Distance)/3.0,Precision=responses.Length==0?(double?)null:best.Joint/(double)responses.Length,FalseResponseRate=responses.Length==0?0:(responses.Length-best.Joint)/(double)responses.Length,NoResponseRate=responses.Length==0?1:0,DirectionError=responses.Length==0?(double?)null:best.Error/responses.Length,MatchedThreatIndices=best.Match};
+            var score=new Score{JointAccuracy=best.Joint/(double)original.Length,DirectionAccuracy=candidates.Max(c=>c.Direction)/(double)original.Length,DistanceAccuracy=candidates.Max(c=>c.Distance)/(double)original.Length,Precision=responses.Length==0?(double?)null:best.Joint/(double)responses.Length,FalseResponseRate=responses.Length==0?0:(responses.Length-best.Joint)/(double)responses.Length,NoResponseRate=responses.Length==0?1:0,DirectionError=responses.Length==0?(double?)null:best.Error/responses.Length,MatchedThreatIndices=best.Match};
             // Ambiguity means multiple maximum-joint assignments involving overlapping eligible pairs,
             // even when the angular-error tie breaker chooses a unique assignment.
             score.Ambiguous=bestJoint>0&&candidates.Where(c=>c.Joint==bestJoint).Select(c=>string.Join(";",Enumerable.Range(0,responses.Length).Where(i=>Angles.Difference(original[c.Match[i]].Bearing,responses[i].Bearing)<=tolerance&&DistanceEncoding.Bin(original[c.Match[i]].Distance)==responses[i].Bin).Select(i=>i+":"+c.Match[i]))).Distinct().Count()>1;
@@ -35,16 +35,7 @@ namespace GCCD.Dts
         static void Enumerate(Threat[] t,Response[] r,double tolerance,int i,bool[] used,int[] match,List<Candidate> output)
         {
             if(i==r.Length){var c=new Candidate{Match=(int[])match.Clone()};for(int k=0;k<r.Length;k++){double e=Angles.Difference(t[match[k]].Bearing,r[k].Bearing);bool direction=e<=tolerance,dist=DistanceEncoding.Bin(t[match[k]].Distance)==r[k].Bin;c.Error+=e;if(direction)c.Direction++;if(dist)c.Distance++;if(direction&&dist)c.Joint++;}output.Add(c);return;}
-            for(int j=0;j<3;j++)if(!used[j]){used[j]=true;match[i]=j;Enumerate(t,r,tolerance,i+1,used,match,output);used[j]=false;}
+            for(int j=0;j<t.Length;j++)if(!used[j]){used[j]=true;match[i]=j;Enumerate(t,r,tolerance,i+1,used,match,output);used[j]=false;}
         }
-    }
-    public sealed class FirstActionTracker
-    {
-        readonly string nearest;readonly double deadline;
-        public bool HasAction{get;private set;}public bool Success{get;private set;}public bool TimedOut{get;private set;}public string Target{get;private set;}="";public double ResponseSeconds{get;private set;}=-1;
-        public FirstActionTracker(string nearestId,double deadlineSeconds){Angles.Finite(deadlineSeconds);if(string.IsNullOrEmpty(nearestId)||deadlineSeconds<=0)throw new ArgumentException("Nearest ID and positive deadline required.");nearest=nearestId;deadline=deadlineSeconds;}
-        public void Shot(double seconds,string target,bool hit,bool frontTask)
-        {Angles.Finite(seconds);if(seconds<0)throw new ArgumentException("Negative response time.");if(HasAction||frontTask)return;if(seconds>=deadline){Expire(seconds);return;}HasAction=true;Target=target??"";ResponseSeconds=seconds;Success=Target==nearest&&hit;}
-        public void Expire(double seconds){if(seconds>=deadline&&!HasAction){TimedOut=true;Success=false;}}
     }
 }

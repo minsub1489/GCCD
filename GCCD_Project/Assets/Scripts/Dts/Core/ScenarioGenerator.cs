@@ -24,55 +24,50 @@ namespace GCCD.Dts
     }
     public static class ScenarioGenerator
     {
-        static readonly double[] edges={0,15,30,45,60,90,120};
-        public static TrialSpec[] PlanA(int seed,int row,double hfov)
+        public static TrialSpec[] PlanA(int seed, int row, double hfov, int threatCount)
         {
-            Angles.IsOffscreen(180,hfov);var order=ConditionScheduler.Order(row);var result=new List<TrialSpec>();
-            for(int block=0;block<6;block++)
+            Angles.IsOffscreen(180, hfov);
+            if (threatCount < 2 || threatCount > ExperimentConfig.MaximumThreatCount)
+                throw new ArgumentOutOfRangeException(nameof(threatCount));
+
+            var order = ConditionScheduler.Order(row);
+            var layoutRng = new StableRandom(seed);
+            var layouts = new Threat[18][];
+            double start = hfov / 2 + 6;
+            for (int family = 0; family < layouts.Length; family++)
             {
-                var trials=new TrialSpec[18];for(int f=0;f<18;f++)
+                var threats = new Threat[threatCount];
+                for (int i = 0; i < threats.Length; i++)
                 {
-                    var rng=new StableRandom(unchecked(seed+f*7919));int bin=f/3;
-                    double gap=edges[bin]+(edges[bin+1]-edges[bin])*(.15+.7*rng.Unit());
-                    double[] relative={0,gap,180+gap/2};
-                    double[] distances=Distances(f,rng);
-                    // Cycle which angular position receives the nearest/isolated rank.
-                    double[] assigned=Enumerable.Range(0,3).Select(i=>distances[(i+f+block)%3]).ToArray();
-                    var rotationRng=new StableRandom(unchecked(seed+f*7919+block*104729));
-                    trials[f]=new TrialSpec{Theta=order[block],Block=block,Family=f,Seed=seed,Preparation=2+2*rotationRng.Unit(),Threats=RotateOffscreen(relative,assigned,rotationRng,hfov,(block+f)%2==0)};
+                    double bearing = start + (360 - 2 * start) * layoutRng.Unit();
+                    double distance = 6.4 + 28 * layoutRng.Unit();
+                    double radians = bearing * Math.PI / 180;
+                    threats[i] = new Threat("E" + (i + 1), true, true, true,
+                        Math.Sin(radians) * distance, 1.7, Math.Cos(radians) * distance,
+                        distance, bearing);
                 }
-                new StableRandom(unchecked(seed+block*65537)).Shuffle(trials);
-                for(int i=0;i<18;i++){trials[i].Id="A"+(block*18+i+1).ToString("D3");result.Add(trials[i]);}
+                layouts[family] = threats;
             }
-            return result.ToArray();
-        }
-        static double[] Distances(int family,StableRandom rng)
-        {
-            // Equal global distance distributions across theta. Includes 2-3 threats in one bin.
-            double[] starts={6.4,12.4,24.4};double[] widths={4.5,10,10};int type=family%6;
-            int[] bins=type<3?new[]{type,type,type}:type==3?new[]{0,0,2}:type==4?new[]{1,1,2}:new[]{0,1,2};
-            var d=bins.Select((b,i)=>starts[b]+widths[b]*(.05+.85*rng.Unit())+i*.03).OrderBy(x=>x).ToArray();return d;
-        }
-        static Threat[] RotateOffscreen(double[] relative,double[] distances,StableRandom rng,double hfov,bool mirror)
-        {
-            for(int attempt=0;attempt<10000;attempt++)
+
+            var result = new List<TrialSpec>();
+            for (int block = 0; block < order.Length; block++)
             {
-                double rotation=360*rng.Unit();double[] bearings=relative.Select(a=>Angles.Normalize(rotation+(mirror?-a:a))).ToArray();
-                // Margin covers target angular extent; actual viewport geometry is checked at event time.
-                if(bearings.Any(a=>Angles.Difference(a,0)<=hfov/2+6))continue;
-                return bearings.Select((a,i)=>{double rad=a*Math.PI/180;return new Threat("E"+(i+1),true,true,true,Math.Sin(rad)*distances[i],1.7,Math.Cos(rad)*distances[i],distances[i],a);}).ToArray();
-            }
-            throw new ArgumentException("Unable to construct offscreen scene at requested FOV.");
-        }
-        public static TrialSpec[] PlanB(int seed,int row,double hfov,int candidate,int eventsPerCondition=12)
-        {
-            if(!ThreatPolicy.Conditions.Contains(candidate)||candidate==0||row<0||row>1||eventsPerCondition<1)throw new ArgumentException("B needs a nonzero preregistered candidate and two-way order.");Angles.IsOffscreen(180,hfov);
-            int[] order=row==0?new[]{0,candidate}:new[]{candidate,0};var result=new List<TrialSpec>();
-            for(int b=0;b<2;b++)for(int f=0;f<eventsPerCondition;f++)
-            {
-                var r=new StableRandom(unchecked(seed+f*19937));double available=360-hfov-20;
-                var ts=Enumerable.Range(0,5).Select(i=>{double a=hfov/2+10+available*r.Unit();double d=6.5+28*r.Unit()+i*.01;double rad=a*Math.PI/180;return new Threat("E"+(i+1),true,true,true,Math.Sin(rad)*d,1.7,Math.Cos(rad)*d,d,a);}).ToArray();
-                result.Add(new TrialSpec{Id="B"+(result.Count+1).ToString("D3"),Theta=order[b],Block=b,Family=f,Seed=seed,Threats=ts,Preparation=2+2*r.Unit()});
+                var rng = new StableRandom(unchecked(seed + block * 65537));
+                var families = Enumerable.Range(0, layouts.Length).ToArray();
+                rng.Shuffle(families);
+                foreach (int family in families)
+                {
+                    result.Add(new TrialSpec
+                    {
+                        Id = "A" + (result.Count + 1).ToString("D3"),
+                        Theta = order[block],
+                        Block = block,
+                        Family = family,
+                        Seed = seed,
+                        Preparation = 2 + 2 * rng.Unit(),
+                        Threats = (Threat[])layouts[family].Clone()
+                    });
+                }
             }
             return result.ToArray();
         }

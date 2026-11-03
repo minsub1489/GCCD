@@ -28,7 +28,32 @@ class CoreTests
         Test("unknown theta rejected",()=>Throws(()=>ThreatPolicy.Apply(ABC(),22)));
         Test("tie ordinal ID",()=>Eq(ThreatPolicy.Apply(new[]{T("B",0,6),T("A",40,6)},90).Kept[0].Id,"A"));
         Test("input order independent",()=>Eq(string.Join(",",ThreatPolicy.Apply(ABC().Reverse(),45).Kept.Select(t=>t.Id)),"A,C"));
-        Test("no refill",()=>Eq(ThreatPolicy.Apply(ABC().Concat(new[]{T("D",200,30),T("E",270,36)}),90).Kept.Length,1));
+        Test("threats beyond the third participate in suppression",()=>{
+            var result=ThreatPolicy.Apply(ABC().Concat(new[]{T("D",200,30),T("E",270,36)}),90);
+            Eq(result.Selected.Length,5);
+            Eq(string.Join(",",result.Kept.Select(t=>t.Id)),"A,D");
+            Eq(result.Decisions[4].ParentId,"A");
+        });
+        Test("random layouts are paired and suppression varies",()=>{
+            var plan=ScenarioGenerator.PlanA(17,0,90,5);
+            foreach(var family in plan.GroupBy(t=>t.Family))
+                Eq(family.Select(t=>string.Join(";",t.Threats.Select(x=>x.Bearing+","+x.Distance))).Distinct().Count(),1);
+            Eq(plan.Where(t=>t.Theta==45).Select(t=>ThreatPolicy.Apply(t.Threats,45).Kept.Length).Distinct().Count()>1,true);
+            Eq(plan.Where(t=>t.Theta==0).All(t=>ThreatPolicy.Apply(t.Threats,0).Kept.Length==5),true);
+        });
+        Test("unset count only has a development fallback",()=>{
+            var config=new ExperimentConfig();
+            Eq(config.ThreatCountFor(true),6);
+            Throws(()=>config.ThreatCountFor(false));
+            config.TotalThreatCount=5;
+            Eq(config.ThreatCountFor(false),5);
+        });
+        Test("eight threats can be scored with eight markers",()=>{
+            var threats=Enumerable.Range(0,8).Select(i=>T("E"+i,i*45,7)).ToArray();
+            var responses=threats.Reverse().Select(t=>new Response(t.Bearing,DistanceBin.Near)).ToArray();
+            Near(ResponseScorer.Score(threats,responses,5).JointAccuracy,1);
+            Near(ResponseScorer.Score(threats,responses.Take(5).ToArray(),5).JointAccuracy,5.0/8);
+        });
         Test("parent nearest retained",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",80,8),T("C",40,9)},45).Decisions[2].ParentId,"A"));
         Test("all retained",()=>Eq(ThreatPolicy.Apply(new[]{T("A",0,6),T("B",120,12),T("C",240,24)},90).Kept.Length,3));
         Test("filter eligibility",()=>Eq(ThreatPolicy.Apply(new[]{new Threat("A",false,true,true,0,0,0,6,0),new Threat("B",true,false,true,0,0,0,7,0),new Threat("C",true,true,false,0,0,0,8,0)},0).Selected.Length,0));
@@ -49,24 +74,17 @@ class CoreTests
         Test("ambiguous overlap flagged",()=>Eq(ResponseScorer.Score(new[]{T("A",0,6),T("B",1,7),T("C",180,30)},new[]{new Response(.5,DistanceBin.Near)},5).Ambiguous,true));
         Test("independent distance accuracy",()=>Near(ResponseScorer.Score(ABC(),new[]{new Response(180,DistanceBin.Near),new Response(180,DistanceBin.Middle),new Response(180,DistanceBin.Far)},5).DistanceAccuracy,1));
         Test("response cap",()=>Throws(()=>ResponseScorer.Score(ABC(),new[]{new Response(0,DistanceBin.Near),new Response(0,DistanceBin.Near),new Response(0,DistanceBin.Near),new Response(0,DistanceBin.Near)},5)));
-        Test("18 families each 6 conditions",()=>{var plan=ScenarioGenerator.PlanA(123,0,90);Eq(plan.Length,108);foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(g.Count(),18);});
+        Test("18 families each 6 conditions",()=>{var plan=ScenarioGenerator.PlanA(123,0,90,5);Eq(plan.Length,108);foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(g.Count(),18);});
         Test("exact provided counterbalance rows",()=>Eq(string.Join(",",ConditionScheduler.Order(0)),"0,15,90,30,60,45"));
         Test("position balance",()=>{for(int pos=0;pos<6;pos++) Eq(Enumerable.Range(0,6).Select(i=>ConditionScheduler.Order(i)[pos]).Distinct().Count(),6);});
-        Test("reproducible all snapshots",()=>{var a=ScenarioGenerator.PlanA(73,2,90);var b=ScenarioGenerator.PlanA(73,2,90);Eq(string.Join(";",a.Select(x=>x.Signature)),string.Join(";",b.Select(x=>x.Signature)));});
-        Test("all generated threats offscreen and unique distance",()=>{foreach(var t in ScenarioGenerator.PlanA(10,3,100)){Eq(t.Threats.Length,3);Eq(t.Threats.Select(x=>x.Distance).Distinct().Count(),3);foreach(var x in t.Threats) Eq(Angles.IsOffscreen(x.Bearing,100),true);}});
-        Test("distance distributions matched across theta",()=>{var plan=ScenarioGenerator.PlanA(1,0,90);var expected=string.Join(",",plan.Where(t=>t.Theta==0).SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x));foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(string.Join(",",g.SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x)),expected);});
-        Test("same distance categories allowed",()=>Eq(ScenarioGenerator.PlanA(1,0,90).Any(t=>t.Threats.Select(x=>DistanceEncoding.Bin(x.Distance)).Distinct().Count()==1),true));
-        Test("invalid FOV rejects",()=>Throws(()=>ScenarioGenerator.PlanA(1,0,360)));
-        Test("families reflect minimum pairwise gap",()=>{double[] edges={0,15,30,45,60,90,120};foreach(var t in ScenarioGenerator.PlanA(10,3,90)){double gap=180;for(int a=0;a<3;a++)for(int b=a+1;b<3;b++)gap=Math.Min(gap,Angles.Difference(t.Threats[a].Bearing,t.Threats[b].Bearing));int bin=t.Family/3;Eq(gap>edges[bin]&&gap<edges[bin+1],true);}});
-        Test("config rejects non-finite FOV",()=>{var c=new ExperimentConfig{HorizontalFov=double.NaN};Eq(c.Problems(false,false,false).Length>0,true);});
+        Test("reproducible all snapshots",()=>{var a=ScenarioGenerator.PlanA(73,2,90,5);var b=ScenarioGenerator.PlanA(73,2,90,5);Eq(string.Join(";",a.Select(x=>x.Signature)),string.Join(";",b.Select(x=>x.Signature)));});
+        Test("all generated threats offscreen and unique distance",()=>{foreach(var t in ScenarioGenerator.PlanA(10,3,100,5)){Eq(t.Threats.Length,5);Eq(t.Threats.Select(x=>x.Distance).Distinct().Count(),5);foreach(var x in t.Threats) Eq(Angles.IsOffscreen(x.Bearing,100),true);}});
+        Test("distance distributions matched across theta",()=>{var plan=ScenarioGenerator.PlanA(1,0,90,5);var expected=string.Join(",",plan.Where(t=>t.Theta==0).SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x));foreach(var g in plan.GroupBy(t=>t.Theta)) Eq(string.Join(",",g.SelectMany(t=>t.Threats).Select(t=>t.Distance).OrderBy(x=>x)),expected);});
+        Test("invalid FOV rejects",()=>Throws(()=>ScenarioGenerator.PlanA(1,0,360,5)));
+        Test("config rejects non-finite FOV",()=>{var c=new ExperimentConfig{HorizontalFov=double.NaN};Eq(c.Problems(false,false).Length>0,true);});
         Test("matching invalid tolerance",()=>Throws(()=>ResponseScorer.Score(ABC(),new Response[0],double.NaN)));
         Test("pending trial survives restart",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}"))s.Begin("T002","{}");using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)){Eq(s.Pending.Single(),"T002");s.Commit("T002","{}");Eq(s.Pending.Length,0);}}finally{Directory.Delete(dir,true);}});
         Test("resume metadata mismatch refuses",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){}Throws(()=>new SessionStore(dir,"P001","DEVELOPMENT","A","{different}",true));}finally{Directory.Delete(dir,true);}});
-        Test("B five active nearest three",()=>{foreach(var t in ScenarioGenerator.PlanB(4,1,90,45)){Eq(t.Threats.Length,5);Eq(ThreatPolicy.Apply(t.Threats,t.Theta).Selected.Length,3);}});
-        Test("B refuses zero candidate",()=>Throws(()=>ScenarioGenerator.PlanB(4,1,90,0)));
-        Test("game first miss permanent fail",()=>{var g=new FirstActionTracker("A",4);g.Shot(1,"A",false,false);g.Shot(2,"A",true,false);Eq(g.Success,false);Eq(g.Target,"A");});
-        Test("front task excluded",()=>{var g=new FirstActionTracker("A",4);g.Shot(1,"FRONT",true,true);Eq(g.HasAction,false);g.Shot(2,"A",true,false);Eq(g.Success,true);Near(g.ResponseSeconds,2);});
-        Test("deadline inclusive timeout",()=>{var g=new FirstActionTracker("A",4);g.Shot(4,"A",true,false);Eq(g.Success,false);Eq(g.TimedOut,true);});
         Test("output equivalence uses submitted integers",()=>{var r=StimulusValidator.Compare(ABC(),Profile(),.1,.9,500);Eq(r.Conditions.Length,6);Eq(r.PairCount,15);Eq(r.IdenticalPairs>=0,true);});
         Test("CSV quotes newline and comma",()=>Eq(CsvTable.Escape("a,\"b\"\nc"),"\"a,\"\"b\"\"\nc\""));
         Test("session commits reject duplicates and resume",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){s.Begin("T001","{} ");s.Commit("T001","{}");Throws(()=>s.Begin("T001","{}"));}using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)) Eq(s.Completed.Contains("T001"),true);}finally{Directory.Delete(dir,true);}});

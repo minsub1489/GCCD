@@ -8,7 +8,7 @@ namespace GCCD.Dts
 {
     public sealed partial class ExperimentPlatform
     {
-        readonly string[] modes={"Device Check","Calibration","Stimulus Validation","Training","Experiment A","Experiment B","Data Review"};
+        readonly string[] modes={"장비 확인","교정","자극 검증","데이터 검토"};
         int menu=4,selectedMarker=-1,motorIndex,calibrationBin=1;Vector2 setupScroll;string resumeFolder="",notice="";
         double calibrationAngle=0,calibrationDistance=12;bool physicalProbe;string comparisonSummary="";
         GUIStyle titleStyle,bodyStyle;Texture2D ringTexture;Font appFont;
@@ -38,8 +38,7 @@ namespace GCCD.Dts
             if(training)GUILayout.Label("훈련 · 정답 피드백 제공",bodyStyle);
             if(Phase==TrialPhase.Prepare||Phase==TrialPhase.Pulse)
             {GUILayout.FlexibleSpace();GUILayout.Label("+",new GUIStyle(titleStyle){alignment=TextAnchor.MiddleCenter,fontSize=48});GUILayout.Label("정면을 바라보고 자극을 기다려 주세요.",new GUIStyle(bodyStyle){alignment=TextAnchor.MiddleCenter});GUILayout.FlexibleSpace();}
-            else if(Phase==TrialPhase.Response&&metadata.experiment_type=="A")DrawResponse();
-            else if(Phase==TrialPhase.Response&&metadata.experiment_type=="B"){GUILayout.Label("정면 표적을 사격하며 외부 위협에 대응하세요.",bodyStyle);GUILayout.FlexibleSpace();GUILayout.Label("+",new GUIStyle(titleStyle){alignment=TextAnchor.MiddleCenter});GUILayout.FlexibleSpace();}
+            else if(Phase==TrialPhase.Response)DrawResponse();
             else if(Phase==TrialPhase.Questionnaire)
             {GUILayout.Label("방금 자극을 구별하는 데 얼마나 혼란스러웠나요?",titleStyle);GUILayout.Label("1 전혀 혼란스럽지 않음 — 7 매우 혼란스러움",bodyStyle);GUILayout.BeginHorizontal();for(int i=1;i<=7;i++){int rating=i;if(GUILayout.Button(i.ToString(),GUILayout.Height(60)))SaveRating(rating);}GUILayout.EndHorizontal();}
             else if(Phase==TrialPhase.Rest||Phase==TrialPhase.Paused)
@@ -57,26 +56,10 @@ namespace GCCD.Dts
             GUILayout.Label("GCCD · 거리 우선 방향 억제각 실험",titleStyle);
             menu=GUILayout.SelectionGrid(menu,modes,4,GUILayout.Height(76));
             setupScroll=GUILayout.BeginScrollView(setupScroll);
-            GUILayout.BeginHorizontal();GUILayout.Label("익명 참가자 ID",GUILayout.Width(150));Participant=GUILayout.TextField(Participant,32,GUILayout.Width(200));GUILayout.Label("자료 구분",GUILayout.Width(100));int m=Array.IndexOf(new[]{"DEVELOPMENT","PILOT","MAIN"},Mode);m=GUILayout.SelectionGrid(Math.Max(0,m),new[]{"개발","파일럿","본 실험"},3);Mode=new[]{"DEVELOPMENT","PILOT","MAIN"}[m];GUILayout.EndHorizontal();
-            if(Mode=="DEVELOPMENT")GUILayout.Label("가상 모터 맵과 임시 허용오차를 사용하는 소프트웨어 확인 모드입니다.",bodyStyle);
             if(menu==0)DrawDevice();
             else if(menu==1)DrawCalibration();
             else if(menu==2)DrawValidation();
-            else if(menu==6)DrawDataReview();
-            else
-            {
-                Experiment=menu==5?"B":"A";
-                GUILayout.Label(menu==3?"단일 방향 → 단일 거리 → 복합 자극 → 세 위협/원형 응답을 연습합니다.":menu==4?"실험 A · 6블록 × 18시행 = 108시행":"실험 B · 후보 억제각과 0°의 독립 확인",bodyStyle);
-                Number("난수 시드",ref config.Seed);Number("균형 순서 행 (0~5)",ref config.CounterbalanceRow);
-                GUILayout.Label("연구자 전용 조건 순서: "+SafeOrder(),bodyStyle);
-                Number("수평 FOV",ref config.HorizontalFov);Number("펄스 지속시간 ms (500은 초기값)",ref config.PulseMilliseconds);
-                Number("방향 허용오차 ° (-1 미확정)",ref config.DirectionTolerance);
-                Number("개인 최소 강도 L",ref config.Low);Number("개인 최대 강도 H",ref config.High);
-                if(menu==5){Number("A에서 선정한 후보 억제각",ref config.CandidateTheta);Number("첫 대응 제한시간 초",ref config.FirstActionDeadline);Number("정면 과제 사격 구역 반각 ° (미확정 -1)",ref config.FrontTaskSectorDegrees);IndependentBParticipantConfirmed=GUILayout.Toggle(IndependentBParticipantConfirmed,"B 참가자는 A에 참여하지 않았음을 확인함");Number("조건당 이벤트 수",ref config.BEventsPerCondition);Text("후보 선정 규칙",ref config.CandidateSelectionRule);Text("후보 선정 근거",ref config.CandidateEvidence);}
-                if(menu==3){Number("훈련 공동 정답률 기준",ref config.TrainingMinimumJointAccuracy);Number("세 위협 훈련 시행 수",ref config.TrainingTripleTrials);Number("최소 유효 세 위협 훈련 시행 수",ref config.TrainingMinimumTrials);Number("최대 재훈련 횟수",ref config.TrainingMaximumRetries);Text("훈련 판정 기준 설명",ref config.TrainingCriterion);Text("훈련 종료 규칙",ref config.TrainingExitRule);}
-                if(Mode=="MAIN")DrawMainSettings();
-                GUILayout.Space(12);if(GUILayout.Button(menu==3?"훈련 시작":"실험 시작",GUILayout.Height(48)))StartSession(menu==3);
-            }
+            else DrawDataReview();
             GUILayout.Space(14);GUILayout.BeginHorizontal();if(GUILayout.Button("설정 저장"))Guard(SaveConfig);if(GUILayout.Button("설정 불러오기"))Guard(LoadConfig);if(GUILayout.Button("긴급 진동 중지"))notice=haptics.Stop();GUILayout.EndHorizontal();
             GUILayout.Label("설정 파일: "+ConfigPath,bodyStyle);Text("재개할 세션 폴더",ref resumeFolder);
             if(GUILayout.Button("세션 재개 · 미완료 시행은 기술 실패로 보존"))ResumeSession(resumeFolder);
@@ -84,7 +67,6 @@ namespace GCCD.Dts
             if(!string.IsNullOrEmpty(Error))GUILayout.Label(Error,bodyStyle);if(!string.IsNullOrEmpty(notice))GUILayout.Label(notice,bodyStyle);
             GUILayout.EndScrollView();GUILayout.EndArea();
         }
-        string SafeOrder(){try{return string.Join(" → ",ConditionScheduler.Order(config.CounterbalanceRow));}catch(ArgumentException){return "순서 행을 0~5로 설정하세요.";}}
         void DrawDevice()
         {
             Text("확인한 X40 장비 이름 (Player에 표시된 이름)",ref config.VerifiedDeviceName);
@@ -125,31 +107,21 @@ namespace GCCD.Dts
         }
         public string ValidateStimuli()
         {
-            var p=ScenarioGenerator.PlanA(config.Seed,config.CounterbalanceRow,config.HorizontalFov);string folder=Path.Combine(Root,"STIMULUS_VALIDATION",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
-            var rows=new List<string>{"scene_family,source_block,source_theta,theta,selected_ids,retained_ids,suppressed_ids,retained_count,requested_motor_array,output_duration"};var pairs=new int[6,6];int[] duplicates=new int[18];
-            foreach(var t in p)
+            var p=ScenarioGenerator.PlanA(config.Seed,config.CounterbalanceRow,config.HorizontalFov,config.ThreatCountFor(LobbySimulation));string folder=Path.Combine(Root,"STIMULUS_VALIDATION",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
+            var rows=new List<string>{"scene_family,source_block,source_theta,theta,selected_ids,retained_ids,suppressed_ids,retained_count,requested_motor_array,output_duration"};var pairs=new int[6,6];
+            foreach(var t in p.Where(t=>t.Block==0))
             {
                 var r=StimulusValidator.Compare(t.Threats,config.Mapping,config.Low,config.High,config.PulseMilliseconds);
                 foreach(var o in r.Conditions)rows.Add(CsvTable.Line(t.Family,t.Block,t.Theta,o.Theta,string.Join(";",o.SelectedIds),string.Join(";",o.RetainedIds),string.Join(";",o.SuppressedIds),o.RetainedIds.Length,string.Join(";",o.Motors),o.Duration));
-                duplicates[t.Family]+=r.IdenticalPairs;
                 for(int i=0;i<6;i++)for(int j=i+1;j<6;j++)if(r.Conditions[i].Motors.SequenceEqual(r.Conditions[j].Motors))pairs[i,j]++;
             }
             SessionStore.AtomicWrite(Path.Combine(folder,"outputs.csv"),string.Join("\n",rows)+"\n");
-            var pairRows=new List<string>{"theta_a,theta_b,identical_trials,total_layouts,identical_ratio"};for(int i=0;i<6;i++)for(int j=i+1;j<6;j++)pairRows.Add(CsvTable.Line(ThreatPolicy.Conditions[i],ThreatPolicy.Conditions[j],pairs[i,j],p.Length,pairs[i,j]/(double)p.Length));
+            var pairRows=new List<string>{"theta_a,theta_b,identical_trials,total_layouts,identical_ratio"};for(int i=0;i<6;i++)for(int j=i+1;j<6;j++)pairRows.Add(CsvTable.Line(ThreatPolicy.Conditions[i],ThreatPolicy.Conditions[j],pairs[i,j],p.Length/6,pairs[i,j]/(p.Length/6.0)));
             SessionStore.AtomicWrite(Path.Combine(folder,"pair_equivalence.csv"),string.Join("\n",pairRows)+"\n");SessionStore.AtomicWrite(Path.Combine(folder,"config_snapshot.json"),JsonUtility.ToJson(config,true));
-            comparisonSummary="108개 배치 × 6조건 비교 저장.\n"+folder+"\n각 조건 쌍의 동일 배열 비율은 pair_equivalence.csv에 있습니다.\n명령 배열 차이는 피부 자극 차이를 증명하지 않습니다. 매핑: "+config.Mapping.Version;
+            comparisonSummary="18개 배치 × 6조건 비교 저장.\n"+folder+"\n각 조건 쌍의 동일 배열 비율은 pair_equivalence.csv에 있습니다.\n명령 배열 차이는 피부 자극 차이를 증명하지 않습니다. 매핑: "+config.Mapping.Version;
             return folder;
         }
-        void DrawValidation(){GUILayout.Label("전체 배치에 여섯 억제각을 적용해 양자화된 제출 배열을 비교합니다.",bodyStyle);if(GUILayout.Button("출력 동일성 분석"))Guard(()=>ValidateStimuli());GUILayout.Label(comparisonSummary,bodyStyle);}
-        void DrawMainSettings()
-        {
-            Text("설정 버전",ref config.Version);Number("확정 표본 수 (-1 미확정)",ref config.FinalSampleSize);Text("표본 수 근거",ref config.SampleSizeRationale);Text("최소 관심 효과",ref config.MinimumEffect);Text("후보 선정 동률 기준",ref config.CandidateTieRule);Text("기술 실패·제외 규칙",ref config.ExclusionRule);Text("주 분석 통계 모형",ref config.StatisticalModel);
-            Number("파일럿 최소 방향 정답률",ref config.PilotMinimumDirectionAccuracy);Number("파일럿 최소 거리 정답률",ref config.PilotMinimumDistanceAccuracy);Number("파일럿 최대 동일 배열 비율",ref config.PilotMaximumIdenticalPairRate);
-            Text("파일럿 기준 사전등록 시각/기록",ref config.PilotCriteriaRegisteredAt);Text("실제 파일럿 근거 파일 경로",ref config.PilotEvidencePath);
-            if(GUILayout.Button("파일럿 근거 파일 해시 확인"))Guard(()=>{config.PilotEvidenceSha256=SessionStore.Hash(File.ReadAllText(config.PilotEvidencePath));notice="근거 해시: "+config.PilotEvidenceSha256;});
-            config.PilotCriteriaPassed=GUILayout.Toggle(config.PilotCriteriaPassed,"연구자: 실제 파일럿 결과가 사전 기준을 충족함");
-            if(GUILayout.Button("검증된 본 실험 설정 잠금"))Guard(FreezeConfig);GUILayout.Label("설정 잠금: "+(string.IsNullOrEmpty(config.LockedHash)?"미잠금":config.LockedHash),bodyStyle);
-        }
+        void DrawValidation(){GUILayout.Label("전체 배치에 여섯 억제각을 적용해 양자화된 제출 배열을 비교합니다.",bodyStyle);if(GUILayout.Button("출력 동일성 분석"))Guard(()=>ValidateStimuli());GUILayout.Label(comparisonSummary,bodyStyle);if(GUILayout.Button("검증된 본 실험 설정 잠금"))Guard(FreezeConfig);}
         void DrawDataReview()
         {
             Text("검토할 세션 폴더",ref resumeFolder);
@@ -158,7 +130,7 @@ namespace GCCD.Dts
         void DrawOperator()
         {
             GUILayout.BeginArea(new Rect(25,25,Screen.width-50,Screen.height-50),GUI.skin.box);GUILayout.Label("연구자 대시보드 · 참가자에게 보이지 않도록 운영",titleStyle);
-            GUILayout.Label("ID "+Participant+" / "+Mode+" / 실험 "+Experiment+" / "+Phase,bodyStyle);
+            GUILayout.Label("ID "+Participant+" / "+Mode+" / 방향 억제각 실험 / "+Phase,bodyStyle);
             GUILayout.Label("완료 "+Completed+" / "+Total+" · 기술 실패 "+TechnicalFailures,bodyStyle);
             if(index<plan.Length)GUILayout.Label("현재 블록 "+(plan[index].Block+1)+(Mode=="DEVELOPMENT"?" · θ "+plan[index].Theta+"°":""),bodyStyle);
             if(Mode=="DEVELOPMENT")GUILayout.Label("조건 순서 "+string.Join(" → ",metadata.block_order),bodyStyle);else GUILayout.Label("조건 수치는 진행 화면에 표시하지 않습니다. 연구자는 세션 메타데이터에서 확인하세요.",bodyStyle);GUILayout.Label("저장 폴더 "+Folder,bodyStyle);GUILayout.Label(Error,bodyStyle);
@@ -166,15 +138,17 @@ namespace GCCD.Dts
             if(GUILayout.Button("긴급 진동 중지 / 시행 중단")){haptics.Stop();Pause("Emergency stop.");}
             if(GUILayout.Button("진행 재개"))Advance();if(GUILayout.Button("세션 종료 / 메뉴"))BackToSetup();GUILayout.EndArea();
         }
+        Vector2 markerScroll;
         void DrawResponse()
         {
-            GUILayout.Label("느낀 위협을 0~3개 표시해 주세요",titleStyle);GUILayout.Label("지도를 클릭해 방향을 추가하고, 각 마커의 거리 범주를 고르세요.",bodyStyle);
+            GUILayout.Label("느낀 위협의 방향과 거리를 표시해 주세요",titleStyle);GUILayout.Label("지도를 클릭해 방향을 추가하고, 각 마커의 거리 범주를 고르세요.",bodyStyle);
             GUILayout.Label("남은 시간 "+Math.Max(0,deadline-Now).ToString("F1")+"초",bodyStyle);
-            Rect area=GUILayoutUtility.GetRect(360,360,GUILayout.ExpandWidth(false));GUI.DrawTexture(area,ringTexture);
+            float mapSize = Mathf.Clamp(Screen.height * .40f, 190, 360);
+            Rect area=GUILayoutUtility.GetRect(mapSize,mapSize,GUILayout.ExpandWidth(false));GUI.DrawTexture(area,ringTexture);
             Vector2 center=area.center;GUI.Label(new Rect(center.x-32,area.y-3,80,26),"0° 정면");GUI.Label(new Rect(area.xMax-50,center.y-13,50,26),"90°");GUI.Label(new Rect(center.x-23,area.yMax-28,70,26),"180°");GUI.Label(new Rect(area.x+5,center.y-13,60,26),"270°");
             for(int i=0;i<Markers.Count;i++)
             {
-                var marker=Markers[i];float rad=(float)(marker.response_bearing*Math.PI/180);Vector2 position=center+new Vector2(Mathf.Sin(rad),-Mathf.Cos(rad))*140;
+                var marker=Markers[i];float rad=(float)(marker.response_bearing*Math.PI/180);Vector2 position=center+new Vector2(Mathf.Sin(rad),-Mathf.Cos(rad))*(mapSize*.39f);
                 if(GUI.Button(new Rect(position.x-15,position.y-15,30,30),(i+1).ToString()))selectedMarker=i;
             }
             Event ev=Event.current;
@@ -184,6 +158,7 @@ namespace GCCD.Dts
                 if(selectedMarker>=0&&selectedMarker<Markers.Count){Markers[selectedMarker].response_bearing=angle;Markers[selectedMarker].response_time=Now-responseOpened;selectedMarker=-1;}
                 else AddMarker(angle,(DistanceBin)calibrationBin);ev.Use();
             }
+            markerScroll = GUILayout.BeginScrollView(markerScroll, GUILayout.MaxHeight(Mathf.Max(48, Screen.height - mapSize - 270)));
             for(int i=0;i<Markers.Count;i++)
             {
                 GUILayout.BeginHorizontal();GUILayout.Label((i+1)+": "+Markers[i].response_bearing.ToString("F1")+"°",GUILayout.Width(100));
@@ -192,6 +167,7 @@ namespace GCCD.Dts
                 if(GUILayout.Button("방향 수정",GUILayout.Width(95)))selectedMarker=i;
                 if(GUILayout.Button("삭제",GUILayout.Width(60))&&Now<deadline){Markers.RemoveAt(i);selectedMarker=-1;GUILayout.EndHorizontal();break;}GUILayout.EndHorizontal();
             }
+            GUILayout.EndScrollView();
             if(selectedMarker>=0)GUILayout.Label("수정할 방향을 지도에서 다시 클릭하세요.",bodyStyle);
             if(GUILayout.Button("응답 완료 · 0개도 제출 가능",GUILayout.Height(44)))CompleteResponse();
         }

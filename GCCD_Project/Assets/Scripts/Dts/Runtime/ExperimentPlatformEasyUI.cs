@@ -63,17 +63,19 @@ namespace GCCD.Dts
             GUILayout.EndVertical();
             GUILayout.BeginVertical(cardStyle);GUILayout.Label("02   진동 확인",titleStyle);GUILayout.Label(testText,bodyStyle);
             GUILayout.BeginHorizontal();GUI.enabled=connectionReady;if(ActionButton("짧게 진동 보내기"))Guard(()=>TestConnectionPulse());GUI.enabled=pulseSubmitted;
-            if(ActionButton("진동이 느껴졌어요")){feltPulse=true;testText="연결 테스트 확인됨. 방향별 교정은 고급 설정에서 진행할 수 있습니다.";}
+            if(ActionButton("진동이 느껴졌어요")){feltPulse=true;testText="연결 테스트 확인됨.";}
             GUI.enabled=true;GUILayout.EndHorizontal();GUILayout.Label("약한 강도로 모터 한 개에 0.2초간 요청합니다.",subtleStyle);GUILayout.EndVertical();
             GUILayout.BeginVertical(cardStyle);GUILayout.Label("03   FPS 미션 / 실험",titleStyle);
             if(ActionButton("FPS 미션 시작 · 이동 / 사격 / 보급품 수집"))StartMission();
             GUILayout.Label(connectionReady?"Player 연결됨: 미션 중 위협 발생 시 진동을 요청합니다. 교정 전 체험 모드입니다.":"조끼 없이도 플레이할 수 있습니다. 진동은 Player 연결 후 사용할 수 있습니다.",subtleStyle);
             GUILayout.BeginHorizontal();GUILayout.Label("참가자 ID",GUILayout.Width(130));Participant=GUILayout.TextField(Participant,32);GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();if(ActionButton("응답 방법 연습")){Mode="DEVELOPMENT";Experiment="A";StartSession(true);}if(ActionButton(Mode=="DEVELOPMENT"?"화면으로 실험 A 연습":"실험 A 시작")){Experiment="A";StartSession();}GUILayout.EndHorizontal();
-            GUILayout.Label(Mode=="DEVELOPMENT"?"현재는 화면 연습 모드입니다. 실제 진동 실험은 고급 설정에서 검증된 프로필을 선택하세요.":"현재 자료 구분: "+Mode,subtleStyle);
+            GUILayout.BeginHorizontal();
+            if(ActionButton("응답 방법 연습")) StartLobbyExperiment(true);
+            if(ActionButton(LobbySimulation ? "실험 시작 · 화면 연습" : "실험 시작")) StartLobbyExperiment();
+            GUILayout.EndHorizontal();
             if(feltPulse)GUILayout.Label("진동 체감 확인은 연결 점검 기록이며, 실험 교정 완료를 뜻하지 않습니다.",subtleStyle);
             if(!string.IsNullOrEmpty(Error))GUILayout.Label("시작 전 확인: "+Error,bodyStyle);GUILayout.EndVertical();
-            GUILayout.BeginHorizontal();if(GUILayout.Button("고급 설정 · 교정 / 실험 B / 데이터",GUILayout.Height(40)))advanced=true;
+            GUILayout.BeginHorizontal();
             if(GUILayout.Button("진동 중지",GUILayout.Width(140),GUILayout.Height(40))){notice=haptics.Stop();testText="진동 중지 요청을 보냈습니다.";}GUILayout.EndHorizontal();
             if(!string.IsNullOrEmpty(notice))GUILayout.Label(notice,subtleStyle);
             GUILayout.EndScrollView();GUILayout.EndArea();
