@@ -9,7 +9,7 @@ namespace GCCD.Dts
         public int FarFalseMarks;
         public int AdjustedCorrect => Math.Max(0, Correct - FarFalseMarks);
         public double? AdjustedRecall => SourceCount==0?(double?)null:AdjustedCorrect/(double)SourceCount;
-        public bool[] CorrectMarks, FarFalseMark;
+        public bool[] CorrectMarks, FarFalseMark, DuplicateMarks;
         public double?[] NearestDirectionErrors;
         public int Missed {get{return SourceCount-Correct;}}
         public int FalseMarks {get{return ResponseCount-Correct;}}
@@ -72,11 +72,24 @@ namespace GCCD.Dts
                 states=next;
             }
             var best=states.OrderByDescending(x=>x.Value.Correct).ThenByDescending(x=>Bits(x.Key)).ThenBy(x=>x.Value.Error).ThenBy(x=>x.Key).First().Value;
-            var score=new MissionLocationScore{SourceCount=sources.Length,ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
+            var score=new MissionLocationScore{SourceCount=sources.Length,ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],DuplicateMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
             for(int i=0;i<marks.Length;i++)if(best.Map[i]>=0){
                 var a=sources[best.Map[i]];var b=marks[i];double ax=a.X-observerX,az=a.Z-observerZ,bx=b.X-observerX,bz=b.Z-observerZ;
                 score.PositionErrors[i]=position[i,best.Map[i]];score.CorrectMarks[i]=correct[i,best.Map[i]];score.RangeErrors[i]=Math.Abs(Math.Sqrt(ax*ax+az*az)-Math.Sqrt(bx*bx+bz*bz));
                 score.DirectionErrors[i]=direction[i,best.Map[i]];
+            }
+            var matchedCorrectly = new bool[sources.Length];
+            for (int i = 0; i < marks.Length; i++)
+                if (score.CorrectMarks[i]) matchedCorrectly[best.Map[i]] = true;
+            for (int i = 0; i < marks.Length; i++)
+            {
+                if (score.CorrectMarks[i]) continue;
+                for (int j = 0; j < sources.Length; j++)
+                {
+                    if (!matchedCorrectly[j] || !correct[i,j]) continue;
+                    score.DuplicateMarks[i] = true;
+                    break;
+                }
             }
             return score;
         }

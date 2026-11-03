@@ -8,7 +8,8 @@ namespace GCCD.Dts
         public Vector3 PlayerPosition;public float PlayerYaw;public Vector3[] Supplies=new Vector3[0];
         public MissionSpawnPoint[] Markers=new MissionSpawnPoint[0];public Action<double,double> Picked;
         public bool Interactive,Detailed;
-        public bool ShowSuppressionSectors;
+        public bool ShowSuppressionSectors, ShowPenaltyMarks, ShowDuplicateMarks;
+        public MissionLocationScore ResponseScore;
         public int SuppressionTheta;
         public Vector3[] ActualSources=new Vector3[0];public bool[] SuppressedSources;public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
@@ -61,6 +62,22 @@ namespace GCCD.Dts
                 p.strokeColor=new Color(.12f,.06f,.02f);p.lineWidth=3;
                 Line(p,pos+new Vector2(-5,-5),pos+new Vector2(5,5));
                 Line(p,pos+new Vector2(-5,5),pos+new Vector2(5,-5));
+            }
+            if (ResponseScore != null)
+            {
+                for (int i = 0; i < Markers.Length; i++)
+                {
+                    bool penalty = ShowPenaltyMarks && ResponseScore.FarFalseMark[i];
+                    bool duplicate = ShowDuplicateMarks && ResponseScore.DuplicateMarks[i];
+                    if (!penalty && !duplicate) continue;
+                    Vector2 point = Point(Markers[i].X, Markers[i].Z);
+                    p.lineWidth = 5;
+                    p.strokeColor = new Color(.06f,.09f,.11f);
+                    p.BeginPath();p.Arc(point,16,Angle.Degrees(0),Angle.Degrees(360));p.ClosePath();p.Stroke();
+                    p.lineWidth = 2.5f;
+                    p.strokeColor = penalty ? new Color(1f,.32f,.38f) : new Color(.35f,.84f,1f);
+                    p.BeginPath();p.Arc(point,16,Angle.Degrees(0),Angle.Degrees(360));p.ClosePath();p.Stroke();
+                }
             }
             p.strokeColor=new Color(.45f,.62f,.65f);p.lineWidth=1;p.BeginPath();p.MoveTo(r.min);p.LineTo(new Vector2(r.xMax,r.yMin));p.LineTo(r.max);p.LineTo(new Vector2(r.xMin,r.yMax));p.ClosePath();p.Stroke();
         }

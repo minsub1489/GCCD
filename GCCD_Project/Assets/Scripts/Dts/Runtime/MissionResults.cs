@@ -78,11 +78,11 @@ namespace GCCD.Dts
         }
         void WritePositionCsv()
         {
-            var csv=new StringBuilder();csv.AppendLine("event_index,event_id,output_group,eligible,row_type,source_index,response_index,source_x,source_z,response_x,response_z,position_error_m,direction_error_deg,range_error_m,within_tolerance,nearest_direction_error_deg,far_false_mark");
+            var csv=new StringBuilder();csv.AppendLine("event_index,event_id,output_group,eligible,row_type,source_index,response_index,source_x,source_z,response_x,response_z,position_error_m,direction_error_deg,range_error_m,within_tolerance,nearest_direction_error_deg,far_false_mark,duplicate_mark");
             for(int index=0;index<reviewEvents.Count;index++){
                 var e=reviewEvents[index];var s=e.Score;var used=new HashSet<int>();
-                for(int i=0;i<e.Marks.Length;i++){int j=s.ResponseToSource[i];if(j>=0)used.Add(j);Vector3 a=j>=0?e.Sources[j]:Vector3.zero;var b=e.Marks[i];csv.AppendLine(Line(index+1,e.Id,e.Group,e.Eligible,j<0?"extra_response":s.CorrectMarks[i]?"within_tolerance":"outside_tolerance",j<0?null:(object)(j+1),i+1,j<0?null:(object)a.x,j<0?null:(object)a.z,b.x,b.z,s.PositionErrors[i],s.DirectionErrors[i],s.RangeErrors[i],s.CorrectMarks[i],s.NearestDirectionErrors[i],s.FarFalseMark[i]));}
-                for(int j=0;j<e.Sources.Length;j++)if(!used.Contains(j))csv.AppendLine(Line(index+1,e.Id,e.Group,e.Eligible,"unmatched_source",j+1,null,e.Sources[j].x,e.Sources[j].z,null,null,null,null,null,false,null,null));
+                for(int i=0;i<e.Marks.Length;i++){int j=s.ResponseToSource[i];if(j>=0)used.Add(j);Vector3 a=j>=0?e.Sources[j]:Vector3.zero;var b=e.Marks[i];csv.AppendLine(Line(index+1,e.Id,e.Group,e.Eligible,j<0?"extra_response":s.CorrectMarks[i]?"within_tolerance":"outside_tolerance",j<0?null:(object)(j+1),i+1,j<0?null:(object)a.x,j<0?null:(object)a.z,b.x,b.z,s.PositionErrors[i],s.DirectionErrors[i],s.RangeErrors[i],s.CorrectMarks[i],s.NearestDirectionErrors[i],s.FarFalseMark[i],s.DuplicateMarks[i]));}
+                for(int j=0;j<e.Sources.Length;j++)if(!used.Contains(j))csv.AppendLine(Line(index+1,e.Id,e.Group,e.Eligible,"unmatched_source",j+1,null,e.Sources[j].x,e.Sources[j].z,null,null,null,null,null,false,null,null,null));
             }
             SaveCsv("positions.csv",csv);
         }

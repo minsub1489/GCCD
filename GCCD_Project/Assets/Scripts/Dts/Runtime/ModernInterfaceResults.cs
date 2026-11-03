@@ -7,7 +7,7 @@ namespace GCCD.Dts
     public sealed partial class ModernInterface
     {
         VisualElement resultsOverlay;MissionMapView resultMap;Label resultNote,resultTitle,resultTotals,resultDetails,resultComparison,resultPath,resultSaveStatus;
-        Toggle resultSectorToggle;
+        Toggle resultSectorToggle,resultPenaltyToggle,resultDuplicateToggle;
         ScrollView resultEventList;MissionDemo resultOwner;int selectedEvent=-1;bool resultsBuilt;
         void BuildResults()
         {
@@ -22,7 +22,18 @@ namespace GCCD.Dts
                 resultMap.ShowSuppressionSectors = evt.newValue;
                 resultMap.Refresh();
             });
-            left.Add(resultSectorToggle);
+            var overlays = Element(left, "row");
+            overlays.Add(resultSectorToggle);
+            resultPenaltyToggle = new Toggle("감점 보기 (빨간 고리)") { name = "resultPenaltyToggle" };
+            resultDuplicateToggle = new Toggle("중복 보기 (하늘색 고리)") { name = "resultDuplicateToggle" };
+            foreach (var toggle in new[] { resultPenaltyToggle, resultDuplicateToggle })
+            {
+                toggle.AddToClassList("small");
+                toggle.style.marginLeft = 18;
+                overlays.Add(toggle);
+            }
+            resultPenaltyToggle.RegisterValueChangedCallback(evt => { resultMap.ShowPenaltyMarks = evt.newValue; resultMap.Refresh(); });
+            resultDuplicateToggle.RegisterValueChangedCallback(evt => { resultMap.ShowDuplicateMarks = evt.newValue; resultMap.Refresh(); });
             resultMap=new MissionMapView{Detailed=true};resultMap.name="resultMap";left.Add(resultMap);
             var side=Element(body,"results-side");resultComparison=Label(side,"","small muted");resultEventList=new ScrollView();resultEventList.AddToClassList("results-event-list");side.Add(resultEventList);resultDetails=Label(side,"","results-details");
             resultNote=Label(shell,"","results-note");
@@ -36,7 +47,7 @@ namespace GCCD.Dts
             bool show=game&&mission.IsComplete;resultsOverlay.style.display=show?DisplayStyle.Flex:DisplayStyle.None;
             if(!show){resultsBuilt=false;resultOwner=null;return;}
             hud.style.display=DisplayStyle.None;responseOverlay.style.display=DisplayStyle.None;
-            if(resultOwner!=mission){resultOwner=mission;resultsBuilt=false;selectedEvent=-1;resultSectorToggle.value=false;}
+            if(resultOwner!=mission){resultOwner=mission;resultsBuilt=false;selectedEvent=-1;resultSectorToggle.value=false;resultPenaltyToggle.value=false;resultDuplicateToggle.value=false;}
             resultTitle.text=mission.EndedEarly?"실험 종료 · 위치 정확도 비교":"작전 완료 · 위치 정확도 비교";
             var events=mission.ReviewEvents;
             if(selectedEvent<0) SetResultCriteria(mission.PositionTolerance, mission.DirectionTolerance);
@@ -71,7 +82,7 @@ namespace GCCD.Dts
                     selectedEvent = Mathf.Clamp(selectedEvent, 0, events.Length - 1);
                     SelectResult(events[selectedEvent]);
                 }
-                else {resultMap.ActualSources=new Vector3[0];resultMap.SuppressedSources=null;resultMap.SuppressionTheta=0;resultSectorToggle.SetEnabled(false);resultMap.Markers=new MissionSpawnPoint[0];resultMap.MatchedSourceIndices=new int[0];resultMap.PlayerPosition=mission.transform.position;resultDetails.text="완료된 위협 응답이 없습니다.\n정확도와 평균 오차는 —로 표시합니다.";}
+                else {resultMap.ActualSources=new Vector3[0];resultMap.SuppressedSources=null;SetResponseOverlays(null);resultMap.SuppressionTheta=0;resultSectorToggle.SetEnabled(false);resultMap.Markers=new MissionSpawnPoint[0];resultMap.MatchedSourceIndices=new int[0];resultMap.PlayerPosition=mission.transform.position;resultDetails.text="완료된 위협 응답이 없습니다.\n정확도와 평균 오차는 —로 표시합니다.";}
                 resultPath.text=mission.CsvFolder;resultsBuilt=true;
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
@@ -89,8 +100,15 @@ namespace GCCD.Dts
             resultSectorToggle.label = e.SuppressionTheta > 0 && e.Suppressed != null
                 ? $"억제각 보기 · {e.SuppressionTheta}° (좌우 ±{e.SuppressionTheta / 2.0:0.#}°)"
                 : "억제각 보기 · 적용 범위 없음";
+            SetResponseOverlays(e.Eligible ? e.Score : null);
             resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource;
-            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
+            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 중복 "+e.Score.DuplicateMarks.Count(value=>value)+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
+        }
+        void SetResponseOverlays(MissionLocationScore score)
+        {
+            resultMap.ResponseScore = score;
+            resultPenaltyToggle.SetEnabled(score != null && score.ResponseCount > 0);
+            resultDuplicateToggle.SetEnabled(score != null && score.ResponseCount > 0);
         }
         static string GroupName(string group){return group=="SIMULATED"?"화면 체험":group=="REQUESTED_UNCONFIRMED"?"조끼 요청 · 착용 미확인":group=="INTERRUPTED"?"출력 중단":"출력 실패";}
         static string GroupText(MissionEventResult[] events,string group,string label){var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();int sources=valid.Sum(e=>e.Score.SourceCount),correct=valid.Sum(e=>e.Score.Correct);return label+"  "+Percent(sources==0?(double?)null:correct/(double)sources)+"  ("+valid.Length+"회)";}

@@ -153,6 +153,7 @@ class CoreTests
             score=MissionLocationScorer.Score(sources,near.Concat(new[]{new MissionSpawnPoint{X=8}}).ToArray(),0,0,0,3,15);
             Eq(score.Correct,1);Eq(score.FarFalseMarks,1);Eq(score.AdjustedCorrect,0);
             Eq(score.FarFalseMark[2],true);
+            Eq(string.Join(",",score.DuplicateMarks),"False,True,False");
         });
         Test("mission spawn seed reproducibility",()=>{var a=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);Eq(string.Join(";",a.Select(x=>x.X+","+x.Z)),string.Join(";",b.Select(x=>x.X+","+x.Z)));});
         Test("mission different seeds change enemies",()=>{var a=MissionSpawnPlanner.Plan(1,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(2,6,0,-14,0,false,(x,z)=>false);Eq(a[0].X==b[0].X&&a[0].Z==b[0].Z,false);});

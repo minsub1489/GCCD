@@ -102,6 +102,16 @@ namespace GCCD.Dts
             if(!resultMap.ShowSuppressionSectors)Fail("Suppression sector toggle activates overlay");
             yield return CaptureInterface("mission-results-ui.png");
             sectors.value=false;
+            var penalty = ui.Q<Toggle>("resultPenaltyToggle");
+            var duplicate = ui.Q<Toggle>("resultDuplicateToggle");
+            if(penalty==null||duplicate==null||penalty.enabledSelf||duplicate.enabledSelf)Fail("Empty response overlays disabled");
+            var firstEvent=ui.Query<Button>(className:"result-event").First();
+            Submit(firstEvent);yield return null;
+            if(!penalty.enabledSelf||!duplicate.enabledSelf||resultMap.ResponseScore==null||resultMap.ResponseScore.ResponseCount!=m.ReviewEvents[0].Score.ResponseCount)Fail("Response flags follow selected event");
+            penalty.value=true;duplicate.value=true;
+            if(!resultMap.ShowPenaltyMarks||!resultMap.ShowDuplicateMarks)Fail("Response flags enable independently");
+            penalty.value=false;
+            if(resultMap.ShowPenaltyMarks||!resultMap.ShowDuplicateMarks)Fail("Response flags disable independently");
             if(resultMap.ShowSuppressionSectors)Fail("Suppression sector toggle hides overlay");
             File.WriteAllText("results-folder.txt",m.CsvFolder);Debug.Log("DTS_RESULT_FLOW_PASS");
             m.Exit();yield return null;if(!p.enabled||GetComponent<CharacterController>()||GetComponent<MissionImageEffect>())Fail("Mission cleanup");
