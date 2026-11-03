@@ -135,6 +135,25 @@ class CoreTests
         Test("session commits reject duplicates and resume",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try {using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){s.Begin("T001","{} ");s.Commit("T001","{}");Throws(()=>s.Begin("T001","{}"));}using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)) Eq(s.Completed.Contains("T001"),true);}finally{Directory.Delete(dir,true);}});
         Test("anonymous path validation",()=>Throws(()=>new SessionStore("/tmp/no-write","../real name","DEVELOPMENT","A","{}")));
         Test("committed journal corruption detected",()=>{var dir=Path.Combine(Path.GetTempPath(),"dts-test-"+Guid.NewGuid());try{using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}")){s.Begin("T001","{}");s.Commit("T001","{\"score\":0}");}string f=Path.Combine(dir,"journal","T001.committed.json");File.WriteAllText(f,File.ReadAllText(f).Replace("score","other"));bool rejected=false;try{using(var s=new SessionStore(dir,"P001","DEVELOPMENT","A","{}",true)){} }catch(InvalidDataException){rejected=true;}Eq(rejected,true);}finally{Directory.Delete(dir,true);}});
+        Test("FPS requires both position and strict angular agreement",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=6}};
+            double angle=20*Math.PI/180;
+            var mark=new MissionSpawnPoint{X=6*Math.Sin(angle),Z=6*Math.Cos(angle)};
+            Eq(MissionLocationScorer.Score(sources,new[]{mark},0,0,0,3).Correct,1);
+            var score=MissionLocationScorer.Score(sources,new[]{mark},0,0,0,3,15);
+            Eq(score.Correct,0);Eq(score.FarFalseMarks,1);
+            var boundary=MissionLocationScorer.Score(sources,new[]{new MissionSpawnPoint{X=6}},0,0,0,10,90);
+            Eq(boundary.Correct,0);Eq(boundary.FarFalseMarks,1);
+        });
+        Test("FPS ignores nearby duplicates for direction penalty and deducts far marks",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=8}};
+            var near=new[]{sources[0],new MissionSpawnPoint{X=.5,Z=8}};
+            var score=MissionLocationScorer.Score(sources,near,0,0,0,3,15);
+            Eq(score.Correct,1);Eq(score.FalseMarks,1);Eq(score.AdjustedCorrect,1);
+            score=MissionLocationScorer.Score(sources,near.Concat(new[]{new MissionSpawnPoint{X=8}}).ToArray(),0,0,0,3,15);
+            Eq(score.Correct,1);Eq(score.FarFalseMarks,1);Eq(score.AdjustedCorrect,0);
+            Eq(score.FarFalseMark[2],true);
+        });
         Test("mission spawn seed reproducibility",()=>{var a=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(77,6,0,-14,0,false,(x,z)=>false);Eq(string.Join(";",a.Select(x=>x.X+","+x.Z)),string.Join(";",b.Select(x=>x.X+","+x.Z)));});
         Test("mission different seeds change enemies",()=>{var a=MissionSpawnPlanner.Plan(1,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(2,6,0,-14,0,false,(x,z)=>false);Eq(a[0].X==b[0].X&&a[0].Z==b[0].Z,false);});
         Test("mission rejects occupied spawn and keeps spacing",()=>{var a=MissionSpawnPlanner.Plan(18,6,0,-14,0,false,(x,z)=>x<0);Eq(a.All(p=>p.X>=0&&p.X<10&&p.Z>=-24&&p.Z<=48),true);for(int i=0;i<a.Length;i++)for(int j=i+1;j<a.Length;j++)Eq(Math.Pow(a[i].X-a[j].X,2)+Math.Pow(a[i].Z-a[j].Z,2)>=9,true);});
