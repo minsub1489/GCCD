@@ -54,7 +54,13 @@ namespace GCCD.Dts
             if(!resultsBuilt){
                 resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ResponseCount);
                 int adjusted=eligible.Sum(e=>e.Score.AdjustedCorrect);
-                resultTotals.text="위협 찾기  "+Percent(sources==0?(double?)null:correct/(double)sources)+"     감점 반영  "+Percent(sources==0?(double?)null:adjusted/(double)sources)+"     표시 정확도  "+Percent(marks==0?(double?)null:correct/(double)marks)+"     일치  "+correct+" / "+sources+"     누락  "+(sources-correct)+"     추가 표시  "+(marks-correct);
+                int retained=eligible.Sum(e=>e.Score.RetainedCount);
+                double? weighted=MissionLocationScore.WeightedScore(correct,retained,sources);
+                resultTotals.text="억제율 반영 점수  "+Percent(weighted)
+                    +"    유지 위협 인지율  "+Percent(retained==0?(double?)null:correct/(double)retained)
+                    +"    억제율  "+Percent(sources==0?(double?)null:(sources-retained)/(double)sources)
+                    +"    방향 감점 반영  "+Percent(sources==0?(double?)null:adjusted/(double)sources)
+                    +"    표시 정확도  "+Percent(marks==0?(double?)null:correct/(double)marks);
                 resultComparison.text=GroupText(events,"SIMULATED","화면 체험")+"\n"+GroupText(events,"REQUESTED_UNCONFIRMED","조끼 요청 · 착용 미확인")+"\n집계 제외  "+events.Count(e=>!e.Eligible)+"회";
                 int withSuppression = Array.FindIndex(events, e => e.Suppressed != null && e.Suppressed.Any(value => value));
                 resultComparison.text += withSuppression >= 0
@@ -68,7 +74,7 @@ namespace GCCD.Dts
                     var e = events[i];
                     int? suppressed = e.Suppressed?.Count(value => value);
                     string status = suppressed.HasValue ? $"억제 {suppressed.Value}개" : "억제 기록 없음";
-                    string accuracy = e.Eligible ? $"{e.Score.Correct}/{e.Score.SourceCount} 일치" : "집계 제외";
+                    string accuracy = e.Eligible ? $"{e.Score.Correct}/{e.Score.RetainedCount} 유지 위협 일치" : "집계 제외";
                     var button = Button(resultEventList, $"이벤트 {i + 1:D2} · {status} · {accuracy}", () =>
                     {
                         selectedEvent = index;
@@ -89,7 +95,7 @@ namespace GCCD.Dts
         }
         void SetResultCriteria(double position, double direction)
         {
-            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답";
+            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답\n억제율 반영 점수 = 유지 위협 인지율 × (1 − 0.5 × 억제율)";
         }
         void SelectResult(MissionEventResult e)
         {
@@ -102,7 +108,7 @@ namespace GCCD.Dts
                 : "억제각 보기 · 적용 범위 없음";
             SetResponseOverlays(e.Eligible ? e.Score : null);
             resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource.Select((source,index)=>e.Score.CorrectMarks[index]?source:-1).ToArray();
-            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"위협 찾기 "+Percent(e.Score.Recall)+" · 표시 정확도 "+Percent(e.Score.Precision):"집계 제외 · "+e.State)+"\n누락 "+e.Score.Missed+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 중복 "+e.Score.DuplicateMarks.Count(value=>value)+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
+            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"억제율 반영 점수 "+Percent(e.Score.SuppressionScore)+" · 유지 인지율 "+Percent(e.Score.RetainedRecognition)+" · 억제율 "+Percent(e.Score.SuppressionRate):"집계 제외 · "+e.State)+"\n유지 위협 누락 "+(e.Score.RetainedCount-e.Score.Correct)+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 중복 "+e.Score.DuplicateMarks.Count(value=>value)+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
         }
         void SetResponseOverlays(MissionLocationScore score)
         {
@@ -111,7 +117,13 @@ namespace GCCD.Dts
             resultDuplicateToggle.SetEnabled(score != null && score.ResponseCount > 0);
         }
         static string GroupName(string group){return group=="SIMULATED"?"화면 체험":group=="REQUESTED_UNCONFIRMED"?"조끼 요청 · 착용 미확인":group=="INTERRUPTED"?"출력 중단":"출력 실패";}
-        static string GroupText(MissionEventResult[] events,string group,string label){var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();int sources=valid.Sum(e=>e.Score.SourceCount),correct=valid.Sum(e=>e.Score.Correct);return label+"  "+Percent(sources==0?(double?)null:correct/(double)sources)+"  ("+valid.Length+"회)";}
+        static string GroupText(MissionEventResult[] events,string group,string label)
+        {
+            var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();
+            var score=MissionLocationScore.WeightedScore(valid.Sum(e=>e.Score.Correct),
+                valid.Sum(e=>e.Score.RetainedCount),valid.Sum(e=>e.Score.SourceCount));
+            return label+"  "+Percent(score)+"  ("+valid.Length+"회)";
+        }
         static string Percent(double? value){return value.HasValue?(value.Value*100).ToString("F1")+"%":"—";}
         static string Number(double? value,string unit){return value.HasValue?value.Value.ToString("F2")+unit:"—";}
     }

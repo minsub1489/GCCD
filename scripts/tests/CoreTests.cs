@@ -155,6 +155,12 @@ class CoreTests
             Eq(score.FarFalseMark[2],true);
             Eq(string.Join(",",score.DuplicateMarks),"False,True,False");
         });
+        Test("FPS suppression weighted score balances recognition and retention",()=>{
+            Near(MissionLocationScore.WeightedScore(6,8,10).Value,.675);
+            Near(MissionLocationScore.WeightedScore(3,3,10).Value,.65);
+            Near(MissionLocationScore.WeightedScore(3,10,10).Value,.3);
+            Eq(MissionLocationScore.WeightedScore(0,0,0).HasValue,false);
+        });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
