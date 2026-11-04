@@ -34,7 +34,7 @@ namespace GCCD.Dts
             }
             resultPenaltyToggle.RegisterValueChangedCallback(evt => { resultMap.ShowPenaltyMarks = evt.newValue; resultMap.Refresh(); });
             resultDuplicateToggle.RegisterValueChangedCallback(evt => { resultMap.ShowDuplicateMarks = evt.newValue; resultMap.Refresh(); });
-            resultMap=new MissionMapView{Detailed=true};resultMap.name="resultMap";left.Add(resultMap);
+            resultMap=new MissionMapView{Detailed=true,ShowDistanceScale=true};resultMap.name="resultMap";left.Add(resultMap);
             var side=Element(body,"results-side");resultComparison=Label(side,"","small muted");resultEventList=new ScrollView();resultEventList.AddToClassList("results-event-list");side.Add(resultEventList);resultDetails=Label(side,"","results-details");
             resultNote=Label(shell,"","results-note");
             var save=Element(shell,"results-save-row");resultPath=Label(save,"","results-path");resultPath.name="csvPath";resultPath.selection.isSelectable=true;

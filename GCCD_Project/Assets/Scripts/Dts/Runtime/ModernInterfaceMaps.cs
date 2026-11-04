@@ -7,7 +7,7 @@ namespace GCCD.Dts
         VisualElement mapPanel,responseOverlay;MissionMapView miniMap,responseMap;Label responseHelp,responseStatus,responseMarkCount;Button responseSubmit,responseUndo,responseClear;
         void BuildMaps()
         {
-            mapPanel=Element(hud,"mini-map-panel");Label(mapPanel,"시설 지도  /  N ↑","eyebrow");miniMap=new MissionMapView();mapPanel.Add(miniMap);Label(mapPanel,"▲ 현재 위치   ◆ 보급품   TAB 닫기","small muted");
+            mapPanel=Element(hud,"mini-map-panel");Label(mapPanel,"시설 지도  /  N ↑","eyebrow");miniMap=new MissionMapView{ShowDistanceScale=true};mapPanel.Add(miniMap);Label(mapPanel,"▲ 현재 위치   ◆ 보급품   TAB 닫기","small muted");
             mapPanel.style.height=480;
             Button(mapPanel,"실험 종료",()=>GetComponent<MissionDemo>().EndExperiment(),"button primary").name="mapEndExperiment";
             Button(mapPanel,"로비로 돌아가기",()=>GetComponent<MissionDemo>().Exit(),"button secondary").name="mapReturnLobby";

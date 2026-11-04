@@ -8,16 +8,28 @@ namespace GCCD.Dts
         public Vector3 PlayerPosition;public float PlayerYaw;public Vector3[] Supplies=new Vector3[0];
         public MissionSpawnPoint[] Markers=new MissionSpawnPoint[0];public Action<double,double> Picked;
         public bool Interactive,Detailed;
+        public bool ShowDistanceScale;
         public bool ShowSuppressionSectors, ShowPenaltyMarks, ShowDuplicateMarks;
         public MissionLocationScore ResponseScore;
         public int SuppressionTheta;
         public Vector3[] ActualSources=new Vector3[0];public bool[] SuppressedSources;public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
+        readonly Label distanceScale = new Label("10 m");
         Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect(contentRect.x+(contentRect.width-72*scale)/2,contentRect.y+(contentRect.height-78*scale)/2,72*scale,78*scale);}}
         public MissionMapView()
         {
             AddToClassList("mission-map");generateVisualContent+=Draw;
             for(int i=0;i<roomLabels.Length;i++){roomLabels[i]=new Label(MissionFloorPlan.Rooms[i].Name);roomLabels[i].AddToClassList("map-room-label");roomLabels[i].pickingMode=PickingMode.Ignore;Add(roomLabels[i]);}
+            distanceScale.pickingMode = PickingMode.Ignore;
+            distanceScale.style.position = Position.Absolute;
+            distanceScale.style.display = DisplayStyle.None;
+            distanceScale.style.color = Color.white;
+            distanceScale.style.backgroundColor = new Color(.08f, .12f, .14f, .95f);
+            distanceScale.style.fontSize = 12;
+            distanceScale.style.unityTextAlign = TextAnchor.MiddleCenter;
+            distanceScale.style.height = 18;
+            Add(distanceScale);
+            RegisterCallback<GeometryChangedEvent>(_ => UpdateDistanceScale());
             RegisterCallback<PointerDownEvent>(e=>{if(e.button==0&&SelectAt(e.localPosition))e.StopPropagation();});
         }
         public bool SelectAt(Vector2 local)
@@ -28,10 +40,21 @@ namespace GCCD.Dts
         Vector2 Point(double x,double z){var p=MissionFloorPlan.ToMap(x,z);var r=Plot;return new Vector2(r.x+(float)p.X*r.width,r.y+(float)p.Z*r.height);}
         public void Refresh()
         {
+            UpdateDistanceScale();
             for(int i=0;i<roomLabels.Length;i++){
                 var p=Point(MissionFloorPlan.Rooms[i].X,MissionFloorPlan.Rooms[i].Z);roomLabels[i].style.display=Detailed?DisplayStyle.Flex:DisplayStyle.None;roomLabels[i].style.left=p.x-40;roomLabels[i].style.top=p.y-7;
             }
             MarkDirtyRepaint();
+        }
+        void UpdateDistanceScale()
+        {
+            var bounds = Plot;
+            bool visible = ShowDistanceScale && bounds.width >= 72;
+            distanceScale.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!visible) return;
+            distanceScale.style.left = bounds.xMin + 8;
+            distanceScale.style.top = bounds.yMax - 27;
+            distanceScale.style.width = Mathf.Max(38, bounds.width * 10 / 72);
         }
         void Draw(MeshGenerationContext ctx)
         {
@@ -80,6 +103,20 @@ namespace GCCD.Dts
                 }
             }
             p.strokeColor=new Color(.45f,.62f,.65f);p.lineWidth=1;p.BeginPath();p.MoveTo(r.min);p.LineTo(new Vector2(r.xMax,r.yMin));p.LineTo(r.max);p.LineTo(new Vector2(r.xMin,r.yMax));p.ClosePath();p.Stroke();
+            if (ShowDistanceScale && r.width >= 72)
+            {
+                float startX = r.xMin + 8;
+                float endX = startX + r.width * 10 / 72;
+                float y = r.yMax - 7;
+                p.strokeColor = Color.white;
+                p.lineWidth = 2;
+                p.BeginPath();
+                p.MoveTo(new Vector2(startX, y - 3));
+                p.LineTo(new Vector2(startX, y));
+                p.LineTo(new Vector2(endX, y));
+                p.LineTo(new Vector2(endX, y - 3));
+                p.Stroke();
+            }
         }
         void DrawSuppressionSectors(Painter2D painter, Rect bounds, Vector2 origin)
         {

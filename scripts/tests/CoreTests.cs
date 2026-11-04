@@ -226,9 +226,55 @@ class CoreTests
         Test("X40 panel correction and mirror are independent",()=>{var standard=X40Layout.Profile();var mirrored=X40Layout.Profile(true,false,false);Near(mirrored.Motors[0].Bearing,standard.Motors[3].Bearing);Near(mirrored.Motors[20].Bearing,standard.Motors[20].Bearing);var swapped=X40Layout.Profile(false,false,true);Near(swapped.Motors[0].Bearing,standard.Motors[20].Bearing);});
         Test("X40 frame split preserves channel 19 20 and 39",()=>{var v=new int[40];v[19]=19;v[20]=20;v[39]=39;var panels=X40Layout.Split(v);Eq(panels.Length,2);Eq(panels[0].Length,20);Eq(panels[1].Length,20);Eq(panels[0][19],19);Eq(panels[1][0],20);Eq(panels[1][19],39);Throws(()=>X40Layout.Split(new int[32]));v[0]=101;Throws(()=>X40Layout.Split(v));});
         Test("X40 keeps distance falloff and circular wrap",()=>{var p=X40Layout.Profile();var a=MotorComposer.Compose(new[]{T("A",359,6)},p,.2,.45);var b=MotorComposer.Compose(new[]{T("B",1,6)},p,.2,.45);Eq(a.Sum(),b.Sum());var far=MotorComposer.Compose(new[]{T("A",0,36)},p,.2,.45);Eq(far.Sum()<a.Sum(),true);});
-        Test("distance check near middle far have clear separated X40 levels",()=>{var p=X40Layout.Profile();var near=MissionHapticEncoding.CheckFrame(0,0,p);var mid=MissionHapticEncoding.CheckFrame(0,1,p);var far=MissionHapticEncoding.CheckFrame(0,2,p);Eq(near.Max(),40);Eq(mid.Max(),25);Eq(far.Max(),10);Eq(near.Sum(),far.Sum()*4);Eq(Enumerable.Range(0,40).All(i=>(near[i]>0)==(far[i]>0)),true);});
+        Test("distance check near middle far have clear separated X40 levels",()=>{var p=X40Layout.Profile();var near=MissionHapticEncoding.CheckFrame(0,0,p);var mid=MissionHapticEncoding.CheckFrame(0,1,p);var far=MissionHapticEncoding.CheckFrame(0,2,p);Eq(near.Sum(),80);Eq(mid.Sum(),50);Eq(far.Sum(),20);Eq(near.Count(v=>v>0),1);Eq(Enumerable.Range(0,40).All(i=>(near[i]>0)==(far[i]>0)),true);});
         Test("distance check matches mission composition at same distance",()=>{var p=X40Layout.Profile();for(int level=0;level<3;level++){double d=MissionHapticEncoding.CheckDistance(level);var expected=MissionHapticEncoding.Compose(new[]{T("real",90,d)},p);Eq(expected.SequenceEqual(MissionHapticEncoding.CheckFrame(1,level,p)),true);}});
+        Test("FPS maps each bearing and elevation to exactly one of the 40 X40 motors",()=>{
+            var profile=X40Layout.Profile();
+            const double distance=21, observerHeight=2;
+            for(int row=0;row<5;row++)
+            {
+                double elevation=(2-row)*15*Math.PI/180;
+                double height=observerHeight+distance*Math.Sin(elevation);
+                foreach(var motor in profile.Motors.Where(m=>m.Index%20/4==row))
+                {
+                    var source=new Threat("source",true,true,true,0,height,0,distance,motor.Bearing);
+                    var frame=MissionHapticEncoding.Compose(new[]{source},profile,observerHeight);
+                    Eq(frame.Count(v=>v>0),1);
+                    Eq(frame[motor.Index],50);
+                }
+            }
+        });
+        Test("FPS mapping follows X40 corrections and wraps through north",()=>{
+            var profile=X40Layout.Profile();
+            Eq(MissionHapticEncoding.Compose(new[]{T("left",359,6)},profile)[9],80);
+            Eq(MissionHapticEncoding.Compose(new[]{T("right",1,6)},profile)[10],80);
+            var corrected=X40Layout.Profile(mirrorFront:true,swapPanels:true);
+            Eq(MissionHapticEncoding.CheckFrame(0,0,corrected)[29],80);
+        });
+        Test("FPS simultaneous threats sharing a motor use the strongest request",()=>{
+            var profile=X40Layout.Profile();
+            var sources=new[]{T("near",20,6),T("far",25,36),T("back",155,21)};
+            var frame=MissionHapticEncoding.Compose(sources,profile);
+            Eq(frame.Count(v=>v>0),2);
+            Eq(frame[10],80);
+            Eq(frame[30],50);
+            Eq(frame.SequenceEqual(MissionHapticEncoding.Compose(sources.Reverse(),profile)),true);
+        });
         Test("distance strength is monotonic clamped and bounded at every angle",()=>{var p=X40Layout.Profile();for(int angle=0;angle<360;angle+=15){int previous=100000;for(int distance=0;distance<=45;distance++){var frame=MissionHapticEncoding.Compose(new[]{T("A",angle,distance)},p);Eq(frame.All(v=>v>=0&&v<=80),true);Eq(frame.Sum()<=previous,true);previous=frame.Sum();}}});
+        Test("custom X40 strengths interpolate on both sides of the middle distance",()=>{
+            var strengths=new MissionStrengths(90,30,10);
+            var profile=X40Layout.Profile();
+            foreach(var pair in new[]{new[]{0d,90},new[]{13.5,60},new[]{21d,30},new[]{28.5,20},new[]{50d,10}})
+            {
+                var frame=MissionHapticEncoding.Compose(new[]{T("source",0,pair[0])},profile,strengths:strengths);
+                Eq(frame.Count(v=>v>0),1);
+                Eq(frame.Max(),(int)pair[1]);
+            }
+            Eq(MissionHapticEncoding.CheckFrame(0,1,profile,strengths).Max(),30);
+            Throws(()=>new MissionStrengths(80,20,30));
+            Throws(()=>new MissionStrengths(101,50,20));
+            Throws(()=>new MissionStrengths(80,50,0));
+        });
         Test("distance checks reject invalid selection",()=>{Throws(()=>MissionHapticEncoding.CheckFrame(-1,0,X40Layout.Profile()));Throws(()=>MissionHapticEncoding.CheckFrame(0,3,X40Layout.Profile()));});
         Console.WriteLine("RESULT " + passed + " passed, " + failed + " failed");
         Environment.ExitCode=failed==0?0:1;

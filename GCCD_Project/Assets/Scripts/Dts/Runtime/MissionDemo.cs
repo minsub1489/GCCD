@@ -19,6 +19,7 @@ namespace GCCD.Dts
                 throw new ArgumentException("Invalid FPS scoring tolerances.");
             var mission = gameObject.AddComponent<MissionDemo>();
             mission.Owner = this;
+            mission.Strengths = ConfiguredMissionStrengths;
             mission.SuppressionTheta = suppressionTheta;
             mission.MinimumThreatCount = minimumThreatCount;
             mission.MaximumThreatCount = maximumThreatCount;
@@ -27,7 +28,12 @@ namespace GCCD.Dts
             mission.Physical = connectionReady;
             enabled = false;
         }
-        public OutputReceipt MissionPulse(Threat[] threats,bool physical){var motors=MissionHapticEncoding.Compose(threats,MissionX40Profile());config.AllowRaw40CalibrationProbe=true;return haptics.Submit(motors,MissionHapticEncoding.DurationMilliseconds,config,!physical,true);}
+        public OutputReceipt MissionPulse(Threat[] threats, bool physical, MissionStrengths strengths)
+        {
+            var motors = MissionHapticEncoding.Compose(threats, MissionX40Profile(), transform.position.y, strengths);
+            config.AllowRaw40CalibrationProbe = true;
+            return haptics.Submit(motors, MissionHapticEncoding.DurationMilliseconds, config, !physical, true);
+        }
         public void EndMission(){haptics.Stop();enabled=true;transform.SetPositionAndRotation(new Vector3(0,1.7f,0),Quaternion.identity);}
         public void StopMissionHaptics(){haptics.Stop();}
         public bool AdvancedVisible {get{return advanced;}}
@@ -42,7 +48,7 @@ namespace GCCD.Dts
     }
     public sealed partial class MissionDemo:MonoBehaviour
     {
-        public const double MissionLow=MissionHapticEncoding.Low,MissionHigh=MissionHapticEncoding.High;
+        public MissionStrengths Strengths { get; internal set; } = MissionStrengths.Default;
         public ExperimentPlatform Owner;public bool Physical;public Func<double> Clock;
         GameObject world,weapon,muzzle;CharacterController body;Camera cam;Color oldBackground;bool oldFog;
         readonly Dictionary<Collider,GameObject> shootable=new Dictionary<Collider,GameObject>();readonly List<GameObject> supplies=new List<GameObject>();
@@ -144,7 +150,7 @@ namespace GCCD.Dts
         {
             var policy = ThreatPolicy.Apply(threats, SuppressionTheta);
             var retained = new HashSet<string>(policy.Kept.Select(t => t.Id), StringComparer.Ordinal);
-            var receipt = Owner.MissionPulse(policy.Kept, Physical);
+            var receipt = Owner.MissionPulse(policy.Kept, Physical, Strengths);
             output = receipt.simulated ? "화면 체험 · 위치를 표시해 주세요" : receipt.submitted ? "위치 응답 대기" : "조끼 출력 실패 · 체험 응답";
             BeginThreatResponse(threats, receipt, threats.Select(t => !retained.Contains(t.Id)).ToArray());
         }

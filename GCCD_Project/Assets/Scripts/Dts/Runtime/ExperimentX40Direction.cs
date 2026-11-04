@@ -8,7 +8,7 @@ namespace GCCD.Dts
         [Serializable] sealed class X40Options {public bool mirrorFront,mirrorBack,swapPanels;}
         [Serializable] sealed class HapticCheckRecord
         {
-            public string kind,mapping,haptic_encoding;public int bearing,duration_ms;public double distance_m,intensity_low,intensity_high;
+            public string kind,mapping,haptic_encoding;public int bearing,duration_ms;public double distance_m,intensity_low,intensity_middle,intensity_high;
             public int[] motors;public OutputReceipt receipt;
         }
         X40Options x40Options;int directionChecks,distanceChecks,lastDirection=-1,lastDistance=-1;double nextCheckPulse;
@@ -34,13 +34,22 @@ namespace GCCD.Dts
             ResetPendingHapticCheck();Options.mirrorFront=mirrorFront;Options.mirrorBack=mirrorBack;Options.swapPanels=swapPanels;directionChecks=distanceChecks=0;
             string path=Path.Combine(Application.persistentDataPath,"DtsSettings","x40_layout.json");Directory.CreateDirectory(Path.GetDirectoryName(path));SessionStore.AtomicWrite(path,JsonUtility.ToJson(Options,true));testText="배열을 보정했습니다. 방향과 거리 세기를 다시 확인하세요.";
         }
-        public int[] DistanceCheckPreview(int level){return MissionHapticEncoding.CheckFrame(0,level,MissionX40Profile());}
+        public MissionStrengths ConfiguredMissionStrengths { get; private set; } = MissionStrengths.Default;
+        public void SetMissionStrengths(int near, int middle, int far)
+        {
+            var strengths = new MissionStrengths(near, middle, far);
+            ResetPendingHapticCheck();
+            ConfiguredMissionStrengths = strengths;
+            directionChecks = distanceChecks = 0;
+            testText = "세기를 적용했습니다. 거리 버튼으로 시험해 보세요.";
+        }
+        public int[] DistanceCheckPreview(int level){return MissionHapticEncoding.CheckFrame(0,level,MissionX40Profile(),ConfiguredMissionStrengths);}
         public OutputReceipt TestDirectionPulse(int direction){return PlayHapticCheck(direction,1,false);}
         public OutputReceipt TestDistancePulse(int level){return PlayHapticCheck(0,level,true);}
         OutputReceipt PlayHapticCheck(int direction,int level,bool distanceCheck)
         {
             // Both checks use the exact mission renderer; distance checks keep front and duration fixed.
-            var frame=MissionHapticEncoding.CheckFrame(direction,level,MissionX40Profile());
+            var frame=MissionHapticEncoding.CheckFrame(direction,level,MissionX40Profile(),ConfiguredMissionStrengths);
             double now=Time.realtimeSinceStartupAsDouble;if(now<nextCheckPulse)throw new InvalidOperationException("짧은 진동이 끝난 뒤 다시 눌러 주세요.");
             lastDirection=lastDistance=-1;pulseSubmitted=false;
             ConnectEasy();if(!connectionReady)throw new InvalidOperationException(connectionText);
@@ -50,7 +59,7 @@ namespace GCCD.Dts
             if(receipt.submitted){if(distanceCheck)lastDistance=level;else lastDirection=direction;}
             testText=receipt.submitted?(distanceCheck?DistanceName(level)+" · 앞 방향":DirectionName(direction)+" 방향")+"으로 0.2초 요청했습니다. 느껴졌나요?":"출력 실패 · "+receipt.error;
             string directory=Path.Combine(Root,"CALIBRATION");Directory.CreateDirectory(directory);
-            var record=new HapticCheckRecord{kind=distanceCheck?"X40_DISTANCE_CHECK":"X40_DIRECTION_CHECK",mapping=X40MappingVersion,haptic_encoding=MissionHapticEncoding.Version,bearing=direction*90,distance_m=MissionHapticEncoding.CheckDistance(level),intensity_low=MissionHapticEncoding.Low,intensity_high=MissionHapticEncoding.High,duration_ms=MissionHapticEncoding.DurationMilliseconds,motors=frame,receipt=receipt};
+            var record=new HapticCheckRecord{kind=distanceCheck?"X40_DISTANCE_CHECK":"X40_DIRECTION_CHECK",mapping=X40MappingVersion,haptic_encoding=MissionHapticEncoding.Version,bearing=direction*90,distance_m=MissionHapticEncoding.CheckDistance(level),intensity_low=ConfiguredMissionStrengths.Far/100.0,intensity_middle=ConfiguredMissionStrengths.Middle/100.0,intensity_high=ConfiguredMissionStrengths.Near/100.0,duration_ms=MissionHapticEncoding.DurationMilliseconds,motors=frame,receipt=receipt};
             SessionStore.AtomicWrite(Path.Combine(directory,(distanceCheck?"distance-":"direction-")+Guid.NewGuid().ToString("N")+".json"),JsonUtility.ToJson(record,true));
             return receipt;
         }

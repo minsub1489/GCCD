@@ -22,7 +22,24 @@ namespace GCCD.Dts
             yield return CaptureInterface("x40-direction-ui.png");
             Submit(ui.Q<Button>("showDistanceCheck"));yield return null;
             if(ui.Q("distancePane").resolvedStyle.display==DisplayStyle.None||ui.Q("directionPane").resolvedStyle.display!=DisplayStyle.None||Enumerable.Range(0,3).Any(i=>ui.Q<Button>("testDistance"+i)==null))Fail("Three distance strengths lobby UI");
-            int[] peaks={40,25,10};for(int level=0;level<3;level++)if(p.DistanceCheckPreview(level).Max()!=peaks[level]||!p.DistanceCheckPreview(level).SequenceEqual(MissionHapticEncoding.CheckFrame(0,level,p.MissionX40Profile())))Fail("Distance preview differs from mission output");
+            int[] peaks={80,50,20};
+            for(int level=0;level<3;level++)
+            {
+                var frame=p.DistanceCheckPreview(level);
+                if(frame.Count(value=>value>0)!=1||frame.Max()!=peaks[level]||
+                    !frame.SequenceEqual(MissionHapticEncoding.CheckFrame(0,level,p.MissionX40Profile())))
+                    Fail("Distance preview must use the single-motor mission output");
+            }
+            ui.Q<IntegerField>("distanceStrength0").value=90;
+            ui.Q<IntegerField>("distanceStrength1").value=30;
+            ui.Q<IntegerField>("distanceStrength2").value=40;
+            Submit(ui.Q<Button>("applyDistanceStrengths"));
+            if(p.DistanceCheckPreview(0).Max()!=80)Fail("Invalid strength order must not apply");
+            ui.Q<IntegerField>("distanceStrength2").value=10;
+            Submit(ui.Q<Button>("applyDistanceStrengths"));
+            if(p.DistanceCheckPreview(0).Max()!=90||p.DistanceCheckPreview(1).Max()!=30||p.DistanceCheckPreview(2).Max()!=10)
+                Fail("Lobby strength values must drive the distance preview");
+            Debug.Log("DTS_CUSTOM_STRENGTH_PASS");
             p.ConfirmDistancePulse();p.ConfirmDirectionPulse();if(p.DistanceCheckCount!=0||p.DirectionCheckCount!=0||p.CanConfirmDistance||p.CanConfirmDirection||ui.Q<Button>("confirmHapticCheck").enabledSelf)Fail("Confirmation accepted without submitted pulse");
             yield return CaptureInterface("x40-distance-ui.png");
             Submit(ui.Q<Button>("showDirectionCheck"));yield return null;if(ui.Q("directionPane").resolvedStyle.display==DisplayStyle.None||ui.Q("distancePane").resolvedStyle.display!=DisplayStyle.None)Fail("Direction tab restoration");
@@ -95,7 +112,7 @@ namespace GCCD.Dts
                 !resultMap.SuppressedSources.Any(value=>value))Fail("Result renders actual suppressed world positions");
             foreach(var name in new[]{"summary.csv","events.csv","positions.csv"})if(!File.Exists(Path.Combine(m.CsvFolder,name)))Fail("Missing CSV "+name);
             string summary=File.ReadAllText(Path.Combine(m.CsvFolder,"summary.csv"));if(!summary.Contains("SIMULATED")||!summary.Contains("MISSION_DEMO"))Fail("CSV simulation grouping");
-            if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.2||e.IntensityHigh!=.8))Fail("Recorded haptic encoding range");
+            if(m.ReviewEvents.Any(e=>e.HapticEncoding!=MissionHapticEncoding.Version||e.IntensityLow!=.1||e.IntensityMiddle!=.3||e.IntensityHigh!=.9))Fail("Recorded haptic encoding range");
             string beforeExport=File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"));m.ExportMissionData();if(File.ReadAllText(Path.Combine(m.CsvFolder,"events.csv"))!=beforeExport)Fail("Duplicate-free re-export");
             var sectors = ui.Q<Toggle>("resultSuppressionToggle");
             if(sectors==null||!sectors.enabledSelf||resultMap.ShowSuppressionSectors||resultMap.SuppressionTheta!=60)Fail("Suppression sector control initial state");
