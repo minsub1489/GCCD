@@ -97,17 +97,18 @@ namespace GCCD.Dts
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
         }
-        void SetResultCriteria(double position, double direction, bool useProximity = true)
+        void SetResultCriteria(double position, double direction, bool useProximity = true, bool countDuplicates = true)
         {
             resultNote.text = useProximity
                 ? $"정답 · 유지 위협과 방향 오차 {direction:G}° 미만이면 1점 · 위치 오차가 {position:G}m일 때 보너스 0.5점"
                     + "\n위치 보너스 = 1 ÷ (1 + 수평 위치 오차 ÷ 기준 거리) · 방향 오답당 1점 차감 · 최소 0점"
+                    + (countDuplicates ? "\n가까운 표시도 다른 유지 위협과 비교하며, 연결되지 않으면 오답입니다." : "\n이전 채점 · 중복 표시는 채점에서 제외합니다.")
                     + "\n억제율 반영 점수 = (획득 점수 ÷ 유지 위협 만점) × (1 − 0.5 × 억제율)"
                 : $"이전 채점 · 수평거리 {position:G}m 이내와 방향 오차 {direction:G}° 미만이면 정답";
         }
         void SelectResult(MissionEventResult e)
         {
-            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance, e.Score.UsesProximity);
+            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance, e.Score.UsesProximity, e.Score.CountsDuplicates);
             resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.SuppressedSources=e.Suppressed;
             resultMap.SuppressionTheta=e.SuppressionTheta;
             resultSectorToggle.SetEnabled(e.Suppressed != null && e.SuppressionTheta > 0);

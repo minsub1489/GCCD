@@ -197,6 +197,22 @@ class CoreTests
             var suppressed=MissionLocationScorer.Score(sources,new[]{sources[1]},0,0,0,3,15,new[]{false,true},useProximity:true);
             Near(suppressed.EarnedPoints,0);
         });
+        Test("FPS compares overlapping marks against other threats and scores leftover marks",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
+            var responses=new[]{sources[0],new MissionSpawnPoint{X=.3,Z=10.2},new MissionSpawnPoint{Z=30}};
+            var score=MissionLocationScorer.Score(sources,responses,0,0,0,3,15,useProximity:true,countDuplicates:true);
+            Eq(score.Correct,2);
+            Eq(score.ResponseToSource[1],1);
+            Eq(score.CorrectMarks[1],true);
+            Eq(score.DuplicateMarks[2],true);
+            Eq(score.IsWrongMark(2),true);
+            Eq(score.WrongMarks,1);
+            Near(score.AppliedPointDeduction,1);
+            Near(score.Precision.Value,2.0/3);
+            var legacy=MissionLocationScorer.Score(sources,responses,0,0,0,3,15,useProximity:true);
+            Eq(legacy.Correct,2);
+            Eq(legacy.WrongMarks,0);
+        });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
