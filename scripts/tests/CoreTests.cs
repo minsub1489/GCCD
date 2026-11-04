@@ -213,6 +213,21 @@ class CoreTests
             Eq(legacy.Correct,2);
             Eq(legacy.WrongMarks,0);
         });
+        Test("FPS distance scoring keeps earned points when an answer is wrong",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=10}};
+            var near=new MissionSpawnPoint{Z=11};
+            var far=new MissionSpawnPoint{Z=16};
+            var wrong=new MissionSpawnPoint{X=10};
+            var score=MissionLocationScorer.Score(sources,new[]{near,wrong},0,0,0,3,15,useProximity:true,countDuplicates:true,deductWrong:false);
+            var distant=MissionLocationScorer.Score(sources,new[]{far,wrong},0,0,0,3,15,useProximity:true,countDuplicates:true,deductWrong:false);
+            Eq(score.WrongMarks,1);
+            Eq(score.AppliedDeduction,0);
+            Near(score.AppliedPointDeduction,0);
+            Near(score.AdjustedPoints,1.75);
+            Near(distant.AdjustedPoints,1+1.0/3);
+            Near(score.AdjustedScore.Value,.875);
+            Eq(score.ScoringRule,MissionLocationScore.ProximityRule);
+        });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});

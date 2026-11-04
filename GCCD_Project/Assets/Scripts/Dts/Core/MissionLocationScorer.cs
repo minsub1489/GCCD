@@ -7,13 +7,15 @@ namespace GCCD.Dts
     {
         public const double SuppressionWeight = .5;
         public const string LegacyProximityRule = "direction-plus-proximity-v1";
-        public const string ProximityRule = "direction-plus-proximity-v2";
+        public const string RematchWithDeductionRule = "direction-plus-proximity-v2";
+        public const string ProximityRule = "direction-plus-proximity-v3";
+        public bool DeductWrong { get; internal set; } = true;
         public bool UsesProximity, CountsDuplicates;
-        public string ScoringRule => CountsDuplicates ? ProximityRule : UsesProximity ? LegacyProximityRule : "legacy";
+        public string ScoringRule => CountsDuplicates ? (DeductWrong ? RematchWithDeductionRule : ProximityRule) : UsesProximity ? LegacyProximityRule : "legacy";
         public double ProximityBonus;
         public double EarnedPoints => Correct + ProximityBonus;
         public int PointsPerMatch => UsesProximity ? 2 : 1;
-        public double AppliedPointDeduction => Math.Min(EarnedPoints, WrongMarks);
+        public double AppliedPointDeduction => DeductWrong ? Math.Min(EarnedPoints, WrongMarks) : 0;
         public double AdjustedPoints => EarnedPoints - AppliedPointDeduction;
         public double ScoredHits => EarnedPoints / PointsPerMatch;
         public double AdjustedScoredHits => AdjustedPoints / PointsPerMatch;
@@ -32,7 +34,7 @@ namespace GCCD.Dts
         public int DuplicateCount => DuplicateMarks.Count(value => value);
         public int ScoredResponseCount => ResponseCount - (CountsDuplicates ? 0 : DuplicateCount);
         public int WrongMarks => ScoredResponseCount - Correct;
-        public int AppliedDeduction => Math.Min(Correct, WrongMarks);
+        public int AppliedDeduction => DeductWrong ? Math.Min(Correct, WrongMarks) : 0;
         public int AdjustedCorrect => Correct - AppliedDeduction;
         public bool IsWrongMark(int index) => !CorrectMarks[index] && (CountsDuplicates || !DuplicateMarks[index]);
         public double? AdjustedRecall => SourceCount==0?(double?)null:AdjustedCorrect/(double)SourceCount;
@@ -53,11 +55,12 @@ namespace GCCD.Dts
     public static class MissionLocationScorer
     {
         sealed class Assignment {public int Correct;public double Error,Bonus;public int[] Map;}
-        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null,bool[] suppressedSources=null,bool useProximity=false,bool countDuplicates=false)
+        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null,bool[] suppressedSources=null,bool useProximity=false,bool countDuplicates=false,bool deductWrong=true)
         {
             if(sources==null||sources.Length<1||sources.Length>MissionSpawnPlanner.MaximumThreatCount||marks==null)throw new ArgumentException("Source and response positions required.");
             Angles.Finite(observerX);Angles.Finite(observerZ);Angles.Finite(yaw);Angles.Finite(tolerance);if(tolerance<0)throw new ArgumentException("Nonnegative tolerance required.");
             foreach(var p in sources.Concat(marks)){Angles.Finite(p.X);Angles.Finite(p.Z);}
+            if (!deductWrong && !countDuplicates) throw new ArgumentException("No-deduction scoring requires rematching.");
             if (countDuplicates && !useProximity) throw new ArgumentException("Counting duplicates requires proximity scoring.");
             if (useProximity && (!directionTolerance.HasValue || tolerance <= 0))
                 throw new ArgumentException("Proximity scoring requires a positive distance scale and a direction tolerance.");
@@ -108,7 +111,7 @@ namespace GCCD.Dts
                 states=next;
             }
             var best=states.OrderByDescending(x=>x.Value.Correct).ThenByDescending(x=>x.Value.Bonus).ThenByDescending(x=>Bits(x.Key)).ThenBy(x=>x.Value.Error).ThenBy(x=>x.Key).First().Value;
-            var score=new MissionLocationScore{UsesProximity=useProximity,CountsDuplicates=countDuplicates,ProximityBonus=best.Bonus,SourceCount=sources.Length,RetainedCount=suppressedSources==null?sources.Length:suppressedSources.Count(value=>!value),ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],DuplicateMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
+            var score=new MissionLocationScore{UsesProximity=useProximity,CountsDuplicates=countDuplicates,DeductWrong=deductWrong,ProximityBonus=best.Bonus,SourceCount=sources.Length,RetainedCount=suppressedSources==null?sources.Length:suppressedSources.Count(value=>!value),ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],DuplicateMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
             for(int i=0;i<marks.Length;i++)if(best.Map[i]>=0){
                 var a=sources[best.Map[i]];var b=marks[i];double ax=a.X-observerX,az=a.Z-observerZ,bx=b.X-observerX,bz=b.Z-observerZ;
                 score.PositionErrors[i]=position[i,best.Map[i]];score.CorrectMarks[i]=correct[i,best.Map[i]];score.RangeErrors[i]=Math.Abs(Math.Sqrt(ax*ax+az*az)-Math.Sqrt(bx*bx+bz*bz));
