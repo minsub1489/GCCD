@@ -101,6 +101,9 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("mapEndExperiment"));
             if(!m.IsComplete||!m.EndedEarly||!m.ExportsReady)Fail("Tab end experiment opens results");
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
+            if(m.ReviewEvents.Any(e=>!e.Score.UsesProximity))Fail("Mission must use and record proximity scoring");
+            if(ui.Q<Button>("openLobbyCsvFolder")==null||MissionDemo.LatestCsvFolder()!=m.CsvFolder)
+                Fail("Lobby CSV shortcut must resolve the latest exported mission");
             if(m.ReviewEvents.Any(e=>e.DirectionTolerance!=22.5||e.PositionTolerance!=4.5))Fail("Lobby tolerances saved on events");
             yield return null;if(ui.Q("missionResults").resolvedStyle.display==DisplayStyle.None)Fail("Result UI visible");
             var resultMap=ui.Q<MissionMapView>("resultMap");if(resultMap.ActualSources.Length==0)Fail("Completed result reveals actual sources");

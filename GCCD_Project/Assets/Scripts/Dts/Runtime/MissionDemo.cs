@@ -75,7 +75,7 @@ namespace GCCD.Dts
             gunAudio=gameObject.AddComponent<AudioSource>();gunAudio.spatialBlend=0;gunAudio.playOnAwake=false;gunAudio.volume=.65f;gunAudio.priority=32;shotClip=Resources.Load<AudioClip>("Realism/Audio/rifle-shot");reloadClip=Resources.Load<AudioClip>("Realism/Audio/reload");if(!shotClip)throw new InvalidOperationException("Rifle audio missing.");
             var finish=gameObject.AddComponent<MissionImageEffect>();finish.enabled=true;
             started=Now;nextThreat=started+8;
-            folder=Path.Combine(Application.persistentDataPath,"ExperimentData","MISSION_DEMO",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
+            folder=Path.Combine(MissionDataRoot,DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
             SessionStore.AtomicWrite(Path.Combine(folder,"layout.json"),JsonUtility.ToJson(new MissionLayoutRecord{seed=spawnSeed,enemy_positions=EnemyPositions},true));
             SetPaused(false);
         }

@@ -60,14 +60,14 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
             }
             var scoringRow = Element(content, "row");
             var penaltyAngle = new TextField("FPS 방향 허용각 (°)") { name = "fpsDirectionTolerance", value = "15" };
-            var positionTolerance = new TextField("FPS 위치 허용거리 (m)") { name = "fpsPositionTolerance", value = "3" };
+            var positionTolerance = new TextField("FPS 위치 보너스 기준 (m)") { name = "fpsPositionTolerance", value = "3" };
             foreach (var input in new[] { penaltyAngle, positionTolerance })
             {
                 input.style.flexGrow = 1;
                 input.AddToClassList("study-field");
                 scoringRow.Add(input);
             }
-            Label(content, "각도는 일치와 방향 감점에, 거리는 일치 판정에 적용됩니다.", "small muted");
+            Label(content, "방향으로 정답을 판정하고, 표시가 실제 위치에 가까울수록 보너스를 줍니다.", "small muted");
             bool TryParseTolerance(string value, out double number)
             {
                 const System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Float;
@@ -114,7 +114,7 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
                 }
                 if (!TryParseTolerance(positionTolerance.value, out double distance) || !(distance > 0 && !double.IsInfinity(distance)))
                 {
-                    rangeError = "FPS 위치 허용거리를 0m보다 큰 숫자로 입력하세요.";
+                    rangeError = "FPS 위치 보너스 기준을 0m보다 큰 숫자로 입력하세요.";
                     return;
                 }
                 platform.StartMission(theta, minimum, maximum, direction, distance);
@@ -135,6 +135,19 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
             testButton=Button(card,"진동 · 방향/거리 확인",()=>OpenDirectionTest(),"button outline");testButton.name="openDirectionCheck";
             pulse=Label(card,"","small muted");confirmButton=Button(card,"진동이 느껴졌어요",()=>platform.ConfirmPulse(),"text-button");
             Button(card,"출력 중지",()=>platform.StopMissionHaptics(),"text-button muted");
+            Button(card, "CSV 저장 폴더 열기", () =>
+            {
+                try
+                {
+                    string folder = MissionDemo.LatestCsvFolder();
+                    Application.OpenURL(new System.Uri(folder + System.IO.Path.DirectorySeparatorChar).AbsoluteUri);
+                    rangeError = "";
+                }
+                catch (System.Exception e) when (e is System.IO.IOException || e is System.UnauthorizedAccessException)
+                {
+                    rangeError = "CSV 저장 폴더를 열 수 없습니다.";
+                }
+            }, "button outline").name = "openLobbyCsvFolder";
         }
         void BuildHud()
         {

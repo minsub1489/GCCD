@@ -53,16 +53,16 @@ namespace GCCD.Dts
             if(selectedEvent<0) SetResultCriteria(mission.PositionTolerance, mission.DirectionTolerance);
             if(!resultsBuilt){
                 resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ScoredResponseCount);
-                int adjusted=eligible.Sum(e=>e.Score.AdjustedCorrect);
+                double adjusted=eligible.Sum(e=>e.Score.AdjustedScoredHits);
                 int retained=eligible.Sum(e=>e.Score.RetainedCount);
-                double? weighted=MissionLocationScore.WeightedScore(correct,retained,sources);
+                double? weighted=MissionLocationScore.WeightedScore(eligible.Sum(e=>e.Score.ScoredHits),retained,sources);
                 resultTotals.text="억제율 반영 점수  "+Percent(weighted)
                     +"    유지 위협 인지율  "+Percent(retained==0?(double?)null:correct/(double)retained)
                     +"    억제율  "+Percent(sources==0?(double?)null:(sources-retained)/(double)sources)
                     +"    감점 후 점수  "+Percent(sources==0?(double?)null:adjusted/(double)sources)
                     +"    표시 정확도  "+Percent(marks==0?(double?)null:correct/(double)marks);
                 string wrongTotal = eligible.Length == 0 ? "—" : $"{eligible.Sum(e => e.Score.WrongMarks)}개";
-                string deductionTotal = eligible.Length == 0 ? "—" : $"{correct - adjusted}개";
+                string deductionTotal = eligible.Length == 0 ? "—" : $"{eligible.Sum(e=>e.Score.AppliedPointDeduction):0.##}점";
                 resultComparison.text=GroupText(events,"SIMULATED","화면 체험")+"\n"+GroupText(events,"REQUESTED_UNCONFIRMED","조끼 요청 · 착용 미확인")
                     +$"\n오답 합계 {wrongTotal} · 실제 차감 {deductionTotal}"
                     +$"\n집계 제외 {events.Count(e=>!e.Eligible)}회";
@@ -97,15 +97,17 @@ namespace GCCD.Dts
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
         }
-        void SetResultCriteria(double position, double direction)
+        void SetResultCriteria(double position, double direction, bool useProximity = true)
         {
-            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답"
-                + "\n오답 · 방향 또는 거리 불일치 등 정답으로 연결되지 않은 표시 (중복 제외) · 오답당 정답 1개 차감 (최소 0개)"
-                + "\n억제율 반영 점수 = 감점 전 유지 위협 인지율 × (1 − 0.5 × 억제율)";
+            resultNote.text = useProximity
+                ? $"정답 · 유지 위협과 방향 오차 {direction:G}° 미만이면 1점 · 위치 오차가 {position:G}m일 때 보너스 0.5점"
+                    + "\n위치 보너스 = 1 ÷ (1 + 수평 위치 오차 ÷ 기준 거리) · 방향 오답당 1점 차감 · 최소 0점"
+                    + "\n억제율 반영 점수 = (획득 점수 ÷ 유지 위협 만점) × (1 − 0.5 × 억제율)"
+                : $"이전 채점 · 수평거리 {position:G}m 이내와 방향 오차 {direction:G}° 미만이면 정답";
         }
         void SelectResult(MissionEventResult e)
         {
-            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance);
+            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance, e.Score.UsesProximity);
             resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.SuppressedSources=e.Suppressed;
             resultMap.SuppressionTheta=e.SuppressionTheta;
             resultSectorToggle.SetEnabled(e.Suppressed != null && e.SuppressionTheta > 0);
@@ -122,8 +124,8 @@ namespace GCCD.Dts
             string accuracy = e.Eligible
                 ? $"억제율 반영 점수 {Percent(score.SuppressionScore)} · 유지 인지율 {Percent(score.RetainedRecognition)} · 억제율 {Percent(score.SuppressionRate)}"
                     + $"\n유지 위협 누락 {score.RetainedCount - score.Correct}개 · 오답 {score.WrongMarks}개 · 중복 {score.DuplicateCount}개"
-                    + $"\n실제 차감 {score.AppliedDeduction}개 · 정답 {score.Correct} → {score.AdjustedCorrect}개"
-                    + $"\n감점 후 {score.AdjustedCorrect}/{score.SourceCount} ({Percent(score.AdjustedRecall)})"
+                    + $"\n획득 {score.EarnedPoints:0.##}점 · 위치 보너스 +{score.ProximityBonus:0.##}점"
+                    + $"\n차감 {score.AppliedPointDeduction:0.##}점 · 감점 후 {Percent(score.AdjustedScore)}"
                 : $"집계 제외 · {e.State}";
             resultDetails.text = $"{GroupName(e.Group)}\n{suppression}\n{accuracy}"
                 + $"\n평균 위치 오차 {Number(score.MeanPositionError, "m")}"
@@ -140,7 +142,7 @@ namespace GCCD.Dts
         static string GroupText(MissionEventResult[] events,string group,string label)
         {
             var valid=events.Where(e=>e.Eligible&&e.Group==group).ToArray();
-            var score=MissionLocationScore.WeightedScore(valid.Sum(e=>e.Score.Correct),
+            var score=MissionLocationScore.WeightedScore(valid.Sum(e=>e.Score.ScoredHits),
                 valid.Sum(e=>e.Score.RetainedCount),valid.Sum(e=>e.Score.SourceCount));
             return label+"  "+Percent(score)+"  ("+valid.Length+"회)";
         }

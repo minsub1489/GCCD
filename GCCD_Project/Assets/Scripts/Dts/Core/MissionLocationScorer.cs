@@ -6,15 +6,25 @@ namespace GCCD.Dts
     public sealed class MissionLocationScore
     {
         public const double SuppressionWeight = .5;
+        public const string ProximityRule = "direction-plus-proximity-v1";
+        public bool UsesProximity;
+        public double ProximityBonus;
+        public double EarnedPoints => Correct + ProximityBonus;
+        public int PointsPerMatch => UsesProximity ? 2 : 1;
+        public double AppliedPointDeduction => Math.Min(EarnedPoints, WrongMarks);
+        public double AdjustedPoints => EarnedPoints - AppliedPointDeduction;
+        public double ScoredHits => EarnedPoints / PointsPerMatch;
+        public double AdjustedScoredHits => AdjustedPoints / PointsPerMatch;
+        public double? AdjustedScore => SourceCount == 0 ? (double?)null : AdjustedScoredHits / SourceCount;
         public int SourceCount,ResponseCount,Correct,RetainedCount;
         public double? RetainedRecognition => RetainedCount == 0 ? (double?)null : Correct / (double)RetainedCount;
         public double? SuppressionRate => SourceCount == 0 ? (double?)null : (SourceCount - RetainedCount) / (double)SourceCount;
-        public double? SuppressionScore => WeightedScore(Correct, RetainedCount, SourceCount);
-        public static double? WeightedScore(int correct, int retained, int total)
+        public double? SuppressionScore => WeightedScore(ScoredHits, RetainedCount, SourceCount);
+        public static double? WeightedScore(double scoredHits, int retained, int total)
         {
             if (retained == 0 || total == 0) return null;
             double suppressionRate = (total - retained) / (double)total;
-            return correct / (double)retained * (1 - SuppressionWeight * suppressionRate);
+            return scoredHits / retained * (1 - SuppressionWeight * suppressionRate);
         }
         public int FarFalseMarks;
         public int DuplicateCount => DuplicateMarks.Count(value => value);
@@ -40,12 +50,14 @@ namespace GCCD.Dts
     }
     public static class MissionLocationScorer
     {
-        sealed class Assignment {public int Correct;public double Error;public int[] Map;}
-        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null,bool[] suppressedSources=null)
+        sealed class Assignment {public int Correct;public double Error,Bonus;public int[] Map;}
+        public static MissionLocationScore Score(MissionSpawnPoint[] sources,MissionSpawnPoint[] marks,double observerX,double observerZ,double yaw,double tolerance,double? directionTolerance=null,bool[] suppressedSources=null,bool useProximity=false)
         {
             if(sources==null||sources.Length<1||sources.Length>MissionSpawnPlanner.MaximumThreatCount||marks==null)throw new ArgumentException("Source and response positions required.");
             Angles.Finite(observerX);Angles.Finite(observerZ);Angles.Finite(yaw);Angles.Finite(tolerance);if(tolerance<0)throw new ArgumentException("Nonnegative tolerance required.");
             foreach(var p in sources.Concat(marks)){Angles.Finite(p.X);Angles.Finite(p.Z);}
+            if (useProximity && (!directionTolerance.HasValue || tolerance <= 0))
+                throw new ArgumentException("Proximity scoring requires a positive distance scale and a direction tolerance.");
             if(directionTolerance.HasValue)
             {
                 Angles.Finite(directionTolerance.Value);
@@ -58,6 +70,7 @@ namespace GCCD.Dts
             var position=new double[marks.Length,sources.Length];
             var direction=new double?[marks.Length,sources.Length];
             var correct=new bool[marks.Length,sources.Length];
+            var bonuses=new double[marks.Length,sources.Length];
             var nearest=new double?[marks.Length];
             var far=new bool[marks.Length];
             for(int i=0;i<marks.Length;i++)
@@ -72,8 +85,10 @@ namespace GCCD.Dts
                         direction[i,j]=error;
                         if(!nearest[i].HasValue||error<nearest[i].Value)nearest[i]=error;
                     }
-                    correct[i,j]=(suppressedSources == null || !suppressedSources[j]) && position[i,j]<=tolerance &&
+                    correct[i,j]=(suppressedSources == null || !suppressedSources[j]) && (useProximity || position[i,j]<=tolerance) &&
                         (!directionTolerance.HasValue || (direction[i,j].HasValue && direction[i,j].Value<directionTolerance.Value));
+                    if (useProximity && correct[i,j])
+                        bonuses[i,j] = 1 / (1 + position[i,j] / tolerance);
                 }
                 far[i]=directionTolerance.HasValue && (!nearest[i].HasValue || nearest[i].Value>=directionTolerance.Value);
             }
@@ -83,13 +98,13 @@ namespace GCCD.Dts
                 var next=new Dictionary<int,Assignment>(states);
                 foreach(var item in states.OrderBy(x=>x.Key))for(int j=0;j<sources.Length;j++)if((item.Key&(1<<j))==0){
                     double error=position[i,j];int mask=item.Key|(1<<j);
-                    var candidate=new Assignment{Correct=item.Value.Correct+(correct[i,j]?1:0),Error=item.Value.Error+error,Map=(int[])item.Value.Map.Clone()};candidate.Map[i]=j;
-                    Assignment old;if(!next.TryGetValue(mask,out old)||candidate.Correct>old.Correct||(candidate.Correct==old.Correct&&candidate.Error<old.Error))next[mask]=candidate;
+                    var candidate=new Assignment{Correct=item.Value.Correct+(correct[i,j]?1:0),Error=item.Value.Error+error,Bonus=item.Value.Bonus+bonuses[i,j],Map=(int[])item.Value.Map.Clone()};candidate.Map[i]=j;
+                    Assignment old;if(!next.TryGetValue(mask,out old)||candidate.Correct>old.Correct||(candidate.Correct==old.Correct && (candidate.Bonus>old.Bonus || (candidate.Bonus==old.Bonus && candidate.Error<old.Error))))next[mask]=candidate;
                 }
                 states=next;
             }
-            var best=states.OrderByDescending(x=>x.Value.Correct).ThenByDescending(x=>Bits(x.Key)).ThenBy(x=>x.Value.Error).ThenBy(x=>x.Key).First().Value;
-            var score=new MissionLocationScore{SourceCount=sources.Length,RetainedCount=suppressedSources==null?sources.Length:suppressedSources.Count(value=>!value),ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],DuplicateMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
+            var best=states.OrderByDescending(x=>x.Value.Correct).ThenByDescending(x=>x.Value.Bonus).ThenByDescending(x=>Bits(x.Key)).ThenBy(x=>x.Value.Error).ThenBy(x=>x.Key).First().Value;
+            var score=new MissionLocationScore{UsesProximity=useProximity,ProximityBonus=best.Bonus,SourceCount=sources.Length,RetainedCount=suppressedSources==null?sources.Length:suppressedSources.Count(value=>!value),ResponseCount=marks.Length,Correct=best.Correct,FarFalseMarks=far.Count(value=>value),FarFalseMark=far,NearestDirectionErrors=nearest,CorrectMarks=new bool[marks.Length],DuplicateMarks=new bool[marks.Length],ResponseToSource=best.Map,PositionErrors=new double?[marks.Length],DirectionErrors=new double?[marks.Length],RangeErrors=new double?[marks.Length]};
             for(int i=0;i<marks.Length;i++)if(best.Map[i]>=0){
                 var a=sources[best.Map[i]];var b=marks[i];double ax=a.X-observerX,az=a.Z-observerZ,bx=b.X-observerX,bz=b.Z-observerZ;
                 score.PositionErrors[i]=position[i,best.Map[i]];score.CorrectMarks[i]=correct[i,best.Map[i]];score.RangeErrors[i]=Math.Abs(Math.Sqrt(ax*ax+az*az)-Math.Sqrt(bx*bx+bz*bz));

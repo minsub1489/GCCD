@@ -178,6 +178,25 @@ class CoreTests
             Near(score.Precision.Value,1.0/3);
             Near(score.F1.Value,2.0/5);
         });
+        Test("proximity scoring rewards closeness without treating distance as a wrong answer",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=8},new MissionSpawnPoint{X=8}};
+            var responses=new[]{sources[0],new MissionSpawnPoint{Z=13},new MissionSpawnPoint{X=14},new MissionSpawnPoint{Z=-8}};
+            var score=MissionLocationScorer.Score(sources,responses,0,0,0,3,15,useProximity:true);
+            Eq(score.Correct,2);
+            Eq(score.DuplicateCount,1);
+            Eq(score.IsWrongMark(2),false);
+            Eq(score.WrongMarks,1);
+            Near(score.ProximityBonus,1+1.0/3);
+            Near(score.EarnedPoints,3+1.0/3);
+            Near(score.AppliedPointDeduction,1);
+            Near(score.AdjustedScore.Value,(2+1.0/3)/4);
+            var exact=MissionLocationScorer.Score(sources,new[]{sources[0],sources[1],responses[3]},0,0,0,3,15,useProximity:true);
+            Eq(exact.WrongMarks,score.WrongMarks);
+            Eq(exact.SuppressionScore>score.SuppressionScore,true);
+            Eq(exact.AdjustedScore>score.AdjustedScore,true);
+            var suppressed=MissionLocationScorer.Score(sources,new[]{sources[1]},0,0,0,3,15,new[]{false,true},useProximity:true);
+            Near(suppressed.EarnedPoints,0);
+        });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
