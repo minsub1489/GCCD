@@ -24,7 +24,7 @@ namespace GCCD.Dts
             });
             var overlays = Element(left, "row");
             overlays.Add(resultSectorToggle);
-            resultPenaltyToggle = new Toggle("감점 보기 (빨간 고리)") { name = "resultPenaltyToggle" };
+            resultPenaltyToggle = new Toggle("오답 보기 (빨간 고리)") { name = "resultPenaltyToggle" };
             resultDuplicateToggle = new Toggle("중복 보기 (하늘색 고리)") { name = "resultDuplicateToggle" };
             foreach (var toggle in new[] { resultPenaltyToggle, resultDuplicateToggle })
             {
@@ -52,16 +52,20 @@ namespace GCCD.Dts
             var events=mission.ReviewEvents;
             if(selectedEvent<0) SetResultCriteria(mission.PositionTolerance, mission.DirectionTolerance);
             if(!resultsBuilt){
-                resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ResponseCount);
+                resultEventList.Clear();var eligible=events.Where(e=>e.Eligible).ToArray();int correct=eligible.Sum(e=>e.Score.Correct),sources=eligible.Sum(e=>e.Score.SourceCount),marks=eligible.Sum(e=>e.Score.ScoredResponseCount);
                 int adjusted=eligible.Sum(e=>e.Score.AdjustedCorrect);
                 int retained=eligible.Sum(e=>e.Score.RetainedCount);
                 double? weighted=MissionLocationScore.WeightedScore(correct,retained,sources);
                 resultTotals.text="억제율 반영 점수  "+Percent(weighted)
                     +"    유지 위협 인지율  "+Percent(retained==0?(double?)null:correct/(double)retained)
                     +"    억제율  "+Percent(sources==0?(double?)null:(sources-retained)/(double)sources)
-                    +"    방향 감점 반영  "+Percent(sources==0?(double?)null:adjusted/(double)sources)
+                    +"    감점 후 점수  "+Percent(sources==0?(double?)null:adjusted/(double)sources)
                     +"    표시 정확도  "+Percent(marks==0?(double?)null:correct/(double)marks);
-                resultComparison.text=GroupText(events,"SIMULATED","화면 체험")+"\n"+GroupText(events,"REQUESTED_UNCONFIRMED","조끼 요청 · 착용 미확인")+"\n집계 제외  "+events.Count(e=>!e.Eligible)+"회";
+                string wrongTotal = eligible.Length == 0 ? "—" : $"{eligible.Sum(e => e.Score.WrongMarks)}개";
+                string deductionTotal = eligible.Length == 0 ? "—" : $"{correct - adjusted}개";
+                resultComparison.text=GroupText(events,"SIMULATED","화면 체험")+"\n"+GroupText(events,"REQUESTED_UNCONFIRMED","조끼 요청 · 착용 미확인")
+                    +$"\n오답 합계 {wrongTotal} · 실제 차감 {deductionTotal}"
+                    +$"\n집계 제외 {events.Count(e=>!e.Eligible)}회";
                 int withSuppression = Array.FindIndex(events, e => e.Suppressed != null && e.Suppressed.Any(value => value));
                 resultComparison.text += withSuppression >= 0
                     ? "\n억제된 위협이 있는 이벤트는 목록에 개수가 표시됩니다."
@@ -95,7 +99,9 @@ namespace GCCD.Dts
         }
         void SetResultCriteria(double position, double direction)
         {
-            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답\n억제율 반영 점수 = 유지 위협 인지율 × (1 − 0.5 × 억제율)";
+            resultNote.text = $"일치 기준 · 수평거리 {position:G}m 이내 + 방향 오차 {direction:G}° 미만 · 유지 위협만 정답"
+                + "\n오답 · 방향 또는 거리 불일치 등 정답으로 연결되지 않은 표시 (중복 제외) · 오답당 정답 1개 차감 (최소 0개)"
+                + "\n억제율 반영 점수 = 감점 전 유지 위협 인지율 × (1 − 0.5 × 억제율)";
         }
         void SelectResult(MissionEventResult e)
         {
@@ -108,7 +114,21 @@ namespace GCCD.Dts
                 : "억제각 보기 · 적용 범위 없음";
             SetResponseOverlays(e.Eligible ? e.Score : null);
             resultMap.Markers=e.Marks.Select(p=>new MissionSpawnPoint{X=p.x,Z=p.z}).ToArray();resultMap.MatchedSourceIndices=e.Score.ResponseToSource.Select((source,index)=>e.Score.CorrectMarks[index]?source:-1).ToArray();
-            resultDetails.text=GroupName(e.Group)+"\n"+(e.Suppressed==null?"억제 기록 없음":$"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value=>!value)}개 + 억제 {e.Suppressed.Count(value=>value)}개" + (e.Suppressed.Any(value=>value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다."))+"\n"+(e.Eligible?"억제율 반영 점수 "+Percent(e.Score.SuppressionScore)+" · 유지 인지율 "+Percent(e.Score.RetainedRecognition)+" · 억제율 "+Percent(e.Score.SuppressionRate):"집계 제외 · "+e.State)+"\n유지 위협 누락 "+(e.Score.RetainedCount-e.Score.Correct)+" · 추가 표시 "+e.Score.FalseMarks+(e.Eligible?"\n방향 감점 "+e.Score.FarFalseMarks+"개 · 중복 "+e.Score.DuplicateMarks.Count(value=>value)+"개 · 감점 반영 "+e.Score.AdjustedCorrect+"/"+e.Score.SourceCount+" ("+Percent(e.Score.AdjustedRecall)+")":"")+"\n평균 위치 오차 "+Number(e.Score.MeanPositionError,"m")+"\n평균 방향 오차 "+Number(e.Score.MeanDirectionError,"°")+"\n평균 거리 오차 "+Number(e.Score.MeanRangeError,"m");
+            var score = e.Score;
+            string suppression = e.Suppressed == null
+                ? "억제 기록 없음"
+                : $"억제각 {e.SuppressionTheta}° · 전체 {e.Sources.Length}개 = 유지 {e.Suppressed.Count(value => !value)}개 + 억제 {e.Suppressed.Count(value => value)}개"
+                    + (e.Suppressed.Any(value => value) ? "" : " · 이 이벤트에는 주황 ×가 없습니다.");
+            string accuracy = e.Eligible
+                ? $"억제율 반영 점수 {Percent(score.SuppressionScore)} · 유지 인지율 {Percent(score.RetainedRecognition)} · 억제율 {Percent(score.SuppressionRate)}"
+                    + $"\n유지 위협 누락 {score.RetainedCount - score.Correct}개 · 오답 {score.WrongMarks}개 · 중복 {score.DuplicateCount}개"
+                    + $"\n실제 차감 {score.AppliedDeduction}개 · 정답 {score.Correct} → {score.AdjustedCorrect}개"
+                    + $"\n감점 후 {score.AdjustedCorrect}/{score.SourceCount} ({Percent(score.AdjustedRecall)})"
+                : $"집계 제외 · {e.State}";
+            resultDetails.text = $"{GroupName(e.Group)}\n{suppression}\n{accuracy}"
+                + $"\n평균 위치 오차 {Number(score.MeanPositionError, "m")}"
+                + $"\n평균 방향 오차 {Number(score.MeanDirectionError, "°")}"
+                + $"\n평균 거리 오차 {Number(score.MeanRangeError, "m")}";
         }
         void SetResponseOverlays(MissionLocationScore score)
         {

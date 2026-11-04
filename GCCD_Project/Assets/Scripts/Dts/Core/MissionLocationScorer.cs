@@ -17,15 +17,20 @@ namespace GCCD.Dts
             return correct / (double)retained * (1 - SuppressionWeight * suppressionRate);
         }
         public int FarFalseMarks;
-        public int AdjustedCorrect => Math.Max(0, Correct - FarFalseMarks);
+        public int DuplicateCount => DuplicateMarks.Count(value => value);
+        public int ScoredResponseCount => ResponseCount - DuplicateCount;
+        public int WrongMarks => ScoredResponseCount - Correct;
+        public int AppliedDeduction => Math.Min(Correct, WrongMarks);
+        public int AdjustedCorrect => Correct - AppliedDeduction;
+        public bool IsWrongMark(int index) => !CorrectMarks[index] && !DuplicateMarks[index];
         public double? AdjustedRecall => SourceCount==0?(double?)null:AdjustedCorrect/(double)SourceCount;
         public bool[] CorrectMarks, FarFalseMark, DuplicateMarks;
         public double?[] NearestDirectionErrors;
         public int Missed {get{return SourceCount-Correct;}}
         public int FalseMarks {get{return ResponseCount-Correct;}}
         public double? Recall {get{return SourceCount==0?(double?)null:Correct/(double)SourceCount;}}
-        public double? Precision {get{return ResponseCount==0?(double?)null:Correct/(double)ResponseCount;}}
-        public double? F1 {get{return SourceCount+ResponseCount==0?(double?)null:2.0*Correct/(SourceCount+ResponseCount);}}
+        public double? Precision => ScoredResponseCount == 0 ? (double?)null : Correct / (double)ScoredResponseCount;
+        public double? F1 => SourceCount + ScoredResponseCount == 0 ? (double?)null : 2.0 * Correct / (SourceCount + ScoredResponseCount);
         public int[] ResponseToSource;
         public double?[] PositionErrors,DirectionErrors,RangeErrors;
         public double? MeanPositionError {get{return Mean(PositionErrors);}}

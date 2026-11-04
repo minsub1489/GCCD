@@ -67,7 +67,7 @@ namespace GCCD.Dts
             {
                 for (int i = 0; i < Markers.Length; i++)
                 {
-                    bool penalty = ShowPenaltyMarks && ResponseScore.FarFalseMark[i];
+                    bool penalty = ShowPenaltyMarks && ResponseScore.IsWrongMark(i);
                     bool duplicate = ShowDuplicateMarks && ResponseScore.DuplicateMarks[i];
                     if (!penalty && !duplicate) continue;
                     Vector2 point = Point(Markers[i].X, Markers[i].Z);

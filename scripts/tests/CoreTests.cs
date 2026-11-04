@@ -161,6 +161,23 @@ class CoreTests
             Near(MissionLocationScore.WeightedScore(3,10,10).Value,.3);
             Eq(MissionLocationScore.WeightedScore(0,0,0).HasValue,false);
         });
+        Test("FPS deducts distance and direction misses but ignores duplicates",()=>{
+            var sources=new[]{new MissionSpawnPoint{Z=8},new MissionSpawnPoint{X=8}};
+            var responses=new[]{sources[0],new MissionSpawnPoint{Z=13},new MissionSpawnPoint{X=13},new MissionSpawnPoint{Z=-8}};
+            var score=MissionLocationScorer.Score(sources,responses,0,0,0,3,15);
+            Eq(score.Correct,1);
+            Eq(score.DuplicateCount,1);
+            Eq(score.FarFalseMarks,1);
+            Eq(score.IsWrongMark(0),false);
+            Eq(score.IsWrongMark(1),false);
+            Eq(score.IsWrongMark(2),true);
+            Eq(score.IsWrongMark(3),true);
+            Eq(score.WrongMarks,2);
+            Eq(score.AppliedDeduction,1);
+            Eq(score.AdjustedCorrect,0);
+            Near(score.Precision.Value,1.0/3);
+            Near(score.F1.Value,2.0/5);
+        });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};
             var score=MissionLocationScorer.Score(sources,sources,0,0,0,3,15,new[]{false,true});
