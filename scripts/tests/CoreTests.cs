@@ -226,7 +226,29 @@ class CoreTests
             Near(score.AdjustedPoints,1.75);
             Near(distant.AdjustedPoints,1+1.0/3);
             Near(score.AdjustedScore.Value,.875);
-            Eq(score.ScoringRule,MissionLocationScore.ProximityRule);
+            Eq(score.ScoringRule,MissionLocationScore.NoDeductionRule);
+        });
+        Test("X40 scoring accepts same-side gap but keeps opposite sides and distance distinct",()=>{
+            Func<double,double,MissionSpawnPoint> Point=(degrees,distance)=>
+            {
+                double radians=degrees*Math.PI/180;
+                return new MissionSpawnPoint{X=distance*Math.Sin(radians),Z=distance*Math.Cos(radians)};
+            };
+            foreach(double side in new[]{90d,270})
+            {
+                var source=Point(side-18,10);
+                var response=Point(side+18,10);
+                var score=MissionLocationScorer.Score(new[]{source},new[]{response,Point(side+180,10)},0,0,0,3,15,useProximity:true,countDuplicates:true,deductWrong:false,compensateSides:true);
+                Eq(score.Correct,1);
+                Eq(score.CorrectMarks[0],true);
+                Eq(score.IsWrongMark(1),true);
+                Near(score.DirectionErrors[0].Value,36);
+                Near(score.ProximityBonus,1/(1+score.PositionErrors[0].Value/3));
+                Near(score.AppliedPointDeduction,0);
+                Eq(score.ScoringRule,MissionLocationScore.ProximityRule);
+                var outside=MissionLocationScorer.Score(new[]{source},new[]{Point(side+25,10)},0,0,0,3,15,useProximity:true,countDuplicates:true,deductWrong:false,compensateSides:true);
+                Eq(outside.Correct,0);
+            }
         });
         Test("FPS suppressed sources never earn credit even at exact position",()=>{
             var sources=new[]{new MissionSpawnPoint{Z=10},new MissionSpawnPoint{X=2,Z=10}};

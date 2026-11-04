@@ -96,10 +96,11 @@ namespace GCCD.Dts
             }
             resultMap.Refresh();resultSaveStatus.text=mission.ExportsReady?"CSV 자동 저장 완료 · summary.csv / events.csv / positions.csv":mission.ExportError;
         }
-        void SetResultCriteria(double position, double direction, bool useProximity = true, bool countDuplicates = true, bool deductWrong = false)
+        void SetResultCriteria(double position, double direction, bool useProximity = true, bool countDuplicates = true, bool deductWrong = false, bool compensateSides = true)
         {
             resultNote.text = useProximity
                 ? $"정답 · 유지 위협과 방향 오차 {direction:G}° 미만이면 1점 · 위치 오차가 {position:G}m일 때 보너스 0.5점"
+                    + (compensateSides ? $"\n옆구리 보정 · 좌우 각각 정측면 ±{MissionLocationScore.SideHalfWidth:G}° 안에서는 같은 쪽으로 인정" : "")
                     + "\n위치 보너스 = 1 ÷ (1 + 수평 위치 오차 ÷ 기준 거리)"
                     + (countDuplicates ? "\n가까운 표시도 다른 유지 위협과 비교하며, 연결되지 않으면 오답입니다." : "\n이전 채점 · 중복 표시는 채점에서 제외합니다.")
                     + (deductWrong ? "\n이전 채점 · 오답당 1점 차감" : "\n정답에 연결되지 않은 표시는 0점입니다.")
@@ -108,7 +109,7 @@ namespace GCCD.Dts
         }
         void SelectResult(MissionEventResult e)
         {
-            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance, e.Score.UsesProximity, e.Score.CountsDuplicates, e.Score.DeductWrong);
+            SetResultCriteria(e.PositionTolerance, e.DirectionTolerance, e.Score.UsesProximity, e.Score.CountsDuplicates, e.Score.DeductWrong, e.Score.UsesSideCompensation);
             resultMap.PlayerPosition=e.Observer;resultMap.PlayerYaw=e.Yaw;resultMap.ActualSources=e.Sources;resultMap.SuppressedSources=e.Suppressed;
             resultMap.SuppressionTheta=e.SuppressionTheta;
             resultSectorToggle.SetEnabled(e.Suppressed != null && e.SuppressionTheta > 0);
