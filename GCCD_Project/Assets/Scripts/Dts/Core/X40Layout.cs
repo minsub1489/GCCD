@@ -4,6 +4,15 @@ namespace GCCD.Dts
 {
     public static class X40Layout
     {
+        public const double SideGapHalfWidth = 22.5;
+        public static int SideSector(double? bearing)
+        {
+            if (!bearing.HasValue) return 0;
+            if (Angles.Difference(bearing.Value, 90) <= SideGapHalfWidth) return 1;
+            if (Angles.Difference(bearing.Value, 270) <= SideGapHalfWidth) return -1;
+            return 0;
+        }
+
         // Official legacy visualizer: front indices increase screen-right to left,
         // back indices increase screen-left to right. Column zero is wearer's left.
         // The angular model approximates eight columns around the torso; not measured anatomy.

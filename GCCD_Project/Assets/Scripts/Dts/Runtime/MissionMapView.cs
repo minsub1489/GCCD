@@ -14,7 +14,7 @@ namespace GCCD.Dts
         public int SuppressionTheta;
         public Vector3[] ActualSources=new Vector3[0];public bool[] SuppressedSources;public int[] MatchedSourceIndices=new int[0];
         readonly Label[] roomLabels=new Label[MissionFloorPlan.Rooms.Length];
-        readonly Label distanceScale = new Label("10 m");
+        readonly Label distanceScale = new Label("10 m") { name = "mapDistanceScale" };
         Rect Plot {get{float scale=Mathf.Min((contentRect.width-28)/72,(contentRect.height-28)/78);return new Rect(contentRect.x+(contentRect.width-72*scale)/2,contentRect.y+(contentRect.height-78*scale)/2,72*scale,78*scale);}}
         public MissionMapView()
         {

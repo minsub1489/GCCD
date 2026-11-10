@@ -4,7 +4,7 @@ namespace GCCD.Dts
 {
     public sealed partial class ModernInterface
     {
-        VisualElement mapPanel,responseOverlay;MissionMapView miniMap,responseMap;Label responseHelp,responseStatus,responseMarkCount;Button responseSubmit,responseUndo,responseClear;
+        VisualElement mapPanel,responseOverlay;MissionMapView miniMap,responseMap;Label responseHelp,responseStatus,responseMarkCount,responseEventCount;Button responseSubmit,responseUndo,responseClear;
         void BuildMaps()
         {
             mapPanel=Element(hud,"mini-map-panel");Label(mapPanel,"시설 지도  /  N ↑","eyebrow");miniMap=new MissionMapView{ShowDistanceScale=true};mapPanel.Add(miniMap);Label(mapPanel,"▲ 현재 위치   ◆ 보급품   TAB 닫기","small muted");
@@ -15,7 +15,9 @@ namespace GCCD.Dts
             var shell=Element(responseOverlay,"response-shell");
             var heading=Element(shell,"response-heading");Label(heading,"HAPTIC RECALL  /  N ↑","eyebrow accent");Label(heading,"위협이 어디에 있었나요?","response-title");
             responseHelp=Label(heading,"","response-description");
-            var row=Element(shell,"response-body");responseMap=new MissionMapView{Detailed=true};responseMap.name="responseMap";responseMap.AddToClassList("response-map");row.Add(responseMap);
+            responseEventCount=Label(heading,"","small accent");
+            responseEventCount.name="responseEventCount";
+            var row=Element(shell,"response-body");responseMap=new MissionMapView{Detailed=true,ShowDistanceScale=true};responseMap.name="responseMap";responseMap.AddToClassList("response-map");row.Add(responseMap);
             responseMap.Picked=(x,z)=>{var m=GetComponent<MissionDemo>();if(m)m.ToggleResponseMarker(x,z);};
             var tools=Element(row,"response-tools");Label(tools,"기억나는 위치를 표시하세요","objective-title");
             Label(tools,"지도 클릭  위치 표시\n표시한 점 클릭  삭제\n\n▲ 진동 당시 내 위치와 방향\n● 내가 표시한 위치\n주황색 통로  앉아서 통과","response-description");
@@ -37,6 +39,7 @@ namespace GCCD.Dts
             if(!answering)return;
             hud.style.display=DisplayStyle.None;responseMap.PlayerPosition=mission.ResponseObserver;responseMap.PlayerYaw=mission.ResponseYaw;responseMap.Markers=mission.ResponseMarkers;responseMap.Interactive=mission.ResponseReady;responseMap.Refresh();
             responseHelp.text=mission.ResponseReady?"당시 내 위치와 방향을 기준으로, 느껴진 위협의 위치를 지도에 찍어 주세요.":"진동이 끝나면 위치를 표시할 수 있습니다.";
+            responseEventCount.text=$"위협 발생 {mission.ThreatEventsOccurred}회";
             responseSubmit.SetEnabled(mission.ResponseReady);responseUndo.SetEnabled(mission.ResponseReady);responseClear.SetEnabled(mission.ResponseReady);
             int markCount = responseMap.Markers.Length;
             responseMarkCount.text = $"표시 {markCount} / {mission.MaximumThreatCount}개";

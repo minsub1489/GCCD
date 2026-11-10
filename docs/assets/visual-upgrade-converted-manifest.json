@@ -1,0 +1,32 @@
+[
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/industrial_wall_lamp/industrial_wall_lamp_glass_metallic_smoothness_1k.png",
+    "sha256": "ca81621329b6ff41da9900b78a16a62682dd17742d9880848e07d9f9524428f4",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  },
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/industrial_wall_lamp/industrial_wall_lamp_glass_occlusion_1k.png",
+    "sha256": "5fd194a2545ca5d9e111c2bf7b76078365ccbb36f278aa38424fe35752695013",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  },
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/industrial_wall_lamp/industrial_wall_lamp_metallic_smoothness_1k.png",
+    "sha256": "fe8740686f13adecbbc6567c592a5e2f9a56e2ed1dbee2fc7f81b8473876c434",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  },
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/industrial_wall_lamp/industrial_wall_lamp_occlusion_1k.png",
+    "sha256": "63858c3789cd7b5d5bc0a289fef21c33e7a5f5145d6baa07eb0c8a355bbee503",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  },
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/power_box_01/power_box_01_metallic_smoothness_1k.png",
+    "sha256": "86c47b9056d92ee212ba80394d4d6b1fa68ee1f945c7a211e383ac0cfa5b0863",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  },
+  {
+    "path": "Assets/Resources/VisualUpgrade/FreeAssets/power_box_01/power_box_01_occlusion_1k.png",
+    "sha256": "dcfce98b2bafbdba34eeb540bc57a775063102903c546ac4536f7a493ec11aff",
+    "conversion": "Poly Haven ARM R=AO G=roughness B=metallic -> Standard metallic R, smoothness A=1-G; separate occlusion grayscale"
+  }
+]

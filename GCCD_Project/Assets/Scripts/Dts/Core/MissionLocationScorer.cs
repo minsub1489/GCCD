@@ -10,7 +10,6 @@ namespace GCCD.Dts
         public const string RematchWithDeductionRule = "direction-plus-proximity-v2";
         public const string NoDeductionRule = "direction-plus-proximity-v3";
         public const string ProximityRule = "direction-plus-proximity-side-v4";
-        public const double SideHalfWidth = 22.5;
         public bool UsesSideCompensation { get; internal set; }
         public bool DeductWrong { get; internal set; } = true;
         public bool UsesProximity, CountsDuplicates;
@@ -77,7 +76,7 @@ namespace GCCD.Dts
             if (suppressedSources != null && suppressedSources.Length != sources.Length)
                 throw new ArgumentException("Suppression flags must match the source count.", nameof(suppressedSources));
             var bearings=sources.Select(point=>Bearing(point,observerX,observerZ,yaw)).ToArray();
-            int[] sourceSides = compensateSides ? bearings.Select(SideSector).ToArray() : null;
+            int[] sourceSides = compensateSides ? bearings.Select(X40Layout.SideSector).ToArray() : null;
             var position=new double[marks.Length,sources.Length];
             var direction=new double?[marks.Length,sources.Length];
             var correct=new bool[marks.Length,sources.Length];
@@ -87,7 +86,7 @@ namespace GCCD.Dts
             for(int i=0;i<marks.Length;i++)
             {
                 var markBearing=Bearing(marks[i],observerX,observerZ,yaw);
-                int markSide = compensateSides ? SideSector(markBearing) : 0;
+                int markSide = compensateSides ? X40Layout.SideSector(markBearing) : 0;
                 for(int j=0;j<sources.Length;j++)
                 {
                     position[i,j]=Distance(sources[j],marks[i]);
@@ -147,13 +146,6 @@ namespace GCCD.Dts
                 }
             }
             return score;
-        }
-        static int SideSector(double? bearing)
-        {
-            if (!bearing.HasValue) return 0;
-            if (Angles.Difference(bearing.Value, 90) <= MissionLocationScore.SideHalfWidth) return 1;
-            if (Angles.Difference(bearing.Value, 270) <= MissionLocationScore.SideHalfWidth) return -1;
-            return 0;
         }
         static double? Bearing(MissionSpawnPoint point,double observerX,double observerZ,double yaw)
         {

@@ -1,0 +1,5 @@
+CC0 1.0 Universal — Poly Haven asset
+https://polyhaven.com/license
+https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/power_box_01
+Authors: Rico Cilliers (modeling/texturing); Yann Kervran (rigging)

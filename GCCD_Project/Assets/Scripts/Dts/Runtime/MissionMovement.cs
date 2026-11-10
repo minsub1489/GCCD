@@ -4,6 +4,9 @@ namespace GCCD.Dts
     public sealed partial class MissionDemo
     {
         const float StandingHeight=1.8f,StandingEye=1.7f,CrouchHeight=1f,CrouchEye=.92f;
+        const float Gravity = 9.81f;
+        const float JumpHeight = 1.05f;
+        const float FallGravityMultiplier = 1.8f;
         bool crouched;readonly MissionPlayClock playClock=new MissionPlayClock();
         public bool IsCrouched {get{return crouched;}}
         public bool IsGrounded {get{return body&&body.isGrounded;}}
@@ -28,8 +31,9 @@ namespace GCCD.Dts
         {
             if(paused||complete||!body||dt<=0)return;dt=Mathf.Min(dt,.05f);
             bool grounded=body.isGrounded;if(grounded&&vertical<0)vertical=-2;
-            if(jump&&grounded&&!crouched)vertical=Mathf.Sqrt(2*9.81f*1.05f);
-            vertical-=9.81f*dt;
+            if(jump&&grounded&&!crouched)vertical=Mathf.Sqrt(2*Gravity*JumpHeight);
+            float gravity = !grounded && vertical <= 0 ? Gravity * FallGravityMultiplier : Gravity;
+            vertical -= gravity * dt;
             Vector3 walk=Quaternion.Euler(0,yaw,0)*new Vector3(input.x,0,input.y);walkAmount=Mathf.Min(1,walk.magnitude);
             float speed=crouched?1.7f:sprint&&!aiming?5.7f:3.5f;
             walk=Vector3.ClampMagnitude(walk,1)*speed;walk.y=vertical;

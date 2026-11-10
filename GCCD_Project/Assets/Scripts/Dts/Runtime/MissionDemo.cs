@@ -19,6 +19,7 @@ namespace GCCD.Dts
                 throw new ArgumentException("Invalid FPS scoring tolerances.");
             var mission = gameObject.AddComponent<MissionDemo>();
             mission.Owner = this;
+            mission.PlayerName = string.IsNullOrWhiteSpace(Participant) ? "Player" : Participant.Trim();
             mission.Strengths = ConfiguredMissionStrengths;
             mission.SuppressionTheta = suppressionTheta;
             mission.MinimumThreatCount = minimumThreatCount;
@@ -55,6 +56,8 @@ namespace GCCD.Dts
         int originalLayer;int hits,collected,ammo=30,fired,spawnSeed;float yaw,pitch,vertical,aimBlend,recoil,walkAmount,weaponTop;double nextThreat,lastThreat,started,nextShot,reloadUntil,lastHit,flashUntil;string output="",folder;bool paused,complete,aiming,exited;
         System.Random rng;AudioSource gunAudio;AudioClip shotClip,reloadClip;Light muzzleLight;
         double Now {get{return playClock.Read(RealNow);}}
+        public string PlayerName { get; internal set; } = "Player";
+        public int ThreatEventsOccurred { get; private set; }
         public int ShotsHit{get{return hits;}}public int SuppliesCollected{get{return collected;}}public bool HasWorld{get{return world!=null;}}
         public int Ammo{get{return ammo;}}public int ShotsFired{get{return fired;}}public bool IsReloading{get{return reloadUntil>Now;}}public bool IsPaused{get{return paused;}}public bool IsComplete{get{return complete;}}public bool IsAiming{get{return aiming;}}public bool HitMarker{get{return Now-lastHit<.15&&lastHit>0;}}
         public bool HasGunAudio{get{return shotClip&&gunAudio;}}public int SpawnSeed{get{return spawnSeed;}}public string OutputText{get{return Now-lastThreat<2.5?output:"";}}
@@ -74,8 +77,14 @@ namespace GCCD.Dts
             muzzleLight=new GameObject("Shot light").AddComponent<Light>();muzzleLight.transform.SetParent(transform);muzzleLight.transform.localPosition=new Vector3(0,0,.8f);muzzleLight.color=new Color(1,.65f,.25f);muzzleLight.range=7;muzzleLight.intensity=0;
             gunAudio=gameObject.AddComponent<AudioSource>();gunAudio.spatialBlend=0;gunAudio.playOnAwake=false;gunAudio.volume=.65f;gunAudio.priority=32;shotClip=Resources.Load<AudioClip>("Realism/Audio/rifle-shot");reloadClip=Resources.Load<AudioClip>("Realism/Audio/reload");if(!shotClip)throw new InvalidOperationException("Rifle audio missing.");
             var finish=gameObject.AddComponent<MissionImageEffect>();finish.enabled=true;
-            started=Now;nextThreat=started+8;
-            folder=Path.Combine(MissionDataRoot,DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"_"+Guid.NewGuid().ToString("N").Substring(0,8));Directory.CreateDirectory(folder);
+            BuildPresentation();
+            started=Now;nextThreat=started+5;
+            string safeName = System.Text.RegularExpressions.Regex.Replace(PlayerName, @"[^\p{L}\p{N}_-]+", "_").Trim('_');
+            if (safeName.Length == 0) safeName = "Player";
+            if (safeName.Length > 32) safeName = safeName.Substring(0, 32);
+            string id = $"{DateTime.UtcNow:yyyyMMddTHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+            folder = Path.Combine(MissionDataRoot, $"{id}_{safeName}_{SuppressionTheta}deg_{MinimumThreatCount}-{MaximumThreatCount}");
+            Directory.CreateDirectory(folder);
             SessionStore.AtomicWrite(Path.Combine(folder,"layout.json"),JsonUtility.ToJson(new MissionLayoutRecord{seed=spawnSeed,enemy_positions=EnemyPositions},true));
             SetPaused(false);
         }
@@ -84,9 +93,12 @@ namespace GCCD.Dts
         void SpawnEnemy(Vector3 p)
         {
             var enemy=new GameObject("Security drone");enemy.transform.SetParent(world.transform);enemy.transform.position=p;
+            if(!BuildDronePresentation(enemy))
+            {
             AddDronePart(enemy,PrimitiveType.Sphere,Vector3.zero,new Vector3(.7f,.45f,.6f),trim);
             AddDronePart(enemy,PrimitiveType.Cylinder,new Vector3(0,0,-.3f),new Vector3(.18f,.1f,.18f),orange,Quaternion.Euler(90,0,0));
             foreach(int x in new[]{-1,1})foreach(int z in new[]{-1,1}){AddDronePart(enemy,PrimitiveType.Cube,new Vector3(x*.35f,.04f,z*.25f),new Vector3(.75f,.06f,.08f),steel,Quaternion.Euler(0,x*z*35,0));AddDronePart(enemy,PrimitiveType.Cylinder,new Vector3(x*.56f,.1f,z*.42f),new Vector3(.4f,.025f,.4f),trim);}
+            }
             var c=enemy.AddComponent<BoxCollider>();c.size=new Vector3(1.3f,.65f,1.1f);shootable.Add(c,enemy);
         }
         void AddDronePart(GameObject parent,PrimitiveType shape,Vector3 at,Vector3 scale,Material material,Quaternion rotation=default(Quaternion))
@@ -128,21 +140,24 @@ namespace GCCD.Dts
             RaycastHit hit;bool didHit=Physics.Raycast(transform.position,direction,out hit,90,~(1<<30),QueryTriggerInteraction.Ignore);
             bool success=didHit&&shootable.ContainsKey(hit.collider);
             if(success){hits++;lastHit=Now;var target=shootable[hit.collider];shootable.Remove(hit.collider);Destroy(target);}
+            PresentShot(didHit?hit.point:transform.position+direction.normalized*90);
             if(didHit)Impact(hit.point,hit.normal);
             return success;
         }
-        void Impact(Vector3 p,Vector3 n){var spark=GameObject.CreatePrimitive(PrimitiveType.Sphere);spark.name="Impact";Destroy(spark.GetComponent<Collider>());spark.transform.position=p+n*.03f;spark.transform.localScale=Vector3.one*.05f;spark.GetComponent<Renderer>().sharedMaterial=orange;Destroy(spark,.2f);}
+        void Impact(Vector3 p,Vector3 n){PresentImpact(p,n);}
         public void ThreatEvent()
         {
             if(paused||complete||IsThreatResponse)return;
-            lastThreat=Now;nextThreat=Now+9+rng.NextDouble()*5;
+            lastThreat=Now;ScheduleNextThreat();
             try{
                 int count = rng.Next(MinimumThreatCount, MaximumThreatCount + 1);
-                var locations=MissionSpawnPlanner.Plan(rng.Next(),count,transform.position.x,transform.position.z,yaw,true,Occupied,true);
+                var locations=MissionSpawnPlanner.Plan(rng.Next(),count,transform.position.x,transform.position.z,yaw,true,Occupied,true,excludeSideGaps:true);
                 var threats=locations.Select((p,i)=>{var at=new Vector3((float)p.X,1.9f,(float)p.Z);var delta=at-transform.position;return new Threat("M"+i,true,true,true,at.x,at.y,at.z,delta.magnitude,Angles.Bearing(delta.x,delta.z,yaw));}).ToArray();
                 BeginMissionThreatEvent(threats);
             }catch(ArgumentException){output="생성할 공간이 부족합니다. 개방된 구역으로 이동하세요.";}
         }
+        void ScheduleNextThreat() => nextThreat = Now + 5 + rng.NextDouble() * 3;
+
         public int MinimumThreatCount { get; internal set; }
         public int MaximumThreatCount { get; internal set; }
         public int SuppressionTheta { get; internal set; } = 45;
@@ -153,6 +168,7 @@ namespace GCCD.Dts
             var receipt = Owner.MissionPulse(policy.Kept, Physical, Strengths);
             output = receipt.simulated ? "화면 체험 · 위치를 표시해 주세요" : receipt.submitted ? "위치 응답 대기" : "조끼 출력 실패 · 체험 응답";
             BeginThreatResponse(threats, receipt, threats.Select(t => !retained.Contains(t.Id)).ToArray());
+            ThreatEventsOccurred++;
         }
         public void SetPaused(bool value)
         {

@@ -122,3 +122,134 @@
 .unity-base-dropdown__container { background-color:rgb(17,27,33); border-color:rgb(92,116,121); }
 .unity-base-dropdown__item { color:rgb(244,248,245); }
 .unity-base-dropdown__item:hover { background-color:rgb(55,76,80); }
+
+/* OUTPOST visual presentation — existing form and research controls retain their behavior. */
+.screen { color:rgb(227,239,232); }
+.lobby { background-color:rgb(7,14,19); }
+.backdrop { opacity:.66; }
+.lobby-top { top:28px; left:48px; right:48px; padding-bottom:18px; border-bottom-width:1px; border-bottom-color:rgba(106,190,188,.28); }
+.brand { font-size:18px; letter-spacing:4px; color:rgb(231,241,232); }
+.lobby-top > .eyebrow { font-size:11px; letter-spacing:2px; color:rgb(136,202,198); background-color:rgba(7,19,23,.8); border-left-width:2px; border-left-color:rgb(87,202,196); padding-left:12px; }
+.lobby-content { top:103px; left:48px; bottom:80px; width:540px; max-width:45%; }
+.lobby-content .hero { font-size:50px; letter-spacing:-1px; margin-bottom:14px; }
+.lobby-content .description { font-size:16px; margin-bottom:20px; color:rgb(177,198,196); }
+.lobby-content .eyebrow { font-size:11px; letter-spacing:3px; margin-bottom:10px; }
+.lobby-content .small { font-size:12px; margin-bottom:10px; }
+.lobby-content .study-field { margin-bottom:11px; min-width:0; flex-shrink:0; }
+.lobby-content .row > .study-field { flex-basis:0; flex-grow:1; }
+.lobby-content .study-field > .unity-base-field__label { font-size:13px; margin-bottom:5px; letter-spacing:.5px; }
+.lobby-content .study-field > .unity-base-field__input { min-height:34px; border-color:rgba(96,156,159,.45); background-color:rgba(9,25,31,.92); border-radius:2px; font-size:15px; }
+.lobby-content .study-field > .unity-base-field__input:hover { border-color:rgb(109,207,199); }
+.lobby-content .study-field > .unity-base-field__input:focus { border-color:rgb(239,188,98); background-color:rgb(17,38,43); }
+.lobby-content .unity-scroll-view__content-container { padding-right:14px; }
+.button { border-radius:2px; border-color:rgba(112,158,160,.44); background-color:rgba(12,28,33,.92); color:rgb(215,231,225); transition-property:background-color,color,border-color,translate; transition-duration:.16s; }
+.button:hover { background-color:rgba(30,63,68,.97); border-color:rgb(111,215,208); color:rgb(246,252,242); translate:2px 0; }
+.button:focus { border-color:rgb(241,201,124); border-width:2px; }
+.button:active { background-color:rgb(54,88,89); translate:0 1px; }
+.lobby-content .button { height:50px; margin-bottom:9px; font-size:17px; }
+.lobby-content .secondary { font-size:15px; height:46px; }
+.primary { background-color:rgb(230,179,91); border-color:rgb(230,179,91); color:rgb(15,24,25); -unity-font-style:bold; }
+.primary:hover { background-color:rgb(255,211,137); border-color:rgb(255,223,164); color:rgb(10,20,22); }
+.primary:focus { border-color:rgb(255,249,221); }
+.lobby-bottom { left:48px; bottom:26px; right:48px; padding-top:14px; border-top-width:1px; border-top-color:rgba(94,153,155,.25); }
+.control-hint { font-size:12px; color:rgb(143,176,177); }
+.device-panel { right:48px; bottom:82px; width:340px; background-color:rgba(7,19,25,.94); border-top-width:2px; border-top-color:rgb(90,206,196); border-left-width:1px; border-left-color:rgba(87,156,160,.32); border-bottom-width:1px; border-bottom-color:rgba(87,156,160,.2); padding:20px 22px 15px 22px; border-radius:2px; }
+.device-panel > .eyebrow { color:rgb(130,195,190); font-size:11px; margin-bottom:12px; letter-spacing:2px; }
+.device-panel .small { font-size:13px; }
+.device-panel .device-status { font-size:22px; margin-bottom:9px; }
+.device-panel .outline { height:42px; font-size:14px; margin-top:8px; margin-bottom:8px; }
+.device-panel .text-button { font-size:12px; height:26px; }
+.motion-preference { font-size:11px; color:rgb(128,162,164); margin-top:8px; padding-top:10px; border-top-width:1px; border-top-color:rgba(100,153,154,.18); }
+.motion-preference:focus { color:rgb(242,205,135); }
+.lobby-instrumentation { position:absolute; top:101px; right:48px; left:52%; height:410px; overflow:hidden; }
+.field-frame { position:absolute; top:0; right:0; width:430px; height:398px; }
+.field-code { position:absolute; right:2px; top:0; font-size:36px; -unity-font-style:bold; letter-spacing:5px; color:rgba(221,237,229,.8); }
+.field-caption { position:absolute; right:4px; top:46px; font-size:10px; letter-spacing:2px; color:rgb(114,179,178); }
+.field-dial { position:absolute; right:0; top:63px; width:330px; height:300px; }
+.field-angle { position:absolute; right:112px; top:150px; width:104px; font-size:39px; letter-spacing:-1px; -unity-font-style:bold; -unity-text-align:middle-center; color:rgba(219,241,229,.85); }
+.field-angle-caption { position:absolute; right:69px; top:232px; width:192px; font-size:9px; letter-spacing:1px; -unity-text-align:middle-center; color:rgb(108,174,174); }
+.field-readout { position:absolute; bottom:0; right:6px; width:316px; padding-top:11px; border-top-width:1px; border-top-color:rgba(96,175,174,.35); flex-direction:row; justify-content:space-between; }
+.readout-label { font-size:9px; letter-spacing:1px; color:rgb(124,170,170); }
+.readout-value { font-size:9px; letter-spacing:1px; }
+.lobby-telemetry-rule { position:absolute; top:70px; bottom:40px; right:368px; width:1px; background-color:rgba(96,191,184,.25); }
+.lobby-sweep { position:absolute; left:10%; right:0; height:1px; background-color:rgb(118,243,218); }
+.lobby-operation-ribbon { position:absolute; right:421px; bottom:92px; width:200px; padding-left:15px; border-left-width:2px; border-left-color:rgba(226,175,84,.65); }
+.ribbon-label { font-size:10px; letter-spacing:3px; color:rgb(222,179,105); margin-bottom:9px; }
+.ribbon-title { font-size:16px; letter-spacing:2px; -unity-font-style:bold; color:rgb(184,211,202); white-space:normal; }
+.ribbon-caption { font-size:9px; letter-spacing:1px; color:rgb(117,157,159); white-space:normal; margin-top:8px; }
+
+.objectives { left:34px; top:30px; border-left-color:rgb(231,180,89); background-color:rgba(6,19,24,.83); border-radius:2px; padding:14px 24px 15px 17px; border-top-width:1px; border-top-color:rgba(105,170,169,.27); }
+.objectives > .eyebrow { font-size:10px; letter-spacing:3px; margin-bottom:7px; }
+.objective-title { font-size:23px; margin-bottom:9px; }
+.objective-detail { font-size:14px; color:rgb(191,213,205); }
+.haptic-badge { right:34px; top:30px; font-size:10px; letter-spacing:1.5px; padding:10px 14px; border-top-width:1px; border-top-color:rgba(107,192,180,.5); color:rgb(143,207,191); background-color:rgba(6,19,24,.85); }
+.threat-notice { right:34px; top:76px; font-size:13px; background-color:rgba(6,19,24,.86); border-right-width:2px; border-right-color:rgb(226,177,90); }
+.weapon-hud { right:34px; bottom:36px; width:245px; padding:17px 20px 16px 20px; background-color:rgba(6,19,24,.86); border-top-width:1px; border-top-color:rgba(108,193,181,.4); border-right-width:2px; border-right-color:rgb(110,202,187); border-radius:2px; }
+.weapon-hud > .eyebrow { font-size:10px; letter-spacing:3px; margin-bottom:4px; color:rgb(146,182,177); }
+.ammo { font-size:44px; color:rgb(231,242,229); letter-spacing:1px; margin-bottom:2px; }
+.ammo-low { color:rgb(255,196,101); }
+.weapon-hud > .small { font-size:12px; margin-bottom:8px; }
+.reload-bar { height:3px; align-self:flex-end; background-color:rgb(239,188,100); margin-top:2px; margin-bottom:7px; }
+.ammo-rail { flex-direction:row; width:100%; height:7px; justify-content:space-between; }
+.ammo-cartridge { width:4px; height:7px; background-color:rgb(97,220,205); }
+.hud-controls { left:34px; bottom:36px; font-size:11px; padding:9px 12px; background-color:rgba(6,19,24,.78); color:rgb(160,191,183); border-left-width:1px; border-left-color:rgba(111,177,174,.4); }
+.supply-marker { padding:5px 9px; font-size:12px; color:rgb(169,241,213); border-width:1px; border-color:rgba(104,218,187,.4); background-color:rgba(6,30,31,.78); border-radius:1px; }
+.hit-marker { color:rgb(255,195,93); }
+.cross-top,.cross-bottom,.cross-left,.cross-right { background-color:rgb(218,244,229); }
+.mission-chrome { position:absolute; left:0; top:0; right:0; bottom:0; }
+.compass { position:absolute; top:27px; left:50%; margin-left:-180px; width:360px; height:59px; overflow:hidden; }
+.compass-heading { color:rgb(184,220,211); font-size:11px; letter-spacing:3px; -unity-text-align:upper-center; height:21px; }
+.compass-tape { position:absolute; top:24px; left:0; right:0; height:30px; overflow:hidden; border-top-width:1px; border-top-color:rgba(122,191,181,.25); }
+.compass-tick { position:absolute; top:0; width:44px; margin-left:-22px; padding-top:8px; font-size:9px; letter-spacing:1px; -unity-text-align:upper-center; border-top-width:3px; border-top-color:rgba(149,210,196,.5); }
+.compass-needle { position:absolute; left:50%; margin-left:-1px; width:2px; height:9px; top:18px; background-color:rgb(228,182,97); }
+.mission-clock { position:absolute; left:34px; top:210px; font-size:9px; letter-spacing:2px; color:rgba(175,210,197,.65); }
+.mission-toast { position:absolute; top:115px; left:50%; width:420px; margin-left:-210px; padding:12px 20px 11px 20px; background-color:rgba(7,26,29,.88); border-top-width:1px; border-top-color:rgb(111,216,196); border-bottom-width:1px; border-bottom-color:rgba(91,160,157,.35); align-items:center; }
+.toast-title { font-size:20px; -unity-font-style:bold; color:rgb(215,243,223); letter-spacing:2px; margin-bottom:5px; }
+.toast-detail { font-size:10px; letter-spacing:2px; color:rgb(133,193,182); }
+.fire-bracket { position:absolute; top:46%; height:64px; width:2px; background-color:rgb(239,180,90); opacity:0; }
+.fire-bracket-left { left:18px; }
+.fire-bracket-right { right:18px; }
+.hud-edge { position:absolute; width:14px; height:14px; border-color:rgba(133,203,184,.32); }
+.hud-edge-tl { left:18px; top:18px; border-top-width:1px; border-left-width:1px; }
+.hud-edge-tr { right:18px; top:18px; border-top-width:1px; border-right-width:1px; }
+.hud-edge-bl { left:18px; bottom:18px; border-bottom-width:1px; border-left-width:1px; }
+.hud-edge-br { right:18px; bottom:18px; border-bottom-width:1px; border-right-width:1px; }
+.pause-overlay { background-color:rgba(4,13,18,.91); }
+.pause-content { width:430px; padding:30px; border-top-width:2px; border-top-color:rgb(109,211,195); background-color:rgba(12,28,34,.88); }
+.pause-title { font-size:42px; margin-bottom:28px; }
+.response-overlay,.results-overlay { background-color:rgb(7,16,22); }
+.response-map { border-color:rgb(57,105,109); }
+.mini-map-panel { border-top-width:1px; border-top-color:rgb(113,202,189); background-color:rgba(6,19,25,.97); }
+.reduced-motion .button { transition-duration:0s; }
+.reduced-motion .button:hover,.reduced-motion .button:active { translate:0 0; }
+
+/* Menu fit checked against 1280x720 and 1600x1000 captures. */
+.lobby-content .hero { font-size:48px; margin-bottom:12px; }
+.lobby-content .description { margin-bottom:22px; }
+.setup-identity { margin-bottom:2px; }
+.setup-details { margin-top:0; margin-bottom:13px; border-bottom-width:1px; border-bottom-color:rgba(99,158,157,.24); padding-bottom:7px; }
+.setup-details > .unity-foldout__toggle { min-height:29px; margin:0; padding-left:0; }
+.setup-details > .unity-foldout__toggle > .unity-toggle__text { font-size:12px; letter-spacing:1px; color:rgb(150,191,183); }
+.setup-details > .unity-foldout__toggle:hover > .unity-toggle__text { color:rgb(231,207,153); }
+.setup-details > .unity-foldout__content { margin-left:0; margin-top:11px; }
+.lobby-instrumentation { height:300px; }
+.field-frame { height:300px; width:340px; }
+.field-code { font-size:29px; letter-spacing:4px; }
+.field-caption { top:40px; font-size:9px; }
+.field-dial { right:0; top:53px; width:260px; height:224px; }
+.field-angle { right:78px; top:117px; width:104px; font-size:32px; }
+.field-angle-caption { right:34px; top:186px; font-size:8px; }
+.field-readout { width:252px; bottom:0; padding-top:7px; }
+.readout-label,.readout-value { font-size:8px; letter-spacing:.5px; }
+.lobby-telemetry-rule { right:292px; top:55px; bottom:18px; }
+.device-panel { width:320px; padding:16px 18px 12px 18px; }
+.device-panel > .eyebrow { font-size:10px; margin-bottom:10px; }
+.device-panel .device-status { font-size:20px; margin-bottom:8px; }
+.device-panel .small { font-size:12px; margin-bottom:9px; }
+.device-panel .outline { height:36px; font-size:13px; margin-top:7px; margin-bottom:7px; }
+.device-panel .text-button { font-size:11px; height:22px; }
+.motion-preference { min-height:22px; flex-direction:row; align-items:center; margin-top:6px; padding-top:8px; }
+.motion-preference > .unity-base-field__label { min-width:0; flex-grow:1; margin-right:12px; }
+.motion-preference > .unity-base-field__input { flex-grow:0; flex-shrink:0; width:24px; min-width:24px; height:18px; }
+.motion-preference .unity-toggle__checkmark { width:12px; height:12px; border-width:1px; border-color:rgb(96,157,154); background-color:rgba(39,72,76,.8); }
+.motion-preference .unity-toggle__input:checked > .unity-toggle__checkmark { background-color:rgb(78,168,157); }

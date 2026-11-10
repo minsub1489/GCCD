@@ -47,6 +47,7 @@ namespace GCCD.Dts
             Submit(ui.Q<Button>("closeDirectionCheck"));yield return null;
             Submit(ui.Q<Button>("startMission"));yield return null;
             if(GetComponent<MissionDemo>())Fail("FPS start rejects missing settings");
+            ui.Q<TextField>("participantName").value="테스트/Team";
             ui.Q<DropdownField>("studyAngle").index=2;
             ui.Q<TextField>("studyThreatMinimum").value="10";
             ui.Q<TextField>("studyThreatMaximum").value="10";
@@ -63,8 +64,31 @@ namespace GCCD.Dts
             Place(new Vector3(-10,1.77f,-10));for(int i=0;i<190;i++)m.StepMovement(Vector2.left,false,false,.02f);
             if(transform.position.x>-21.5f)Fail("Interior entrance traversal");
             Place(new Vector3(-22,1.77f,-12));for(int i=0;i<20;i++)m.StepMovement(Vector2.zero,false,false,.02f);
-            float beforeY=transform.position.y;m.StepMovement(Vector2.zero,true,false,.02f);for(int i=0;i<12;i++)m.StepMovement(Vector2.zero,false,false,.02f);
-            if(transform.position.y<beforeY+.5f)Fail("Space jump height");for(int i=0;i<120;i++)m.StepMovement(Vector2.zero,false,false,.02f);if(Mathf.Abs(transform.position.y-beforeY)>.15f)Fail("Jump landing");
+            const float jumpStep = .02f;
+            float beforeY = transform.position.y;
+            float peakY = beforeY;
+            int apexStep = 0;
+            int landingStep = 0;
+            for (int step = 1; step <= 90; step++)
+            {
+                m.StepMovement(Vector2.zero, step == 1, false, jumpStep);
+                if (transform.position.y > peakY)
+                {
+                    peakY = transform.position.y;
+                    apexStep = step;
+                }
+                if (step > 1 && m.IsGrounded)
+                {
+                    landingStep = step;
+                    break;
+                }
+            }
+            if (peakY - beforeY < .85f || peakY - beforeY > 1.15f) Fail("Space jump height");
+            if (landingStep == 0 || Mathf.Abs(transform.position.y - beforeY) > .15f) Fail("Jump landing");
+            float ascent = apexStep * jumpStep;
+            float descent = (landingStep - apexStep) * jumpStep;
+            if (descent > ascent - .04f) Fail($"Jump descent should be shorter than ascent: {ascent:F2}s / {descent:F2}s");
+            Debug.Log($"DTS_JUMP_TIMING_PASS ascent={ascent:F2}s descent={descent:F2}s height={peakY - beforeY:F2}m");
             if(!m.SetCrouched(true)||!m.IsCrouched)Fail("C crouch toggle");if(Mathf.Abs(GetComponent<CharacterController>().height-1)>0.01)Fail("Crouch collider height");
             Place(new Vector3(-29,1.00f,17));if(m.SetCrouched(false)||!m.IsCrouched)Fail("Headroom blocks standing");
             Place(new Vector3(-22,1.0f,-12));if(!m.SetCrouched(false))Fail("Standing after leaving hatch");
@@ -80,6 +104,9 @@ namespace GCCD.Dts
             var frozen=transform.position;int oldAmmo=m.Ammo;double oldElapsed=m.Elapsed;time+=60;m.StepMovement(Vector2.one,true,true,.02f);m.Fire(Vector3.forward);m.Reload();m.SetPaused(false);m.ToggleMap();
             if(transform.position!=frozen||m.Ammo!=oldAmmo||m.Elapsed!=oldElapsed||!m.IsPaused||m.MapVisible)Fail("Response blocks gameplay and timers");
             yield return null;var response=ui.Q<MissionMapView>("responseMap");if(!response.Interactive||ui.Q("threatResponse").resolvedStyle.display==DisplayStyle.None)Fail("Response map visible");
+            var scale = response.Q<Label>("mapDistanceScale");
+            if(scale==null || scale.resolvedStyle.display==DisplayStyle.None || scale.text!="10 m")Fail("Response distance scale visible");
+            if(m.ThreatEventsOccurred!=1 || !ui.Q<Label>("responseEventCount").text.Contains("1회"))Fail("First threat event shown");
             for(int i=0;i<10;i++)if(!m.ToggleResponseMarker(-30+3*i,48))Fail("Configured response capacity");
             if(m.ToggleResponseMarker(20,48)||m.ResponseMarkers.Length!=10)Fail("Eleventh response blocked");
             yield return null;
@@ -96,11 +123,14 @@ namespace GCCD.Dts
             // An empty answer is valid and must not disclose a required marker count.
             m.SuppressionTheta=60;
             m.ThreatEvent();
+            yield return null;
+            if(m.ThreatEventsOccurred!=2 || !ui.Q<Label>("responseEventCount").text.Contains("2회"))Fail("Second threat event shown");
             time+=1;if(!m.CompleteThreatResponse()||m.IsPaused)Fail("Empty response resumes");
             m.ToggleMap();yield return null;
             Submit(ui.Q<Button>("mapEndExperiment"));
             if(!m.IsComplete||!m.EndedEarly||!m.ExportsReady)Fail("Tab end experiment opens results");
             if(m.ReviewEvents.Length!=2)Fail("Result event count");
+            if(m.ReviewEvents.Any(e=>e.PlayerName!="테스트/Team"))Fail("Saved participant name");
             if(m.ReviewEvents.Any(e=>!e.Score.UsesProximity))Fail("Mission must use and record proximity scoring");
             if(ui.Q<Button>("openLobbyCsvFolder")==null||MissionDemo.LatestCsvFolder()!=m.CsvFolder)
                 Fail("Lobby CSV shortcut must resolve the latest exported mission");

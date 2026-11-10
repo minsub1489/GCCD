@@ -24,7 +24,7 @@ namespace GCCD.Dts
             var style=Resources.Load<StyleSheet>("Realism/UI/Operator");if(style)root.styleSheets.Add(style);
             string family=System.Array.Find(new[]{"Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR","Arial"},x=>System.Array.IndexOf(Font.GetOSInstalledFontNames(),x)>=0);
             font=family==null?Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"):Font.CreateDynamicFontFromOSFont(family,22);root.style.unityFontDefinition=FontDefinition.FromFont(font);
-            BuildLobby();BuildHud();BuildMaps();BuildResults();BuildDirectionTest();
+            BuildLobby();BuildHud();BuildMaps();BuildResults();BuildDirectionTest();BuildPresentation();
         }
         VisualElement Element(VisualElement parent,string classes){var e=new VisualElement();foreach(var c in classes.Split(' '))e.AddToClassList(c);parent.Add(e);return e;}
         Label Label(VisualElement parent,string value,string classes){var l=new Label(value);foreach(var c in classes.Split(' '))l.AddToClassList(c);parent.Add(l);return l;}
@@ -175,9 +175,9 @@ var top=Element(lobby,"lobby-top");Label(top,"Finding Threat","brand");Label(top
                     if(visible){supplyMarkers[i].style.left=Length.Percent(v.x*100);supplyMarkers[i].style.top=Length.Percent((1-v.y)*100);float distance=Vector3.Distance(transform.position,points[i]);supplyMarkers[i].text=distance<3?"[E] 회수":"◇  "+Mathf.RoundToInt(distance)+" m";}
                 }
                 threatNotice.text=mission.OutputText;threatNotice.style.display=string.IsNullOrEmpty(threatNotice.text)?DisplayStyle.None:DisplayStyle.Flex;
-                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused&&!mission.MapVisible?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
+                objectives.text="보급품  "+mission.SuppliesCollected+" / 3\n드론 무력화  "+mission.ShotsHit+" / 5\n위협 발생  "+mission.ThreatEventsOccurred+"회";ammo.text=mission.Ammo.ToString("D2")+"  /  30";status.text=mission.IsReloading?"재장전 중…":(mission.IsCrouched?"앉음  ·  ":"")+"R  재장전";ammoProgress.style.display=mission.IsReloading?DisplayStyle.Flex:DisplayStyle.None;reticle.style.opacity=mission.IsAiming?.15f:.8f;marker.style.display=mission.HitMarker?DisplayStyle.Flex:DisplayStyle.None;pause.style.display=mission.IsPaused&&!mission.MapVisible?DisplayStyle.Flex:DisplayStyle.None;pauseTitle.text=mission.IsComplete?"작전 완료":"일시정지";continueButton.style.display=mission.IsComplete?DisplayStyle.None:DisplayStyle.Flex;hapticBadge.text=(mission.Physical?"HAPTICS  ●":"HAPTICS  OFF")+"   /   체험 모드";}
         }
-        void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);RefreshResults(m,m&&m.HasWorld);RefreshDirectionTest();}
+        void LateUpdate(){var m=GetComponent<MissionDemo>();RefreshMaps(m,m&&m.HasWorld);RefreshResults(m,m&&m.HasWorld);RefreshDirectionTest();RefreshPresentation(m);}
         void OnDestroy(){if(document)Destroy(document);if(panel)Destroy(panel);if(font)Destroy(font);if(scrimTexture)Destroy(scrimTexture);}
     }
 }

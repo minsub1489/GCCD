@@ -1,0 +1,60 @@
+{
+  "AegisSecurityDrone": {
+    "triangles": 32156,
+    "blender_bounds_min": [
+      -0.5709999799728394,
+      -0.460999995470047,
+      -0.22899998724460602
+    ],
+    "blender_bounds_max": [
+      0.5710000395774841,
+      0.460999995470047,
+      0.25697264075279236
+    ],
+    "unity_size_xyz": [
+      1.1420000195503235,
+      0.4859726279973984,
+      0.921999990940094
+    ],
+    "objects": 15,
+    "materials": [
+      "Hull",
+      "Steel",
+      "Rubber",
+      "Amber",
+      "Cyan",
+      "Lens"
+    ],
+    "sha256": "9aa2bf86948943f3dd66a5c8dca09ed7c50d22dc4a940b6888d0e0a50c067d96",
+    "resource": "VisualUpgrade/Models/AegisSecurityDrone"
+  },
+  "IndustrialServiceUnit": {
+    "triangles": 6100,
+    "blender_bounds_min": [
+      -0.4300000071525574,
+      -0.279508113861084,
+      -0.8449999690055847
+    ],
+    "blender_bounds_max": [
+      0.4300000071525574,
+      0.09000000357627869,
+      0.9600000977516174
+    ],
+    "unity_size_xyz": [
+      0.8600000143051147,
+      1.8050000667572021,
+      0.36950811743736267
+    ],
+    "objects": 6,
+    "materials": [
+      "Hull",
+      "Steel",
+      "Rubber",
+      "Amber",
+      "Cyan",
+      "Lens"
+    ],
+    "sha256": "f3c73457efdf52b6b908a75270ce0557f9c5ec82f5897822e944a4b180ea76c2",
+    "resource": "VisualUpgrade/Models/IndustrialServiceUnit"
+  }
+}

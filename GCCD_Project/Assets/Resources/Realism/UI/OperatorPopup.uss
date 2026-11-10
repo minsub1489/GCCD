@@ -1,0 +1,46 @@
+/* Runtime menus live beside the UIDocument. Scope this sheet to its own panel. */
+.outpost-popup-theme .unity-base-dropdown__container-outer {
+    background-color:rgb(9,25,31);
+    border-width:1px;
+    border-color:rgb(83,153,154);
+    border-top-color:rgb(109,211,198);
+    border-radius:2px;
+    padding:4px 0;
+}
+.outpost-popup-theme .unity-base-dropdown__container-inner,
+.outpost-popup-theme .unity-base-dropdown__container-inner .unity-scroll-view__content-viewport,
+.outpost-popup-theme .unity-base-dropdown__container-inner .unity-scroll-view__content-container {
+    background-color:transparent;
+}
+.outpost-popup-theme .unity-base-dropdown__item {
+    min-height:32px;
+    padding:7px 14px 7px 10px;
+    border-left-width:2px;
+    border-left-color:transparent;
+    background-color:transparent;
+    color:rgb(210,233,225);
+}
+.outpost-popup-theme .unity-base-dropdown__label {
+    color:rgb(210,233,225);
+    font-size:14px;
+}
+.outpost-popup-theme .unity-base-dropdown__item:checked {
+    background-color:rgb(18,47,51);
+    border-left-color:rgb(92,185,174);
+}
+.outpost-popup-theme .unity-base-dropdown__item:hover {
+    background-color:rgb(30,68,71);
+    border-left-color:rgb(126,230,207);
+}
+.outpost-popup-theme .unity-base-dropdown__item:hover .unity-base-dropdown__label,
+.outpost-popup-theme .unity-base-dropdown__item:checked .unity-base-dropdown__label {
+    color:rgb(238,248,231);
+}
+.outpost-popup-theme .unity-base-dropdown__checkmark {
+    -unity-background-image-tint-color:rgb(126,230,207);
+}
+.outpost-popup-theme .unity-base-dropdown__separator {
+    background-color:rgba(96,163,161,.35);
+    height:1px;
+    margin:4px 10px;
+}

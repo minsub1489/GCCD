@@ -266,6 +266,20 @@ class CoreTests
         Test("mission different seeds change enemies",()=>{var a=MissionSpawnPlanner.Plan(1,6,0,-14,0,false,(x,z)=>false);var b=MissionSpawnPlanner.Plan(2,6,0,-14,0,false,(x,z)=>false);Eq(a[0].X==b[0].X&&a[0].Z==b[0].Z,false);});
         Test("mission rejects occupied spawn and keeps spacing",()=>{var a=MissionSpawnPlanner.Plan(18,6,0,-14,0,false,(x,z)=>x<0);Eq(a.All(p=>p.X>=0&&p.X<10&&p.Z>=-24&&p.Z<=48),true);for(int i=0;i<a.Length;i++)for(int j=i+1;j<a.Length;j++)Eq(Math.Pow(a[i].X-a[j].X,2)+Math.Pow(a[i].Z-a[j].Z,2)>=9,true);});
         Test("mission surprise sources offscreen",()=>{var a=MissionSpawnPlanner.Plan(41,3,0,0,110,true,(x,z)=>false);foreach(var p in a)Eq(Angles.IsOffscreen(Angles.Bearing(p.X,p.Z,110),100),true);});
+        Test("FPS excludes both X40 side gaps relative to player yaw",()=>{
+            foreach(int yaw in new[]{0,45,90,180,270,359})
+            {
+                var points=MissionSpawnPlanner.Plan(41,12,0,0,yaw,true,(x,z)=>false,true,excludeSideGaps:true);
+                Eq(points.Length,12);
+                foreach(var point in points)
+                {
+                    double bearing=Angles.Bearing(point.X,point.Z,yaw);
+                    Eq(Angles.Difference(bearing,90)>22.5,true);
+                    Eq(Angles.Difference(bearing,270)>22.5,true);
+                    Eq(Angles.IsOffscreen(bearing,100),true);
+                }
+            }
+        });
         Test("mission unavailable spawns fail bounded",()=>Throws(()=>MissionSpawnPlanner.Plan(1,5,0,0,0,false,(x,z)=>true)));
         Test("terminal map coordinates round trip",()=>{var p=MissionFloorPlan.ToMap(-28,18);var w=MissionFloorPlan.FromMap(p.X,p.Z);Near(w.X,-28);Near(w.Z,18);Throws(()=>MissionFloorPlan.FromMap(-.01,.5));});
         Test("terminal entrances are open and facade is solid",()=>{foreach(int side in new[]{-1,1})foreach(double z in new[]{-10d,8,26,44})Eq(MissionFloorPlan.Walkable(side*12,z,1.8,.35),true);Eq(MissionFloorPlan.Walkable(12,-15,1.8,.35),false);});
